@@ -1,43 +1,53 @@
 import axios from 'axios';
-import BASE_URL from './config';
 
-// สร้าง Instance ของ Axios พร้อมกำหนดค่าเริ่มต้น
+// ✅ ใช้ Environment Variable ของ Vite แทนการ Hardcode URL
+// เพื่อให้สลับระหว่าง localhost และ production บน Vercel ได้อัตโนมัติ
+const API_URL = import.meta.env.VITE_API_URL;
+
 const axiosInstance = axios.create({
-    baseURL: BASE_URL,
+    baseURL: API_URL,
+    // ✅ จำเป็นสำหรับการทำ CORS ข้ามโดเมนระหว่าง Vercel Frontend และ Backend
+    withCredentials: true, 
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// --- Request Interceptor: ใส่ Token ให้อัตโนมัติทุกครั้งที่ยิง API ---
+// --- Request Interceptor ---
 axiosInstance.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
         if (token) {
-            config.headers.Authorization = `Bearer ${token}`; //
+            config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // ✅ จุดสำคัญ: หากส่งข้อมูลเป็น FormData (เช่น การแนบสลิป)
+        // ต้องให้ Axios จัดการ Content-Type เอง ห้ามบังคับเป็น application/json
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        }
+
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
-// --- Response Interceptor: จัดการ Error ทั่วไประดับ Global ---
+// --- Response Interceptor ---
 axiosInstance.interceptors.response.use(
     (response) => {
-        // หาก API ส่งกลับมาในรูปแบบ { success: true, data: ... } 
-        // เราสามารถส่งแค่ส่วน data ออกไปให้หน้าบ้านได้เลย
+        // คืนค่าเฉพาะ data (เช่น { success: true, data: [...] })
         return response.data;
     },
     (error) => {
-        // หากเจอ Error 401 (Unauthorized) เช่น Token หมดอายุ
+        // หากเจอ Error 401 (Unauthorized)
         if (error.response && error.response.status === 401) {
             localStorage.removeItem('token');
-            window.location.href = '/login'; // เตะกลับไปหน้า Login
+            localStorage.removeItem('user'); // ล้างข้อมูล User ไปด้วย (ถ้ามี)
+            
+            // ✅ ใช้ replace เพื่อไม่ให้ผู้ใช้กด "Back" กลับมาหน้าเดิมที่ติด Error ได้
+            window.location.replace('/login'); 
         }
         
-        // ส่ง Error ต่อไปให้หน้าบ้านรับไปแสดงผล (เช่น toast.error)
         return Promise.reject(error);
     }
 );
