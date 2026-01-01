@@ -1,0 +1,5 @@
+/* ลบ @tailwind base; @tailwind components; @tailwind utilities; ออก */
+@import "tailwindcss";
+
+/* ฟอนต์ Kanit ที่คุณใช้ในหน้า Home */
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap');
