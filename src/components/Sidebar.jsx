@@ -8,34 +8,25 @@ import {
 import { jwtDecode } from 'jwt-decode';
 import Swal from 'sweetalert2';
 
-// --- นำเข้า API Config และ Instance ---
 import axiosInstance from '../api/axiosInstance';
 import { API_ENDPOINTS } from '../api/config';
 
-const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsSidebarOpen, activePage }) => {
+const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen, activePage }) => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
-  const [shopName, setShopName] = useState('กรุณาตั้งชื่อร้านค้า');
+  const [shopName, setShopName] = useState('SOOO GUICHAI');
 
-  // 1. ดึงชื่อร้านค้า (ใช้ axiosInstance)
   const fetchShopName = useCallback(async () => {
     try {
-      // ใช้ Endpoint สาธารณะ (ต้องเพิ่มใน config.js ด้วยนะครับ)
       const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
       if (res.success && res.data.shop_name) {
-        const name = res.data.shop_name;
-        setShopName(name === "EMPTY" ? 'กรุณาตั้งชื่อร้านค้า' : name);
+        setShopName(res.data.shop_name === "EMPTY" ? 'SOOO GUICHAI' : res.data.shop_name);
       }
-    } catch (error) {
-      console.error("Error fetching shop name:", error);
-    }
+    } catch (error) { console.error("Error fetching shop name:", error); }
   }, []);
 
-  useEffect(() => {
-    fetchShopName();
-  }, [fetchShopName]);
+  useEffect(() => { fetchShopName(); }, [fetchShopName]);
 
-  // ดึงระดับสิทธิ์ผู้ใช้
   let userLevel = 0;
   try {
     if (token) {
@@ -44,143 +35,98 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsSidebarOpen, 
     }
   } catch (error) {}
 
-  // 2. ออกจากระบบ (ใช้ SweetAlert2)
   const handleLogout = () => {
     Swal.fire({
       title: 'ออกจากระบบ?',
-      text: "คุณต้องการออกจากเซสชันปัจจุบันใช่หรือไม่",
+      text: "คุณต้องการออกจากระบบจัดการใช่หรือไม่",
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#ef4444',
+      confirmButtonColor: '#1e293b',
       cancelButtonColor: '#f4f7fe',
       confirmButtonText: 'ยืนยัน',
       cancelButtonText: 'ยกเลิก',
-      reverseButtons: true,
-      customClass: { popup: 'premium-popup' }
     }).then((result) => {
       if (result.isConfirmed) {
         localStorage.removeItem('token');
-        localStorage.removeItem('user');
         window.location.href = '/login';
       }
     });
   };
 
   const navItems = [
-    { id: 'dashboard', label: 'แดชบอร์ด', icon: <LayoutDashboard size={20}/>, path: '/admin/dashboard', allowedRoles: [1, 2, 3] },
-    { id: 'orders', label: 'จัดการคำสั่งซื้อ', icon: <ShoppingCart size={20}/>, path: '/admin/orders', allowedRoles: [1, 2, 3] },
-    { id: 'products', label: 'จัดการสินค้า', icon: <Package size={20}/>, path: '/admin/products', allowedRoles: [1, 2, 3] },
-    { id: 'users', label: 'จัดการผู้ใช้', icon: <Users size={20}/>, path: '/admin/users', allowedRoles: [1, 2] },
-    { id: 'system_log', label: 'System Log', icon: <FileText size={20}/>, path: '/admin/system-log', allowedRoles: [1, 2] },
-    { id: 'invlog', label: 'Inventory Log', icon: <ClipboardList size={20}/>, path: '/admin/inv-log', allowedRoles: [1, 2] },
-    { id: 'reports', label: 'รายงานยอดขาย', icon: <BarChart3 size={20}/>, path: '/admin/reports', allowedRoles: [1, 2] },
-    { id: 'shop-setting', label: 'ตั้งค่าร้านค้า', icon: <Settings size={20}/>, path: '/admin/shop-setting', allowedRoles: [1, 2] },
+    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={22}/>, path: '/admin/dashboard', allowedRoles: [1, 2, 3] },
+    { id: 'orders', label: 'Order Management', icon: <ShoppingCart size={22}/>, path: '/admin/orders', allowedRoles: [1, 2, 3] },
+    { id: 'products', label: 'Products Management', icon: <Package size={22}/>, path: '/admin/products', allowedRoles: [1, 2, 3] },
+    { id: 'users', label: 'User Management', icon: <Users size={22}/>, path: '/admin/users', allowedRoles: [1, 2] },
+    { id: 'system_log', label: 'System Log', icon: <FileText size={22}/>, path: '/admin/system-log', allowedRoles: [1, 2] },
+    { id: 'invlog', label: 'Inventory Log', icon: <ClipboardList size={22}/>, path: '/admin/inv-log', allowedRoles: [1, 2] },
+    { id: 'reports', label: 'Reports', icon: <BarChart3 size={22}/>, path: '/admin/reports', allowedRoles: [1, 2] },
+    { id: 'shop-setting', label: 'Shop Settings', icon: <Settings size={22}/>, path: '/admin/shop-setting', allowedRoles: [1, 2] },
   ];
 
   const visibleNavItems = navItems.filter(item => item.allowedRoles.includes(userLevel));
 
   return (
     <>
-      {/* Overlay สำหรับมือถือ */}
       {isMobileOpen && (
-        <div 
-          className="sidebar-overlay" 
-          onClick={() => setIsSidebarOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 999, backdropFilter: 'blur(4px)' }}
-        />
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] lg:hidden transition-all duration-300" onClick={() => setIsMobileOpen(false)} />
       )}
 
       <aside className={`sidebar-main ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}>
         <style>{`
           .sidebar-main {
-              width: 280px; height: 100vh; background: #fff; border-right: 1px solid #f1f5f9;
+              width: 300px; height: 100vh; background: #ffffff; border-right: 1px solid #f1f5f9;
               display: flex; flex-direction: column; position: fixed; left: 0; top: 0; z-index: 1000;
-              transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); font-family: 'Kanit', sans-serif;
+              transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); font-family: 'Kanit', sans-serif;
           }
+          .sidebar-main.collapsed { width: 100px; }
 
-          .sidebar-main.collapsed { width: 85px; }
-
-          /* Mobile Logic */
-          @media (max-width: 1024px) {
-              .sidebar-main { transform: translateX(-100%); width: 280px !important; }
-              .sidebar-main.mobile-open { transform: translateX(0); box-shadow: 20px 0 50px rgba(0,0,0,0.1); }
+          @media (max-width: 1023px) { /* แก้จาก 1024 เป็น 1023 เพื่อให้ iPad Pro 1024px แสดง Sidebar ปกติ */
+              .sidebar-main { 
+                  transform: translateX(-100%); 
+                  width: 280px !important;
+                  box-shadow: 25px 0 50px -12px rgba(0, 0, 0, 0.15);
+                  border-right: none;
+              }
+              .sidebar-main.mobile-open { transform: translateX(0); }
               .toggle-btn-box { display: none !important; }
+              .mobile-close-btn { display: flex !important; }
           }
 
-          .toggle-btn-box {
-              position: absolute; right: -15px; top: 45px; width: 30px; height: 30px;
-              background: #4318ff; color: white; border-radius: 50%; display: flex;
-              align-items: center; justify-content: center; cursor: pointer;
-              box-shadow: 0 4px 10px rgba(67, 24, 255, 0.3); border: none; z-index: 10;
-          }
-
+          .mobile-close-btn { display: none; position: absolute; right: 15px; top: 15px; width: 35px; height: 35px; border-radius: 10px; align-items: center; justify-content: center; background: #f8fafc; color: #64748b; }
+          .toggle-btn-box { position: absolute; right: -18px; top: 40px; width: 36px; height: 36px; background: #ffffff; color: #1e293b; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #f1f5f9; z-index: 10; }
           .logo-area { padding: 40px 25px; display: flex; align-items: center; gap: 15px; cursor: pointer; }
-          .logo-icon-box { min-width: 40px; height: 40px; background: linear-gradient(135deg, #4318ff 0%, #3311db 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; }
-          
-          .brand-text { font-size: 16px; font-weight: 800; color: #1b2559; letter-spacing: 0.5px; white-space: nowrap; transition: opacity 0.3s; text-transform: uppercase; }
-          .collapsed .brand-text { opacity: 0; pointer-events: none; }
-
-          .menu-section { flex: 1; padding: 0 15px; overflow-y: auto; }
-          .menu-category { font-size: 11px; text-transform: uppercase; color: #a3aed0; font-weight: 700; margin: 20px 0 15px 15px; letter-spacing: 1px; }
-          .collapsed .menu-category { visibility: hidden; }
-
-          .nav-link-item {
-              display: flex; align-items: center; gap: 15px; padding: 14px 18px; margin-bottom: 8px;
-              border-radius: 15px; color: #a3aed0; text-decoration: none; font-weight: 500;
-              transition: all 0.3s; cursor: pointer; position: relative;
-          }
-          .nav-link-item:hover { background: #f4f7fe; color: #1b2559; }
+          .logo-icon-box { min-width: 44px; min-height: 44px; background: #f4f7fe; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #4318ff; border: 1px solid #eef2f6; }
+          .brand-text { font-size: 18px; font-weight: 900; color: #1b2559; letter-spacing: -0.5px; white-space: nowrap; transition: 0.3s; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; }
+          .collapsed .brand-text { opacity: 0; width: 0; transform: translateX(-10px); }
+          .menu-section { flex: 1; padding: 0 15px; overflow-y: auto; overflow-x: hidden; }
+          .menu-category { font-size: 11px; text-transform: uppercase; color: #cbd5e1; font-weight: 800; margin: 20px 0 10px 15px; letter-spacing: 1.5px; }
+          .collapsed .menu-category { visibility: hidden; opacity: 0; }
+          .nav-link-item { display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin-bottom: 4px; border-radius: 16px; color: #a3aed0; text-decoration: none; font-weight: 600; transition: all 0.2s ease; cursor: pointer; position: relative; }
+          .nav-link-item:hover { color: #4318ff; background: #f8fafc; }
           .nav-link-item.active-menu { background: #f4f7fe; color: #4318ff; }
-          .nav-link-item.active-menu::after { content: ''; position: absolute; right: 0; top: 20%; height: 60%; width: 4px; background: #4318ff; border-radius: 4px 0 0 4px; }
-
+          .nav-link-item.active-menu::after { content: ''; position: absolute; right: -15px; top: 20%; height: 60%; width: 4px; background: #4318ff; border-radius: 4px 0 0 4px; }
           .collapsed .label-text { display: none; }
-          .logout-section { padding: 25px 20px; border-top: 1px solid #f1f5f9; }
-          
-          .btn-logout {
-              width: 100%; display: flex; align-items: center; gap: 15px; padding: 14px 18px;
-              background: #fff1f2; color: #ef4444; border: none; border-radius: 15px;
-              font-weight: 700; cursor: pointer; transition: 0.3s;
-          }
-          .btn-logout:hover { background: #ffe4e6; transform: translateY(-2px); }
-          .collapsed .btn-logout { justify-content: center; padding: 14px 0; }
+          .logout-section { padding: 20px 15px; border-top: 1px solid #f8fafc; }
+          .btn-logout { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px; background: #fef2f2; color: #ef4444; border: none; border-radius: 16px; font-weight: 800; cursor: pointer; transition: 0.3s; font-family: 'Kanit'; text-transform: uppercase; font-size: 12px; justify-content: center; }
           .collapsed .logout-label { display: none; }
-          .premium-popup { border-radius: 30px !important; font-family: 'Kanit', sans-serif !important; }
         `}</style>
 
-        {/* ปุ่มยุบ-ขยาย Sidebar (ซ่อนเมื่ออยู่บนมือถือ) */}
+        <button className="mobile-close-btn" onClick={() => setIsMobileOpen(false)}><X size={20} /></button>
         <button className="toggle-btn-box" onClick={() => setIsCollapsed(!isCollapsed)}>
-          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
 
-        {/* ปุ่มปิดสำหรับมือถือ */}
-        {isMobileOpen && (
-          <button 
-            onClick={() => setIsSidebarOpen(false)}
-            style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: '#f4f7fe', padding: '8px', borderRadius: '10px' }}
-          >
-            <X size={20} color="#a3aed0" />
-          </button>
-        )}
-
         <div className="logo-area" onClick={() => navigate('/admin/dashboard')}>
-          <div className="logo-icon-box">
-            <Package size={22} />
-          </div>
+          <div className="logo-icon-box"><Package size={24} strokeWidth={2.5} /></div>
           <span className="brand-text">{shopName}</span>
         </div>
         
         <div className="menu-section">
-          {!isCollapsed && <p className="menu-category">ระบบจัดการหลังบ้าน</p>}
+          {!isCollapsed && <p className="menu-category">Main Console</p>}
           {visibleNavItems.map((item) => (
-            <div 
-              key={item.id} 
-              className={`nav-link-item ${activePage === item.id ? 'active-menu' : ''}`}
-              onClick={() => {
-                navigate(item.path);
-                if (setIsSidebarOpen) setIsSidebarOpen(false); // ปิด Sidebar เมื่อเปลี่ยนหน้าบนมือถือ
-              }}
-              title={isCollapsed ? item.label : ""}
-            >
+            <div key={item.id} className={`nav-link-item ${activePage === item.id ? 'active-menu' : ''}`}
+              onClick={() => { navigate(item.path); if (window.innerWidth < 1024) setIsMobileOpen(false); }}>
               <div className="icon-wrapper">{item.icon}</div>
               <span className="label-text">{item.label}</span>
             </div>
@@ -189,8 +135,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsSidebarOpen, 
         
         <div className="logout-section">
           <button onClick={handleLogout} className="btn-logout">
-            <LogOut size={20}/> 
-            <span className="logout-label">ออกจากระบบ</span>
+            <LogOut size={20} strokeWidth={2.5}/> <span className="logout-label">Sign Out</span>
           </button>
         </div>
       </aside>

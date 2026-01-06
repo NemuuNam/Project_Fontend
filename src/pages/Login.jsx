@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Loader2, Home, Store, KeyRound } from 'lucide-react';
-import { FcGoogle } from 'react-icons/fc';
 import toast, { Toaster } from 'react-hot-toast';
 import { jwtDecode } from 'jwt-decode';
 
@@ -12,17 +11,16 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [shopName, setShopName] = useState('SOOO GUICHAI'); // ค่าเริ่มต้น
+    const [shopName, setShopName] = useState('กรุณาใส่ชื่อร้าน'); 
     const navigate = useNavigate();
 
-    // ✅ 1. ดึงชื่อร้านค้าผ่าน Endpoint /public (โครงสร้างเดียวกับ Footer)
+    // ดึงชื่อร้านค้า
     useEffect(() => {
         const fetchShopInfo = async () => {
             try {
                 const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
                 if (res.success && res.data) {
                     const d = res.data;
-                    // ดึงค่า shop_name จากฐานข้อมูล
                     if (d.shop_name && d.shop_name !== "EMPTY") {
                         setShopName(d.shop_name); 
                     }
@@ -34,12 +32,11 @@ const Login = () => {
         fetchShopInfo();
     }, []);
 
-    // ✅ 2. นำทางตามระดับสิทธิ์ของผู้ใช้
+    // นำทางตามระดับสิทธิ์
     const redirectByUserRole = (token) => {
         try {
             const decoded = jwtDecode(token);
             const roleLevel = Number(decoded.role_level);
-            
             if ([1, 2, 3].includes(roleLevel)) {
                 navigate('/admin/dashboard');
             } else {
@@ -48,22 +45,6 @@ const Login = () => {
         } catch (err) {
             navigate('/');
         }
-    };
-
-    // ✅ 3. จัดการ Google Login Callback
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const tokenFromUrl = params.get('token');
-        if (tokenFromUrl) {
-            localStorage.setItem('token', tokenFromUrl);
-            toast.success("เข้าสู่ระบบด้วย Google สำเร็จ");
-            window.history.replaceState({}, document.title, "/login");
-            setTimeout(() => { redirectByUserRole(tokenFromUrl); }, 800);
-        }
-    }, [navigate]);
-
-    const handleGoogleLogin = () => {
-        window.location.href = `${API_ENDPOINTS.AUTH}/google`;
     };
 
     const handleLogin = async (e) => {
@@ -90,162 +71,88 @@ const Login = () => {
     };
 
     return (
-        <div className="login-wrapper">
+        <div className="min-h-screen bg-[#ffffff] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-['Kanit'] overflow-x-hidden">
             <Toaster position="top-right" />
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500;600;700;800&display=swap');
+            
+            {/* Login Card */}
+            <div className="w-full max-w-[480px] bg-white p-8 sm:p-12 md:p-14 rounded-[40px] md:rounded-[60px] border border-slate-50 shadow-[0_20px_70px_rgba(0,0,0,0.03)] relative animate-in fade-in zoom-in duration-500">
                 
-                :root {
-                    --navy: #1B2559;
-                    --gold: #C5A059;
-                    --bg-soft: #F4F7FE;
-                }
+                {/* Back Home Button */}
+                <Link to="/" className="absolute top-8 left-8 sm:top-12 sm:left-12 flex items-center gap-2 text-slate-400 hover:text-slate-900 font-bold text-xs uppercase tracking-widest transition-all hover:-translate-x-1">
+                    <Home size={16} /> Home
+                </Link>
 
-                .login-wrapper { 
-                    display: flex; justify-content: center; align-items: center; 
-                    min-height: 100vh; background: var(--bg-soft); 
-                    font-family: 'Kanit', sans-serif; padding: 15px; box-sizing: border-box;
-                }
+                <div className="text-center mt-6">
+                    {/* Brand Icon */}
+                    <div className="inline-flex p-5 sm:p-6 bg-slate-50 rounded-[25px] sm:rounded-[30px] border border-slate-100 text-blue-600 mb-6 shadow-sm">
+                        <Store size={40} strokeWidth={2.5} className="sm:w-12 sm:h-12" />
+                    </div>
 
-                .login-card { 
-                    background: #fff; padding: 50px 35px; border-radius: 45px; 
-                    box-shadow: 0 40px 80px -15px rgba(27, 37, 89, 0.15); 
-                    width: 100%; max-width: 440px; text-align: center;
-                    border: 1px solid rgba(197, 160, 89, 0.25); position: relative;
-                }
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tighter mb-1 leading-tight">Welcome Back</h2>
+                    <p className="text-blue-600 font-black text-sm sm:text-base uppercase tracking-widest italic">{shopName}</p>
+                </div>
 
-                .back-home {
-                    position: absolute; top: 30px; left: 35px; color: var(--navy);
-                    text-decoration: none; display: flex; align-items: center; gap: 8px;
-                    font-size: 14px; font-weight: 600; opacity: 0.6; transition: 0.3s;
-                }
-                .back-home:hover { opacity: 1; color: var(--gold); transform: translateX(-3px); }
-
-                .brand-icon { 
-                    display: inline-flex; padding: 22px; background: rgba(27, 37, 89, 0.04); 
-                    border-radius: 30px; margin-bottom: 20px; color: var(--gold); 
-                }
-
-                h2 { font-weight: 800; font-size: 30px; color: var(--navy); margin: 0; letter-spacing: -0.5px; }
-                .shop-display { color: var(--gold); font-size: 15px; font-weight: 600; margin-top: 6px; text-transform: uppercase; letter-spacing: 2px; }
-
-                .form-area { margin-top: 40px; }
-                .input-group { text-align: left; margin-bottom: 22px; }
-                .input-group label { display: block; margin-bottom: 10px; font-size: 13px; font-weight: 700; color: var(--navy); margin-left: 6px; }
-
-                .input-box { position: relative; display: flex; align-items: center; }
-                .input-box svg { position: absolute; left: 20px; color: var(--navy); opacity: 0.4; }
-                
-                .login-input { 
-                    width: 100%; padding: 18px 20px 18px 58px; border-radius: 22px; 
-                    border: 2px solid #E2E8F0; background: #F8FAFC; font-family: 'Kanit'; 
-                    font-size: 15px; outline: none; transition: 0.4s; box-sizing: border-box;
-                }
-                .login-input:focus { border-color: var(--gold); background: #fff; box-shadow: 0 10px 25px -5px rgba(197, 160, 89, 0.15); }
-
-                /* ✅ ปรับแต่งส่วน ลืมรหัสผ่าน ให้สวยงามขึ้น */
-                .forgot-row { 
-                    display: flex; 
-                    justify-content: flex-end; 
-                    margin-top: -12px; 
-                    margin-bottom: 30px; 
-                }
-                .forgot-link { 
-                    color: var(--gold); 
-                    text-decoration: none; 
-                    font-size: 14px; 
-                    font-weight: 600; 
-                    display: flex; 
-                    align-items: center; 
-                    gap: 5px; 
-                    transition: all 0.3s ease;
-                    padding: 5px 2px;
-                }
-                .forgot-link:hover { 
-                    color: var(--navy); 
-                    transform: translateY(-1px);
-                }
-                .forgot-link span { position: relative; }
-                .forgot-link span::after {
-                    content: '';
-                    position: absolute;
-                    width: 0;
-                    height: 1.5px;
-                    bottom: -2px;
-                    left: 0;
-                    background-color: var(--gold);
-                    transition: width 0.3s ease;
-                }
-                .forgot-link:hover span::after { width: 100%; }
-
-                .submit-btn { 
-                    width: 100%; padding: 18px; background: linear-gradient(135deg, #1B2559 0%, #11183A 100%); 
-                    color: #fff; border: none; border-radius: 24px; font-size: 17px; font-weight: 700; 
-                    cursor: pointer; display: flex; justify-content: center; align-items: center; 
-                    gap: 12px; transition: 0.3s; box-shadow: 0 15px 30px -10px rgba(27, 37, 89, 0.35);
-                }
-                .submit-btn:hover { transform: translateY(-3px); box-shadow: 0 20px 35px -10px rgba(27, 37, 89, 0.45); }
-
-                .google-btn { 
-                    width: 100%; padding: 15px; border: 2.5px solid #F4F7FE; border-radius: 22px; 
-                    background: #fff; cursor: pointer; display: flex; justify-content: center; 
-                    align-items: center; gap: 12px; font-weight: 700; font-family: 'Kanit'; 
-                    transition: 0.2s; color: var(--navy); margin-top: 30px;
-                }
-                .google-btn:hover { border-color: var(--gold); background: #F8FAFC; }
-
-                .register-hint { margin-top: 35px; font-size: 15px; color: #718096; }
-                .register-hint a { color: var(--gold); font-weight: 800; text-decoration: none; margin-left: 5px; }
-
-                @media (max-width: 480px) {
-                    .login-card { padding: 50px 25px 40px; border-radius: 35px; }
-                    h2 { font-size: 26px; }
-                }
-            `}</style>
-
-            <div className="login-card">
-                <Link to="/" className="back-home"><Home size={18}/> หน้าหลัก</Link>
-                <div className="brand-icon"><Store size={42} /></div>
-                <h2>เข้าสู่ระบบ</h2>
-                <div className="shop-display">{shopName}</div>
-
-                <form onSubmit={handleLogin} className="form-area">
-                    <div className="input-group">
-                        <label>อีเมลสมาชิก</label>
-                        <div className="input-box">
-                            <Mail size={18} />
-                            <input type="email" className="login-input" placeholder="example@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <form onSubmit={handleLogin} className="mt-10 sm:mt-12 space-y-6">
+                    
+                    {/* Email Input */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Email Address</label>
+                        <div className="relative flex items-center group">
+                            <Mail className="absolute left-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+                            <input 
+                                className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent outline-none font-bold text-slate-900 transition-all focus:border-blue-600 focus:bg-white"
+                                type="email" 
+                                placeholder="example@email.com" 
+                                value={email} 
+                                onChange={(e) => setEmail(e.target.value)} 
+                                required 
+                            />
                         </div>
                     </div>
 
-                    <div className="input-group">
-                        <label>รหัสผ่าน</label>
-                        <div className="input-box">
-                            <Lock size={18} />
-                            <input type="password" className="login-input" placeholder="ระบุรหัสผ่านของคุณ" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    {/* Password Input */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Password</label>
+                        <div className="relative flex items-center group">
+                            <Lock className="absolute left-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+                            <input 
+                                className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent outline-none font-bold text-slate-900 transition-all focus:border-blue-600 focus:bg-white"
+                                type="password" 
+                                placeholder="ระบุรหัสผ่านของคุณ" 
+                                value={password} 
+                                onChange={(e) => setPassword(e.target.value)} 
+                                required 
+                            />
                         </div>
                     </div>
 
-                    {/* ✅ ลิงก์ลืมรหัสผ่านที่ปรับแต่งใหม่ */}
-                    <div className="forgot-row">
-                        <Link to="/forgot-password" className="forgot-link">
-                            <KeyRound size={15} strokeWidth={2.5} />
-                            <span>ลืมรหัสผ่าน?</span>
+                    {/* Forgot Password Link */}
+                    <div className="flex justify-end -mt-2">
+                        <Link to="/forgot-password" disabled className="flex items-center gap-1.5 text-slate-400 hover:text-blue-600 font-bold text-xs uppercase tracking-wide transition-all">
+                            <KeyRound size={14} /> Forgot Password?
                         </Link>
                     </div>
 
-                    <button type="submit" className="submit-btn" disabled={loading}>
-                        {loading ? <Loader2 className="animate-spin" size={24} /> : <>ล็อกอินเข้าสู่ระบบ <ArrowRight size={22} /></>}
+                    {/* Submit Button */}
+                    <button 
+                        className="w-full py-5 bg-slate-900 text-white rounded-[25px] font-black text-lg flex justify-center items-center gap-3 transition-all hover:bg-black hover:-translate-y-1 shadow-xl shadow-slate-100 mt-4 disabled:bg-slate-200 disabled:cursor-not-allowed"
+                        type="submit" 
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <Loader2 className="animate-spin" size={24} />
+                        ) : (
+                            <>Sign In <ArrowRight size={22} /></>
+                        )}
                     </button>
                 </form>
 
-                <button className="google-btn" type="button" onClick={handleGoogleLogin}>
-                    <FcGoogle size={24} /> ดำเนินการต่อด้วย Google
-                </button>
-
-                <div className="register-hint">
-                    ยังไม่เป็นสมาชิก? <Link to="/register">สมัครสมาชิกที่นี่</Link>
+                {/* Register Hint */}
+                <div className="mt-10 text-center text-slate-400 font-bold text-sm">
+                    New here? 
+                    <Link to="/register" className="ml-2 text-blue-600 font-black hover:underline underline-offset-4 transition-all">Create an account</Link>
                 </div>
+
             </div>
         </div>
     );

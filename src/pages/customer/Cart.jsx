@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Trash2, Plus, Minus, ShoppingBag, ArrowLeft, 
-  CreditCard, Loader2, Info, ChevronRight 
+  CreditCard, Loader2, Info 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast, { Toaster } from 'react-hot-toast';
 
-// --- นำเข้า API Config และ Instance ---
 import axiosInstance from '../../api/axiosInstance';
 import { API_ENDPOINTS } from '../../api/config';
-
 import HeaderHome from '../../components/HeaderHome';
 import Footer from '../../components/Footer';
 
@@ -18,19 +16,15 @@ const Cart = ({ userData }) => {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  const [shopSettings, setShopSettings] = useState({
-    delivery_fee: 180,
-    min_free_shipping: 20
-  });
+  const [shopSettings, setShopSettings] = useState({ delivery_fee: 0, min_free_shipping: 0 });
 
   const fetchSettings = useCallback(async () => {
     try {
       const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/home`);
       if (res.success) {
         setShopSettings({
-          delivery_fee: Number(res.data.delivery_fee) || 180,
-          min_free_shipping: Number(res.data.min_free_shipping) || 20
+          delivery_fee: Number(res.data.delivery_fee) || 0,
+          min_free_shipping: Number(res.data.min_free_shipping) || 0
         });
       }
     } catch (err) { console.error(err); }
@@ -38,17 +32,13 @@ const Cart = ({ userData }) => {
 
   const syncCartWithDatabase = useCallback(async () => {
     const localCart = JSON.parse(localStorage.getItem('cart')) || [];
-    if (localCart.length === 0) {
-      setCartItems([]);
-      return;
-    }
+    if (localCart.length === 0) { setCartItems([]); return; }
     try {
       const productIds = localCart.map(item => item.product_id);
       const res = await axiosInstance.post(`${API_ENDPOINTS.PRODUCTS}/sync-cart`, { ids: productIds });
       if (res.success) {
-        const dbProducts = res.data;
         const mergedCart = localCart.map(localItem => {
-          const latestInfo = dbProducts.find(p => p.product_id === localItem.product_id);
+          const latestInfo = res.data.find(p => p.product_id === localItem.product_id);
           if (!latestInfo) return null;
           return {
             ...latestInfo,
@@ -87,127 +77,141 @@ const Cart = ({ userData }) => {
     });
     setCartItems(updated);
     localStorage.setItem('cart', JSON.stringify(updated.map(i => ({ product_id: i.product_id, quantity: i.quantity }))));
+    window.dispatchEvent(new Event('storage'));
   };
 
   const removeItem = (id) => {
     Swal.fire({
       title: 'ลบสินค้า?',
-      text: "คุณต้องการนำสินค้าออกใช่หรือไม่",
+      text: "คุณต้องการนำสินค้าชิ้นนี้ออกจากตะกร้าใช่หรือไม่",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#1b2559',
+      confirmButtonColor: '#0f172a',
       confirmButtonText: 'ลบออก',
       cancelButtonText: 'ยกเลิก',
-      borderRadius: '20px'
     }).then((result) => {
       if (result.isConfirmed) {
         const updated = cartItems.filter(item => item.product_id !== id);
         setCartItems(updated);
         localStorage.setItem('cart', JSON.stringify(updated.map(i => ({ product_id: i.product_id, quantity: i.quantity }))));
         window.dispatchEvent(new Event('storage'));
-        toast.success("ลบสินค้าเรียบร้อย");
+        toast.success("ลบสินค้าเรียบร้อยแล้ว");
       }
     });
   };
 
   if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center bg-[#fdfbf2]">
-      <Loader2 className="animate-spin text-[#1b2559]" size={50} />
+    <div className="h-screen flex items-center justify-center bg-white">
+      <Loader2 className="animate-spin text-slate-900" size={60} />
     </div>
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#fdfbf2]/40 font-['Kanit'] text-[#1b2559]">
+    <div className="flex flex-col min-h-screen bg-white font-['Kanit'] text-slate-900">
       <Toaster position="bottom-right" />
       <HeaderHome userData={userData} />
       
-      <main className="flex-grow container mx-auto px-4 py-12 md:py-20">
+      {/* ปรับแก้ส่วน Main ให้ขยายเต็มพื้นที่ iPad Pro (1024px) */}
+      <main className="flex-grow w-full max-w-[1366px] mx-auto px-4 sm:px-8 lg:px-10 py-10 md:py-16">
         
-        {/* Header Section */}
-        <div className="mb-10 text-center md:text-left">
-          <button onClick={() => navigate('/products')} className="inline-flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-[#1b2559] mb-4 transition-all group">
-            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> เลือกเมนูเพิ่มเติม
+        {/* Header */}
+        <div className="mb-10">
+          <button 
+            onClick={() => navigate('/products')} 
+            className="inline-flex items-center gap-2 text-base font-bold text-slate-400 hover:text-slate-900 mb-4 transition-all"
+          >
+            <ArrowLeft size={20} /> เลือกเมนูเพิ่มเติม
           </button>
-          <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight">
-            ตะกร้าของฉัน <span className="text-[#e8c4a0]">({cartItems.length})</span>
+          <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight">
+            ตะกร้าของฉัน <span className="text-red-500">({cartItems.length})</span>
           </h1>
         </div>
 
         {cartItems.length === 0 ? (
-          <div className="text-center py-24 bg-white rounded-[3rem] shadow-sm border border-dashed border-gray-200">
-            <ShoppingBag size={60} className="mx-auto text-gray-200 mb-6" />
-            <h2 className="text-xl font-bold text-gray-400 mb-8">ยังไม่มีสินค้าในตะกร้า</h2>
-            <button onClick={() => navigate('/products')} className="bg-[#1b2559] text-white px-10 py-4 rounded-2xl font-black shadow-xl hover:bg-[#e8c4a0] transition-all">ดูเมนูอาหาร</button>
+          <div className="text-center py-24 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
+            <ShoppingBag size={80} className="mx-auto text-slate-200 mb-6" />
+            <h2 className="text-2xl font-bold text-slate-400">ยังไม่มีสินค้าในตะกร้า</h2>
+            <button onClick={() => navigate('/products')} className="mt-8 bg-slate-900 text-white px-10 py-4 rounded-2xl font-black">
+              ดูเมนูอาหารทั้งหมด
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          /* ปรับ Grid ให้แบ่งพื้นที่ฝั่งขวาให้กว้างขึ้นสำหรับ iPad Pro */
+          <div className="flex flex-col lg:flex-row gap-8 xl:gap-12 items-start">
             
-            {/* List Section: 8 Columns on Desktop */}
-            <div className="lg:col-span-8 space-y-4">
+            {/* รายการสินค้า (ซ้าย) */}
+            <div className="w-full lg:w-[60%] xl:w-[65%] space-y-6">
               {cartItems.map((item) => (
-                <div key={item.product_id} className="bg-white p-4 md:p-6 rounded-[2.5rem] flex flex-col sm:flex-row items-center gap-6 shadow-sm border border-white hover:shadow-md transition-all relative group">
-                  <div className="w-32 h-32 md:w-40 md:h-40 shrink-0 overflow-hidden rounded-[2rem] bg-gray-50">
-                    <img src={item.image_url || '/placeholder.png'} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div key={item.product_id} className="bg-white p-6 rounded-[2.5rem] flex flex-col sm:flex-row items-center gap-6 shadow-sm border border-slate-100 hover:border-slate-300 transition-all">
+                  <div className="w-40 h-40 shrink-0 overflow-hidden rounded-[2rem] bg-slate-50">
+                    <img src={item.image_url || '/placeholder.png'} alt={item.product_name} className="w-full h-full object-cover" />
                   </div>
-
                   <div className="flex-1 text-center sm:text-left">
-                    <span className="text-[10px] font-black text-[#e8c4a0] uppercase tracking-widest">{item.category?.category_name}</span>
-                    <h3 className="text-lg md:text-xl font-bold mb-2">{item.product_name}</h3>
-                    <p className="text-2xl font-black text-[#1b2559]">฿{item.unit_price.toLocaleString()}</p>
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{item.category?.category_name}</span>
+                    <h3 className="text-xl md:text-2xl font-bold text-slate-800 leading-tight">{item.product_name}</h3>
+                    <p className="text-3xl font-black text-slate-900 mt-1">฿{item.unit_price.toLocaleString()}</p>
                   </div>
-
-                  <div className="flex flex-col items-center sm:items-end gap-4">
-                    <div className="flex items-center gap-4 bg-[#fdfbf2] p-1.5 rounded-2xl border border-gray-100">
-                      <button onClick={() => updateQuantity(item.product_id, -1)} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm hover:text-red-500 transition-all"><Minus size={16} /></button>
+                  <div className="flex flex-col items-center sm:items-end gap-5">
+                    <div className="flex items-center gap-3 bg-slate-100 p-2 rounded-full border border-slate-200">
+                      <button onClick={() => updateQuantity(item.product_id, -1)} className="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm active:scale-90 transition-all"><Minus size={18} /></button>
                       <span className="text-lg font-black w-8 text-center">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.product_id, 1)} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm hover:text-[#e8c4a0] transition-all"><Plus size={16} /></button>
+                      <button onClick={() => updateQuantity(item.product_id, 1)} className="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm active:scale-90 transition-all"><Plus size={18} /></button>
                     </div>
-                    <button onClick={() => removeItem(item.product_id)} className="text-gray-300 hover:text-red-500 flex items-center gap-2 text-xs font-bold transition-colors">
-                      <Trash2 size={16} /> ลบรายการ
+                    <button onClick={() => removeItem(item.product_id)} className="text-slate-300 hover:text-red-500 text-sm font-bold flex items-center gap-1">
+                      <Trash2 size={14} /> ลบออก
                     </button>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Summary Section: 4 Columns on Desktop */}
-            <div className="lg:col-span-4 lg:sticky lg:top-28">
-              <div className="bg-[#1b2559] text-white p-8 rounded-[3rem] shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#e8c4a0]/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+            {/* สรุปการสั่งซื้อ (ขวา - พื้นหลังขาว Premium) */}
+            <div className="w-full lg:w-[40%] xl:w-[35%] lg:sticky lg:top-28">
+              <div className="bg-white text-slate-900 p-8 md:p-10 rounded-[3.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.08)] border border-slate-100 relative overflow-hidden">
                 
-                <h2 className="text-xl font-black mb-8 flex items-center gap-2 border-b border-white/10 pb-4">
-                  <ChevronRight className="text-[#e8c4a0]" size={20} /> สรุปการสั่งซื้อ
-                </h2>
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-slate-50 rounded-full" />
 
-                <div className="space-y-4 mb-10">
-                  <div className="flex justify-between text-sm opacity-80 font-bold">
-                    <span>ค่าอาหาร ({totalItemsCount} ชิ้น)</span>
-                    <span>฿{subtotal.toLocaleString()}</span>
+                <h2 className="text-3xl font-black mb-10 border-b border-slate-50 pb-6 relative z-10">สรุปการสั่งซื้อ</h2>
+
+                <div className="space-y-6 mb-10 relative z-10">
+                  <div className="flex justify-between text-lg font-bold text-slate-400">
+                    <span>ยอดรวม ({totalItemsCount} ชิ้น)</span>
+                    <span className="text-slate-900 text-2xl font-black">฿{subtotal.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold">
-                    <span className="opacity-80">ค่าจัดส่ง</span>
-                    {isFreeShipping ? <span className="text-green-400">ฟรี!</span> : <span>฿{shopSettings.delivery_fee}</span>}
+                  <div className="flex justify-between text-lg font-bold text-slate-400">
+                    <span>ค่าจัดส่ง</span>
+                    {isFreeShipping ? <span className="text-green-500 font-black text-2xl italic">ฟรี!</span> : <span className="text-slate-900 text-2xl font-black">฿{shopSettings.delivery_fee.toLocaleString()}</span>}
                   </div>
-                  {!isFreeShipping && (
-                    <div className="bg-white/5 p-4 rounded-2xl flex gap-3 items-center">
-                      <Info size={16} className="text-[#e8c4a0]" />
-                      <p className="text-[10px] leading-relaxed">ซื้อเพิ่มอีก <b className="text-[#e8c4a0]">{shopSettings.min_free_shipping - totalItemsCount} ชิ้น</b> เพื่อส่งฟรี!</p>
+
+                  {!isFreeShipping && shopSettings.min_free_shipping > 0 && (
+                    <div className="bg-slate-50 p-5 rounded-[2rem] flex gap-4 items-center border border-slate-100 shadow-inner">
+                      <Info size={24} className="text-blue-500 shrink-0" />
+                      <p className="text-sm font-bold text-slate-600">
+                        สั่งเพิ่มอีก <span className="text-red-500 text-lg font-black">{shopSettings.min_free_shipping - totalItemsCount} ชิ้น</span> เพื่อ <span className="text-green-500 font-black">ส่งฟรี!</span>
+                      </p>
                     </div>
                   )}
                 </div>
 
-                <div className="pt-6 border-t border-white/10 flex justify-between items-end mb-8">
-                  <div>
-                    <span className="text-[10px] font-black opacity-40 uppercase tracking-widest block">Total Price</span>
-                    <span className="text-sm font-bold opacity-60">ยอดสุทธิ</span>
+                <div className="pt-8 border-t border-slate-100 mb-10 relative z-10">
+                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-1">Grand Total</span>
+                  <div className="flex justify-between items-end">
+                    <span className="text-xl font-bold text-slate-400">ยอดชำระสุทธิ</span>
+                    <span className="text-6xl xl:text-7xl font-black text-slate-900 tracking-tighter italic leading-none">฿{finalTotal.toLocaleString()}</span>
                   </div>
-                  <span className="text-4xl font-black text-[#e8c4a0]">฿{finalTotal.toLocaleString()}</span>
                 </div>
 
-                <button onClick={() => navigate('/checkout')} className="w-full py-5 bg-[#e8c4a0] text-[#1b2559] rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-white hover:scale-[1.02] active:scale-95 transition-all shadow-xl">
-                  <CreditCard size={22} /> ชำระเงิน
+                <button 
+                  onClick={() => navigate('/checkout')} 
+                  className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black text-2xl flex items-center justify-center gap-4 hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all shadow-xl relative z-10"
+                >
+                  <CreditCard size={28} /> ชำระเงินเลย
                 </button>
               </div>
+              
+              <button onClick={() => navigate('/products')} className="w-full mt-6 py-2 text-slate-400 font-bold hover:text-slate-900 transition-colors flex items-center justify-center gap-2">
+                <ArrowLeft size={18} /> เลือกสินค้าเพิ่มเติม
+              </button>
             </div>
 
           </div>

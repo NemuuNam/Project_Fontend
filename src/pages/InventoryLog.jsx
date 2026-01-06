@@ -1,13 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { 
     ClipboardList, Search, ArrowUpCircle, ArrowDownCircle, 
-    Package, Loader2, User, Clock, Trash2, Calendar 
+    Package, Loader2, User, Clock, Trash2, Calendar, RefreshCw, Menu
 } from 'lucide-react';
 import { jwtDecode } from 'jwt-decode'; 
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
-// --- นำเข้า API Config และ Instance ---
 import axiosInstance from '../api/axiosInstance';
 import { API_ENDPOINTS } from '../api/config';
 
@@ -15,51 +14,40 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 const InventoryLog = () => {
-    // --- States ---
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     
     const token = localStorage.getItem('token');
-
-    // --- เช็คสิทธิ์ Owner (Level 1) ---
     const decoded = token ? jwtDecode(token) : {};
     const isOwner = decoded.role_level === 1;
 
-    // --- 1. ดึงข้อมูลประวัติสต็อก (ใช้ axiosInstance) ---
     const fetchLogs = useCallback(async () => {
         try {
             setLoading(true);
             const res = await axiosInstance.get(API_ENDPOINTS.ADMIN.INVENTORY_LOG);
-            if (res.success) {
-                setLogs(res.data || []);
-            }
+            if (res.success) setLogs(res.data || []);
         } catch (err) {
-            console.error("Fetch Logs Error:", err);
             toast.error("ไม่สามารถโหลดข้อมูลประวัติได้");
         } finally {
             setLoading(false);
         }
     }, []);
 
-    useEffect(() => {
-        fetchLogs();
-    }, [fetchLogs]);
+    useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
-    // --- 2. ฟังก์ชันล้างประวัติ (ใช้ axiosInstance + Swal) ---
     const handleClearAll = async () => {
         const result = await Swal.fire({
             title: 'ยืนยันการล้างประวัติสต็อก?',
-            text: "ข้อมูลการบันทึกจะหายไปถาวรและไม่สามารถกู้คืนได้!",
+            text: "ข้อมูลกิจกรรมจะหายไปถาวร ไม่สามารถกู้คืนได้!",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#f4f7fe',
+            confirmButtonColor: '#1e293b',
             confirmButtonText: 'ล้างข้อมูลทั้งหมด',
             cancelButtonText: 'ยกเลิก',
-            reverseButtons: true,
-            customClass: { popup: 'premium-popup' }
+            borderRadius: '25px'
         });
 
         if (!result.isConfirmed) return;
@@ -68,7 +56,7 @@ const InventoryLog = () => {
         try {
             const res = await axiosInstance.delete(`${API_ENDPOINTS.ADMIN.INVENTORY_LOG}/clear`);
             if (res.success) {
-                toast.success("ล้างประวัติสต็อกเรียบร้อยแล้ว", { id: loadToast });
+                toast.success("ล้างประวัติเรียบร้อยแล้ว", { id: loadToast });
                 fetchLogs(); 
             }
         } catch (err) {
@@ -76,167 +64,158 @@ const InventoryLog = () => {
         }
     };
 
-    // --- 3. ระบบค้นหา ---
     const filteredLogs = logs.filter(log => 
         log.product?.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.reason?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (loading) return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f4f7fe' }}>
-            <Loader2 className="animate-spin" color="#10b981" size={45} />
+    if (loading && logs.length === 0) return (
+        <div className="flex h-screen items-center justify-center bg-white text-slate-900">
+            <Loader2 className="animate-spin" size={65} />
         </div>
     );
 
     return (
-        <div className="inv-log-page">
+        <div className="flex min-h-screen bg-white font-['Kanit'] text-slate-900 overflow-x-hidden">
             <Toaster position="top-right" />
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
-                .inv-log-page { display: flex; min-height: 100vh; background-color: #f4f7fe; font-family: 'Kanit', sans-serif; color: #1b2559; }
+            
+            <Sidebar 
+                isCollapsed={isCollapsed} 
+                setIsCollapsed={setIsCollapsed} 
+                isMobileOpen={isSidebarOpen} 
+                setIsMobileOpen={setIsSidebarOpen} 
+                activePage="invlog" 
+            />
+
+            <main className={`flex-1 p-4 md:p-8 lg:p-10 transition-all duration-300 ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[300px]'} w-full`}>
                 
-                .main-content { 
-                    flex: 1; 
-                    margin-left: ${isCollapsed ? '80px' : '260px'}; 
-                    padding: 30px; 
-                    transition: all 0.3s ease; 
-                    width: 100%;
-                    box-sizing: border-box;
-                }
+                {/* Mobile Menu Toggle & Header */}
+                <div className="mb-6 md:mb-10 flex items-center gap-4">
+                    <button 
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="lg:hidden p-2 bg-slate-50 rounded-xl text-slate-600"
+                    >
+                        <Menu size={24} />
+                    </button>
+                    <div className="flex-1">
+                        <Header title="Inventory Tracking" />
+                    </div>
+                </div>
 
-                @media (max-width: 1024px) {
-                    .main-content { margin-left: 0 !important; padding: 20px; }
-                }
+                {/* Welcome & Refresh Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 md:mb-12">
+                    <div className="flex-1">
+                        <p className="text-sm md:text-lg font-bold text-slate-400 mb-1 uppercase tracking-widest">INVENTORY REPORT</p>
+                        <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter text-slate-900 leading-[0.9]">
+                            Inventory Logs
+                        </h1>
+                    </div>
+                    <button 
+                        onClick={fetchLogs} 
+                        className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-center shadow-sm hover:border-slate-900 transition-all group"
+                    >
+                        <RefreshCw size={24} className="text-slate-400 group-hover:text-slate-900" />
+                    </button>
+                </div>
 
-                .content-card { background: #fff; border-radius: 35px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; }
-                
-                .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px; }
-                
-                .search-container { position: relative; width: 100%; max-width: 400px; }
-                @media (max-width: 768px) { .search-container { max-width: 100%; order: 2; } }
-
-                .search-input { 
-                    width: 100%; padding: 14px 20px 14px 52px; border-radius: 18px; border: 1.5px solid #eef2f6; 
-                    background: #fcfdfe; outline: none; transition: 0.3s; font-family: 'Kanit'; font-size: 14px;
-                }
-                .search-input:focus { border-color: #10b981; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.05); }
-
-                .btn-clear { 
-                    display: flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 15px; 
-                    border: none; background: #ef4444; color: #fff; font-weight: 700; cursor: pointer; 
-                    transition: 0.2s; font-family: 'Kanit'; font-size: 14px;
-                }
-                .btn-clear:hover { background: #dc2626; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2); }
-
-                .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 10px; }
-                .data-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; min-width: 850px; }
-                .data-table th { text-align: left; padding: 12px 20px; color: #a3aed0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-                .data-table td { padding: 18px 20px; background: #fff; border-top: 1px solid #f8fafc; border-bottom: 1px solid #f8fafc; font-size: 14px; }
-                
-                .data-table tr td:first-child { border-left: 1px solid #f8fafc; border-radius: 18px 0 0 18px; }
-                .data-table tr td:last-child { border-right: 1px solid #f8fafc; border-radius: 0 18px 18px 0; }
-
-                .qty-badge { padding: 8px 16px; border-radius: 12px; font-size: 14px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; }
-                .qty-up { background: #ecfdf5; color: #10b981; }
-                .qty-down { background: #fef2f2; color: #ef4444; }
-                .qty-none { background: #f8fafc; color: #94a3b8; }
-                
-                .product-cell { font-weight: 700; color: #1b2559; display: flex; align-items: center; gap: 10px; }
-                .staff-pill { display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1b2559; }
-                .premium-popup { border-radius: 30px !important; font-family: 'Kanit', sans-serif !important; }
-            `}</style>
-
-            <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} activePage="invlog" />
-
-            <main className="main-content">
-                <Header title="ความเคลื่อนไหวคลังสินค้า" />
-
-                <section className="content-card">
-                    <div className="header-flex">
-                        <div>
-                            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <ClipboardList color="#10b981" size={24} /> ประวัติสต็อกสินค้า
-                            </h3>
-                            <p style={{ color: '#a3aed0', fontSize: '13px', marginTop: '4px' }}>ตรวจสอบการเพิ่ม-ลดจำนวนสินค้าในระบบ</p>
-                        </div>
+                {/* Table Card (Pure White Theme) */}
+                <div className="bg-white p-5 md:p-8 lg:p-10 rounded-[30px] md:rounded-[45px] border border-slate-100 shadow-xl shadow-slate-50/50">
+                    
+                    {/* Action Bar */}
+                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-10">
+                        <h3 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                            <ClipboardList className="text-emerald-500 w-6 h-6 md:w-8 md:h-8" /> บันทึกประวัติสต็อก
+                        </h3>
                         
-                        <div style={{ display: 'flex', gap: '12px', flexGrow: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                            {isOwner && (
-                                <button onClick={handleClearAll} className="btn-clear">
-                                    <Trash2 size={18} /> ล้างประวัติ
-                                </button>
-                            )}
-                            <div className="search-container">
-                                <Search size={18} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#a3aed0' }} />
+                        <div className="flex flex-col md:flex-row gap-4 w-full xl:max-w-3xl">
+                            <div className="relative flex-1">
+                                <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
                                 <input 
-                                    className="search-input" 
-                                    placeholder="ค้นชื่อสินค้า หรือ เหตุผล..." 
+                                    className="w-full pl-14 pr-6 py-4 rounded-xl md:rounded-2xl bg-slate-50 border-none outline-none font-bold text-base md:text-lg focus:bg-white focus:ring-2 focus:ring-slate-100 transition-all" 
+                                    placeholder="ค้นหาชื่อสินค้า หรือเหตุผล..." 
                                     value={searchTerm} 
                                     onChange={(e) => setSearchTerm(e.target.value)} 
                                 />
                             </div>
+                            {isOwner && (
+                                <button onClick={handleClearAll} className="px-6 py-4 bg-white border-2 border-rose-100 text-rose-500 rounded-xl md:rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-rose-50 transition-all uppercase text-[10px] md:text-xs tracking-widest whitespace-nowrap">
+                                    <Trash2 size={18} /> ล้างประวัติ
+                                </button>
+                            )}
                         </div>
                     </div>
 
-                    <div className="table-responsive">
-                        <table className="data-table">
+                    {/* Responsive Table Scroll */}
+                    <div className="overflow-x-auto -mx-2 px-2">
+                        <table className="w-full text-left border-separate border-spacing-y-3 min-w-[900px]">
                             <thead>
-                                <tr>
-                                    <th>วัน-เวลา</th>
-                                    <th>สินค้า</th>
-                                    <th>จำนวนที่เปลี่ยน</th>
-                                    <th>ผู้ทำรายการ</th>
-                                    <th>เหตุผล</th>
+                                <tr className="text-slate-400 uppercase text-[10px] md:text-xs font-black tracking-widest">
+                                    <th className="px-4 md:px-6 pb-4">วัน-เวลา</th>
+                                    <th className="px-4 md:px-6 pb-4">สินค้า</th>
+                                    <th className="px-4 md:px-6 pb-4 text-center">จำนวนที่เปลี่ยน</th>
+                                    <th className="px-4 md:px-6 pb-4">ผู้ทำรายการ</th>
+                                    <th className="px-4 md:px-6 pb-4">เหตุผล</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredLogs.length > 0 ? filteredLogs.map((log) => (
-                                    <tr key={log.inv_log_id}>
-                                        <td style={{ width: '180px' }}>
-                                            <div style={{ color: '#a3aed0', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}>
-                                                <Calendar size={14} />
-                                                {new Date(log.created_at).toLocaleString('th-TH', { 
-                                                    day: '2-digit', month: 'short', year: '2-digit',
-                                                    hour: '2-digit', minute: '2-digit'
-                                                })}
+                                    <tr key={log.inv_log_id} className="group hover:bg-slate-50 transition-all">
+                                        <td className="px-4 md:px-6 py-6 rounded-l-2xl md:rounded-l-3xl border-y border-l border-slate-50 group-hover:border-slate-100 whitespace-nowrap">
+                                            <div className="flex items-center gap-3 text-slate-400 font-bold">
+                                                <Calendar size={16} />
+                                                <span className="text-sm md:text-md">
+                                                    {new Date(log.created_at).toLocaleString('th-TH', { 
+                                                        day: '2-digit', month: 'short', year: '2-digit',
+                                                        hour: '2-digit', minute: '2-digit'
+                                                    })}
+                                                </span>
                                             </div>
                                         </td>
-                                        <td>
-                                            <div className="product-cell">
-                                                <Package size={16} color="#a3aed0" />
-                                                {log.product?.product_name || 'สินค้าถูกลบ'}
+                                        <td className="px-4 md:px-6 py-6 border-y border-slate-50 group-hover:border-slate-100">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
+                                                    <Package size={18} />
+                                                </div>
+                                                <span className="font-black text-base md:text-lg text-slate-900 truncate max-w-[150px] md:max-w-[250px]">
+                                                    {log.product?.product_name || 'สินค้าถูกลบ'}
+                                                </span>
                                             </div>
                                         </td>
-                                        <td>
-                                            <div className={`qty-badge ${log.change_qty > 0 ? 'qty-up' : log.change_qty < 0 ? 'qty-down' : 'qty-none'}`}>
-                                                {log.change_qty > 0 ? <ArrowUpCircle size={16} /> : log.change_qty < 0 ? <ArrowDownCircle size={16} /> : <Clock size={16} />}
+                                        <td className="px-4 md:px-6 py-6 border-y border-slate-50 group-hover:border-slate-100 text-center">
+                                            <div className={`inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-black border ${
+                                                log.change_qty > 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                                                log.change_qty < 0 ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-slate-50 text-slate-400 border-slate-100'
+                                            }`}>
+                                                {log.change_qty > 0 ? <ArrowUpCircle size={16} /> : <ArrowDownCircle size={16} />}
                                                 {log.change_qty > 0 ? `+${log.change_qty}` : log.change_qty}
                                             </div>
                                         </td>
-                                        <td>
-                                            <div className="staff-pill">
-                                                <div style={{ padding: '6px', background: '#f4f7fe', borderRadius: '10px' }}>
-                                                    <User size={14} color="#4318ff" />
+                                        <td className="px-4 md:px-6 py-6 border-y border-slate-50 group-hover:border-slate-100 whitespace-nowrap">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                                    <User size={14} />
                                                 </div>
-                                                {log.user?.first_name} {log.user?.last_name}
+                                                <span className="font-bold text-slate-600 text-sm md:text-md">
+                                                    {log.user?.first_name} {log.user?.last_name}
+                                                </span>
                                             </div>
                                         </td>
-                                        <td style={{ color: '#8b94a5', maxWidth: '250px' }}>
+                                        <td className="px-4 md:px-6 py-6 rounded-r-2xl md:rounded-r-3xl border-y border-r border-slate-50 group-hover:border-slate-100 font-medium text-slate-400 text-sm md:text-md">
                                             {log.reason || 'ไม่มีการระบุ'}
                                         </td>
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan="5" style={{ textAlign: 'center', padding: '80px 0', color: '#a3aed0', background: 'transparent' }}>
-                                            <ClipboardList size={40} style={{ marginBottom: '12px', opacity: 0.2, display: 'block', margin: '0 auto' }} />
-                                            <p style={{ fontWeight: '500' }}>ไม่พบประวัติความเคลื่อนไหว</p>
+                                        <td colSpan="5" className="text-center py-20 md:py-32">
+                                            <Package size={48} className="mx-auto text-slate-100 mb-4" />
+                                            <p className="text-slate-300 font-bold italic text-lg">ไม่พบข้อมูลความเคลื่อนไหว</p>
                                         </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
             </main>
         </div>
     );

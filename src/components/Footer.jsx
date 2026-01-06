@@ -1,139 +1,112 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  Facebook, 
-  Instagram, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  MessageCircle,
-  Settings 
-} from 'lucide-react';
+import React from 'react';
+import { Mail, Phone, MapPin, Settings, Facebook, Instagram, MessageCircle } from 'lucide-react';
 
-// --- นำเข้า API Config และ Instance ---
-import axiosInstance from '../api/axiosInstance';
-import { API_ENDPOINTS } from '../api/config';
-
-const Footer = ({ userData }) => {
-  const [shopData, setShopData] = useState({
-    shop_name: 'SOOO GUICHAI',
-    hero_description: 'กำลังโหลดข้อมูล...',
-    address: 'กำลังโหลด...',
-    phone: 'กำลังโหลด...',
-    email: 'กำลังโหลด...',
-    facebook_url: '#',
-    instagram_url: '#',
-    line_url: '#' 
-  });
-
-  const fetchFooterSettings = useCallback(async () => {
-    try {
-      const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
-      if (res.success) {
-        const d = res.data;
-        const getValue = (val, fallback) => (val && val !== "EMPTY") ? val : fallback;
-        
-        setShopData({
-          shop_name: getValue(d.shop_name, 'กรุณาเพิ่มชื่อร้านค้า'),
-          hero_description: getValue(d.hero_description, 'กรุณาเพิ่มคำอธิบายร้านค้า'),
-          address: getValue(d.address, 'กรุณาเพิ่มที่อยู่ร้านค้า'),
-          phone: getValue(d.phone, 'กรุณาเพิ่มเบอร์โทรร้านค้า'),
-          email: getValue(d.email, 'กรุณาเพิ่มอีเมลร้านค้า'),
-          facebook_url: getValue(d.facebook_url, '#'),
-          instagram_url: getValue(d.instagram_url, '#'),
-          line_url: getValue(d.line_url, '#')
-        });
-      }
-    } catch (err) { 
-      console.error("Fetch footer settings error:", err); 
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchFooterSettings();
-  }, [fetchFooterSettings]);
-
-  const isAdminManager = userData && [1, 2].includes(Number(userData.role_level));
+const Footer = () => {
+  // สร้างตัวแปรปีปัจจุบัน (ตามคำแนะนำคือปี 2026)
+  const currentYear = 2026;
 
   return (
-    <footer className="bg-transparent font-['Kanit'] w-full">
-      
-      {/* ส่วนโค้งมนสีครีม - ปรับความโค้งตามขนาดหน้าจอ */}
-      <div className="bg-[#fdfbf2]/80 rounded-t-[3rem] md:rounded-t-[5rem] px-6 pt-16 md:pt-20 pb-10 border-t border-[#e8c4a0]/10 shadow-[0_-15px_40px_rgba(232,196,160,0.05)] backdrop-blur-sm">
-        <div className="container mx-auto max-w-7xl">
+    <footer className="bg-white border-t border-slate-100 font-['Kanit']">
+      {/* ส่วนเนื้อหาหลัก */}
+      <div className="max-w-7xl mx-auto px-6 py-12 lg:py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
           
-          {/* Main Grid: ปรับจำนวน Column ตาม Breakpoint */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12 mb-16">
-            
-            {/* 1. ข้อมูลร้านค้า */}
-            <div className="space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
-              <Link to="/" className="text-2xl md:text-3xl font-black text-[#1b2559] tracking-tighter uppercase leading-tight">
-                {shopData.shop_name.split(' ')[0]} <span className="text-[#e8c4a0]">{shopData.shop_name.split(' ')[1] || ''}</span>
-              </Link>
-              <p className="text-gray-500 text-sm leading-relaxed max-w-[280px]">
-                {shopData.hero_description}
-              </p>
-              <div className="flex items-center gap-3">
-                <a href={shopData.facebook_url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white rounded-2xl text-[#1b2559] shadow-sm hover:shadow-md hover:-translate-y-1 transition-all"><Facebook size={18} /></a>
-                <a href={shopData.instagram_url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white rounded-2xl text-[#1b2559] shadow-sm hover:shadow-md hover:-translate-y-1 transition-all"><Instagram size={18} /></a>
-                <a href={shopData.line_url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white rounded-2xl text-[#1b2559] shadow-sm hover:shadow-md hover:-translate-y-1 transition-all"><MessageCircle size={18} /></a>
-              </div>
-
-              {isAdminManager && (
-                <div className="pt-2">
-                  <Link to="/admin/shop-setting" className="inline-flex items-center gap-2 px-4 py-2 bg-[#1b2559] text-white text-xs rounded-xl hover:bg-[#e8c4a0] transition-all">
-                    <Settings size={14} /> ตั้งค่าระบบ
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* 2. หน้าเมนู */}
-            <div className="text-center md:text-left">
-              <h4 className="text-[#1b2559] font-bold text-base md:text-lg mb-6 md:mb-8 uppercase tracking-widest">หน้าเมนู</h4>
-              <ul className="space-y-4 text-gray-500 text-sm">
-                <li><Link to="/" className="hover:text-[#e8c4a0] transition-colors font-medium">หน้าแรก</Link></li>
-                <li><Link to="/products" className="hover:text-[#e8c4a0] transition-colors font-medium">สั่งซื้อสินค้า</Link></li>
-                <li><Link to="/cart" className="hover:text-[#e8c4a0] transition-colors font-medium">ตะกร้าสินค้า</Link></li>
-              </ul>
-            </div>
-
-            {/* 3. ช่วยเหลือ */}
-            <div className="text-center md:text-left">
-              <h4 className="text-[#1b2559] font-bold text-base md:text-lg mb-6 md:mb-8 uppercase tracking-widest">ช่วยเหลือ</h4>
-              <ul className="space-y-4 text-gray-500 text-sm">
-                <li><Link to="#" className="hover:text-[#e8c4a0] font-medium transition-colors">นโยบายความเป็นส่วนตัว</Link></li>
-                <li><Link to="#" className="hover:text-[#e8c4a0] font-medium transition-colors">คำถามที่พบบ่อย</Link></li>
-              </ul>
-            </div>
-
-            {/* 4. ติดต่อเรา */}
-            <div className="text-center md:text-left space-y-6">
-              <h4 className="text-[#1b2559] font-bold text-base md:text-lg mb-6 md:mb-8 uppercase tracking-widest">ติดต่อเรา</h4>
-              <div className="space-y-4 text-sm text-gray-500">
-                <div className="flex items-start justify-center md:justify-start gap-3">
-                  <MapPin className="text-[#e8c4a0] shrink-0 mt-0.5" size={18} /> 
-                  <span className="font-medium text-xs md:text-sm leading-relaxed">{shopData.address}</span>
-                </div>
-                <div className="flex items-center justify-center md:justify-start gap-3">
-                  <Phone className="text-[#e8c4a0] shrink-0" size={18} /> 
-                  <span className="font-medium">{shopData.phone}</span>
-                </div>
-                <div className="flex items-center justify-center md:justify-start gap-3">
-                  <Mail className="text-[#e8c4a0] shrink-0" size={18} /> 
-                  <span className="break-all font-medium">{shopData.email}</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Bottom Copyright */}
-          <div className="pt-8 md:pt-10 border-t border-[#e8c4a0]/20 text-center">
-            <p className="text-gray-400 text-[9px] md:text-[10px] tracking-[0.2em] md:tracking-[0.3em] uppercase font-bold px-4">
-              © {new Date().getFullYear()} {shopData.shop_name}. All rights reserved.
+          {/* Column 1: Brand & Slogan */}
+          <div className="space-y-6">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tighter">KAIKA</h2>
+            <p className="text-slate-500 font-medium leading-relaxed">
+              ถูก อร่อย และดี <br className="hidden lg:block" /> 
+              เราคัดสรรวัตถุดิบคุณภาพเพื่อคุณในทุกๆ วัน
             </p>
+            <div className="flex space-x-3">
+              {[
+                { Icon: Facebook, href: "#" },
+                { Icon: Instagram, href: "#" },
+                { Icon: MessageCircle, href: "#" }
+              ].map((social, index) => (
+                <a 
+                  key={index}
+                  href={social.href} 
+                  className="p-2.5 border border-slate-200 rounded-2xl text-slate-400 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-90"
+                >
+                  <social.Icon size={20} />
+                </a>
+              ))}
+            </div>
+            
+            <button className="flex items-center space-x-2 bg-slate-50 text-slate-900 border border-slate-100 px-5 py-2.5 rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-900 hover:text-white transition-all active:scale-95">
+              <Settings size={16} />
+              <span>SHOP SETTINGS</span>
+            </button>
           </div>
+
+          {/* Column 2: Navigation */}
+          <div>
+            <h3 className="text-sm font-black text-slate-900 mb-6 tracking-[0.2em] uppercase">Navigation</h3>
+            <ul className="space-y-4 text-slate-500 font-semibold">
+              {['หน้าแรก', 'เมนูสินค้า', 'ตะกร้าของฉัน', 'ติดตามออเดอร์'].map((item) => (
+                <li key={item}>
+                  <a href="#" className="hover:text-slate-900 transition-colors flex items-center group">
+                    <span className="w-0 group-hover:w-2 h-0.5 bg-slate-900 mr-0 transition-all group-hover:mr-2 rounded-full"></span>
+                    {item}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Column 3: Support */}
+          <div>
+            <h3 className="text-sm font-black text-slate-900 mb-6 tracking-[0.2em] uppercase">Support</h3>
+            <ul className="space-y-4 text-slate-500 font-semibold">
+              {['Privacy Policy', 'Terms of Service', 'FAQ', 'ติดต่อเจ้าหน้าที่'].map((item) => (
+                <li key={item}>
+                  <a href="#" className="hover:text-slate-900 transition-colors flex items-center group">
+                    <span className="w-0 group-hover:w-2 h-0.5 bg-slate-900 mr-0 transition-all group-hover:mr-2 rounded-full"></span>
+                    {item}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Column 4: Contact Us */}
+          <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-50 lg:bg-transparent lg:p-0 lg:border-none">
+            <h3 className="text-sm font-black text-slate-900 mb-6 tracking-[0.2em] uppercase">Contact Us</h3>
+            <ul className="space-y-5 text-slate-600 font-medium">
+              <li className="flex items-start space-x-4 group">
+                <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                    <MapPin size={18} className="shrink-0" />
+                </div>
+                <span className="text-sm leading-relaxed">000/00 แขวงไก่กา เขตไก่ <br/>กรุงเทพ 10000</span>
+              </li>
+              <li className="flex items-center space-x-4 group">
+                <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                    <Phone size={18} className="shrink-0" />
+                </div>
+                <span className="text-sm font-bold">080-000-0000</span>
+              </li>
+              <li className="flex items-center space-x-4 group">
+                <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                    <Mail size={18} className="shrink-0" />
+                </div>
+                <span className="text-sm font-bold break-all">kaika.official@gmail.com</span>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Bottom Footer */}
+      <div className="border-t border-slate-50 py-8 bg-slate-50/30">
+        <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-xs font-bold text-slate-400 tracking-widest uppercase">
+              © {currentYear} Kaika. All rights reserved.
+            </p>
+            <p className="text-[10px] font-black text-slate-300 tracking-tighter uppercase">
+              Crafted with Quality & Passion
+            </p>
         </div>
       </div>
     </footer>

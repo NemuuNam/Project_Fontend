@@ -2,17 +2,15 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
     Package, Plus, Trash2, Edit3, Upload, X, Tag,
     ImageIcon, Check, AlertCircle, Coins, 
-    Loader2, Search
+    Loader2, Search, RefreshCw, Menu
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import imageCompression from 'browser-image-compression'; 
 import { jwtDecode } from 'jwt-decode'; 
 import Swal from 'sweetalert2'; 
 
-// --- นำเข้าระบบ API ส่วนกลาง ---
 import axiosInstance from '../api/axiosInstance';
 import { API_ENDPOINTS } from '../api/config';
-
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
@@ -29,38 +27,33 @@ const ProductManagement = () => {
     const [newCatName, setNewCatName] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // เช็คสิทธิ์ Admin
     const token = localStorage.getItem('token');
     let userLevel = 0;
-    try {
-        if (token) {
-            const decoded = jwtDecode(token);
-            userLevel = decoded.role_level || 0; 
-        }
-    } catch (err) {}
+    try { if (token) { const decoded = jwtDecode(token); userLevel = decoded.role_level || 0; } } catch (err) {}
     const isAdminManager = [1, 2].includes(userLevel);
 
-    // 1. ดึงข้อมูลสินค้าและหมวดหมู่
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isSilent = false) => {
         try {
-            setLoading(true);
+            if (!isSilent) setLoading(true);
             const [prodRes, catRes] = await Promise.all([
                 axiosInstance.get(API_ENDPOINTS.ADMIN.PRODUCTS),
                 axiosInstance.get(`${API_ENDPOINTS.ADMIN.PRODUCTS}/categories`)
             ]);
             if (prodRes.success) setProducts(prodRes.data || []);
             if (catRes.success) setCategories(catRes.data || []);
-        } catch (err) {
-            toast.error("ดึงข้อมูลไม่สำเร็จ!");
-        } finally {
-            setLoading(false);
-        }
+        } catch (err) { toast.error("ดึงข้อมูลไม่สำเร็จ!"); } finally { setLoading(false); }
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    // 2. จัดการรูปภาพ (Compression)
+    const getStockStatus = (qty) => {
+        if (qty <= 0) return { label: 'หมดสต็อก', color: 'bg-rose-50 text-rose-500 border-rose-100' };
+        if (qty <= 10) return { label: 'ใกล้หมด', color: 'bg-amber-50 text-amber-600 border-amber-100' };
+        return { label: 'พร้อมขาย', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' };
+    };
+
     const handleImageChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -70,12 +63,9 @@ const ProductManagement = () => {
             const finalFile = new File([compressedFile], file.name, { type: file.type });
             setFormData(prev => ({ ...prev, image: finalFile }));
             setImagePreview(URL.createObjectURL(finalFile)); 
-        } catch (error) {
-            toast.error('ประมวลผลรูปล้มเหลว');
-        }
+        } catch (error) { toast.error('ประมวลผลรูปล้มเหลว'); }
     };
 
-    // 3. บันทึกข้อมูลสินค้า (Add / Edit)
     const handleProductSubmit = async (e) => {
         e.preventDefault();
         const data = new FormData();
@@ -86,7 +76,7 @@ const ProductManagement = () => {
         if (formData.image) data.append('image', formData.image);
 
         setIsUploading(true);
-        const loadToast = toast.loading(isEditing ? "กำลังอัปเดตข้อมูล..." : "กำลังเพิ่มสินค้า...");
+        const loadToast = toast.loading(isEditing ? "กำลังอัปเดต..." : "กำลังเพิ่มสินค้า...");
         try {
             const url = isEditing ? `${API_ENDPOINTS.ADMIN.PRODUCTS}/${currentId}` : API_ENDPOINTS.ADMIN.PRODUCTS;
             const res = await axiosInstance({
@@ -95,68 +85,32 @@ const ProductManagement = () => {
                 data: data,
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            
             if (res.success) {
-                toast.success('บันทึกข้อมูลเรียบร้อย', { id: loadToast });
+                toast.success('บันทึกเรียบร้อย', { id: loadToast });
                 setModalType(null);
-                fetchData();
+                fetchData(true);
             }
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'บันทึกล้มเหลว!', { id: loadToast });
-        } finally {
-            setIsUploading(false);
-        }
+        } catch (err) { toast.error('บันทึกล้มเหลว!', { id: loadToast }); } 
+        finally { setIsUploading(false); }
     };
 
-    // 4. ลบสินค้า
     const handleDeleteProduct = async (id) => {
         const result = await Swal.fire({
-            title: 'ยืนยันการลบสินค้า?',
-            text: "ข้อมูลสินค้าและรูปภาพจะถูกลบออกจากระบบถาวร",
+            title: 'ยืนยันการลบ?',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            confirmButtonText: 'ยืนยันการลบ',
-            cancelButtonText: 'ยกเลิก'
+            confirmButtonColor: '#10b981',
+            confirmButtonText: 'ตกลง',
+            cancelButtonText: 'ยกเลิก',
         });
-
         if (result.isConfirmed) {
             try {
                 const res = await axiosInstance.delete(`${API_ENDPOINTS.ADMIN.PRODUCTS}/${id}`);
-                if (res.success) {
-                    toast.success('ลบสินค้าสำเร็จ');
-                    fetchData();
-                }
-            } catch (err) {
-                toast.error('ลบไม่สำเร็จ!');
-            }
+                if (res.success) { toast.success('ลบสินค้าสำเร็จ'); fetchData(true); }
+            } catch (err) { toast.error('ลบไม่สำเร็จ!'); }
         }
     };
 
-    // 5. จัดการหมวดหมู่
-    const handleAddCategory = async () => {
-        if (!newCatName.trim()) return toast.error("กรุณาระบุชื่อหมวดหมู่");
-        try {
-            const res = await axiosInstance.post(`${API_ENDPOINTS.ADMIN.PRODUCTS}/categories`, { category_name: newCatName });
-            if (res.success) {
-                toast.success("เพิ่มหมวดหมู่สำเร็จ");
-                setNewCatName('');
-                fetchData();
-            }
-        } catch (err) { toast.error("เพิ่มล้มเหลว"); }
-    };
-
-    const handleDeleteCategory = async (id) => {
-        try {
-            const res = await axiosInstance.delete(`${API_ENDPOINTS.ADMIN.PRODUCTS}/categories/${id}`);
-            if (res.success) {
-                toast.success("ลบหมวดหมู่สำเร็จ");
-                fetchData();
-            }
-        } catch (err) { toast.error("ไม่สามารถลบได้ (อาจมีสินค้าอยู่ในกลุ่มนี้)"); }
-    };
-
-    // กรองข้อมูลสินค้า
     const filteredProducts = products.filter(p =>
         p.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.category?.category_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -164,175 +118,250 @@ const ProductManagement = () => {
 
     const stats = {
         total: products.length,
-        low: products.filter(p => p.stock_quantity > 0 && p.stock_quantity < 10).length,
+        low: products.filter(p => p.stock_quantity > 0 && p.stock_quantity <= 10).length,
         out: products.filter(p => p.stock_quantity <= 0).length,
         val: products.reduce((acc, p) => acc + (p.unit_price * p.stock_quantity), 0)
     };
 
     if (loading && products.length === 0) return (
-        <div className="h-screen flex items-center justify-center bg-[#f4f7fe]">
-            <Loader2 className="animate-spin text-[#4318ff]" size={45} />
+        <div className="h-screen flex items-center justify-center bg-white">
+            <Loader2 className="animate-spin text-slate-900" size={65} />
         </div>
     );
 
     return (
-        <div className="inventory-layout">
+        <div className="flex min-h-screen bg-white font-['Kanit'] text-slate-900 overflow-x-hidden">
             <Toaster position="top-right" />
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
-                .inventory-layout { display: flex; min-height: 100vh; background: #f4f7fe; font-family: 'Kanit', sans-serif; color: #1b2559; }
-                .main-content { flex: 1; margin-left: ${isCollapsed ? '80px' : '260px'}; padding: 30px; transition: all 0.3s ease; width: 100%; box-sizing: border-box; }
-                @media (max-width: 1024px) { .main-content { margin-left: 0 !important; padding: 20px; } }
-                .inventory-section { background: white; border-radius: 35px; padding: 35px; box-shadow: 0 10px 40px rgba(0,0,0,0.02); }
-                .input-field-premium { width: 100%; padding: 16px 20px; border-radius: 18px; border: 1.5px solid #eef2f6; outline: none; background: #fcfdfe; transition: 0.2s; font-family: 'Kanit'; box-sizing: border-box; font-size: 15px; }
-                .input-field-premium:focus { border-color: #4318ff; box-shadow: 0 10px 20px rgba(67, 24, 255, 0.05); }
-                .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
-                .modal-box { background: white; width: 100%; max-width: 800px; border-radius: 40px; padding: 45px; position: relative; max-height: 95vh; overflow-y: auto; }
-            `}</style>
+            <Sidebar 
+                isCollapsed={isCollapsed} 
+                setIsCollapsed={setIsCollapsed} 
+                isMobileOpen={isSidebarOpen} 
+                setIsMobileOpen={setIsSidebarOpen} 
+                activePage="products" 
+            />
 
-            <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} activePage="products" />
-
-            <main className="main-content">
-                <Header title="จัดการสินค้าในคลัง" />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8 mt-5">
-                    <StatBox title="สินค้าทั้งหมด" value={stats.total} icon={<Package size={22} />} color="#4318ff" />
-                    <StatBox title="ใกล้หมด" value={stats.low} icon={<AlertCircle size={22} />} color="#ffb547" />
-                    <StatBox title="หมดสต็อก" value={stats.out} icon={<X size={22} />} color="#ef4444" />
-                    <StatBox title="มูลค่าสต็อก" value={`฿${stats.val.toLocaleString()}`} icon={<Coins size={22} />} color="#05cd99" />
+            <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[300px]'} p-4 md:p-8 lg:p-10 w-full`}>
+                
+                {/* Mobile Header Toggle */}
+                <div className="mb-6 md:mb-10 flex items-center gap-4">
+                    <button 
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="lg:hidden p-2 bg-slate-50 rounded-xl text-slate-600"
+                    >
+                        <Menu size={24} />
+                    </button>
+                    <div className="flex-1">
+                        <Header title="Products Management" />
+                    </div>
                 </div>
 
-                <section className="inventory-section">
-                    <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-                        <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
-                            <Search size={20} style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', color: '#a3aed0' }} />
-                            <input className="input-field-premium" style={{ paddingLeft: '55px' }} placeholder="ค้นหาชื่อสินค้า หรือหมวดหมู่..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                {/* Hero Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 md:mb-12">
+                    <div className="flex-1">
+                        <p className="text-xs md:text-sm font-bold text-slate-400 mb-1 uppercase tracking-widest">INVENTORY STOCK</p>
+                        <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter text-slate-900 leading-[0.9]">Products</h1>
+                    </div>
+                    <button onClick={() => fetchData()} className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-center shadow-sm hover:border-slate-900 transition-all text-slate-400 hover:text-slate-900">
+                        <RefreshCw size={24} />
+                    </button>
+                </div>
+
+                {/* Stats Grid - Responsive Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+                    <StatCardWhite title="สินค้าทั้งหมด" value={stats.total} icon={<Package size={24} />} color="#4318ff" />
+                    <StatCardWhite title="ใกล้หมด" value={stats.low} icon={<AlertCircle size={24} />} color="#ea580c" />
+                    <StatCardWhite title="หมดสต็อก" value={stats.out} icon={<X size={24} />} color="#ef4444" />
+                    <StatCardWhite title="มูลค่ารวม" value={`฿${stats.val.toLocaleString()}`} icon={<Coins size={24} />} color="#10b981" />
+                </div>
+
+                {/* Main Content Area */}
+                <div className="bg-white p-5 md:p-8 lg:p-10 rounded-[30px] md:rounded-[45px] border border-slate-100 shadow-xl shadow-slate-50/50">
+                    
+                    {/* Search and Buttons Bar */}
+                    <div className="flex flex-col xl:flex-row justify-between items-center gap-4 md:gap-6 mb-8 md:mb-12">
+                        <div className="relative w-full max-w-2xl">
+                            <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                            <input 
+                                className="w-full pl-14 pr-6 py-4 rounded-xl md:rounded-2xl bg-slate-50 border-none outline-none font-bold text-base md:text-lg focus:ring-2 focus:ring-slate-100 transition-all" 
+                                placeholder="ค้นหาชื่อสินค้า หรือหมวดหมู่..." 
+                                value={searchTerm} 
+                                onChange={(e) => setSearchTerm(e.target.value)} 
+                            />
                         </div>
-                        <div className="flex gap-3">
-                            <button onClick={() => setModalType('category')} className="px-6 py-4 bg-slate-50 text-[#4318ff] rounded-2xl font-bold flex items-center gap-2 border-none cursor-pointer hover:bg-slate-100 transition-all"><Tag size={18}/> หมวดหมู่</button>
-                            <button onClick={() => { setIsEditing(false); setModalType('product'); setFormData({ name: '', unitPrice: '', stock: '', category_id: '', image: null }); setImagePreview(null); }} className="px-6 py-4 bg-[#4318ff] text-white rounded-2xl font-bold flex items-center gap-2 border-none cursor-pointer hover:shadow-lg transition-all"><Plus size={18}/> เพิ่มสินค้า</button>
+                        <div className="flex gap-3 md:gap-4 w-full xl:w-auto">
+                            <button onClick={() => setModalType('category')} className="flex-1 xl:flex-none px-4 md:px-8 py-3 md:py-5 bg-white border-2 border-slate-100 text-slate-600 rounded-xl md:rounded-2xl font-black flex items-center justify-center gap-2 hover:border-slate-900 transition-all uppercase text-[10px] md:text-xs tracking-widest">
+                                <Tag size={16}/> <span className="hidden sm:inline">Categories</span>
+                            </button>
+                            <button 
+                                onClick={() => { setIsEditing(false); setModalType('product'); setFormData({ name: '', unitPrice: '', stock: '', category_id: '', image: null }); setImagePreview(null); }} 
+                                className="flex-1 xl:flex-none px-4 md:px-8 py-3 md:py-5 bg-blue-600 text-white rounded-xl md:rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all uppercase text-[10px] md:text-xs tracking-widest"
+                            >
+                                <Plus size={16}/> Add Product
+                            </button>
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[850px] border-collapse">
+                    {/* Table with Responsive Scroll */}
+                    <div className="overflow-x-auto -mx-2 px-2">
+                        <table className="w-full text-left border-separate border-spacing-y-3 min-w-[900px]">
                             <thead>
-                                <tr className="text-left text-[#a3aed0] text-xs uppercase tracking-widest border-b border-slate-100">
-                                    <th className="pb-4 pl-4">รูปสินค้า</th>
-                                    <th className="pb-4">ชื่อสินค้า</th>
-                                    <th className="pb-4">ราคา</th>
-                                    <th className="pb-4">คลัง</th>
-                                    <th className="pb-4">สถานะ</th>
-                                    <th className="pb-4 text-center">จัดการ</th>
+                                <tr className="text-slate-400 uppercase text-[10px] md:text-xs font-black tracking-widest text-center">
+                                    <th className="px-4 pb-4 text-left">Product</th>
+                                    <th className="px-4 pb-4">Category</th>
+                                    <th className="px-4 pb-4 text-right">Price</th>
+                                    <th className="px-4 pb-4">Stock</th>
+                                    <th className="px-4 pb-4">Status</th>
+                                    <th className="px-4 pb-4">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredProducts.map(p => (
-                                    <tr key={p.product_id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                        <td className="py-5 pl-4">
-                                            {p.images?.[0]?.image_url ? 
-                                                <img src={p.images[0].image_url} alt="" style={{ width: '55px', height: '55px', borderRadius: '15px', objectFit: 'cover' }} /> 
-                                                : <div style={{ width: '55px', height: '55px', borderRadius: '15px', background: '#f4f7fe' }} className="flex items-center justify-center"><ImageIcon color="#a3aed0" /></div>
-                                            }
-                                        </td>
-                                        <td>
-                                            <p className="font-bold text-[#1b2559] m-0">{p.product_name}</p>
-                                            <p className="text-[11px] text-slate-400 m-0 uppercase">{p.category?.category_name}</p>
-                                        </td>
-                                        <td className="font-bold">฿{p.unit_price.toLocaleString()}</td>
-                                        <td className="font-bold text-slate-500">{p.stock_quantity}</td>
-                                        <td><span className={`px-3 py-1 rounded-full text-[10px] font-black ${p.stock_quantity > 0 ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500'}`}>{p.stock_quantity > 0 ? '● พร้อมขาย' : '● หมดสต็อก'}</span></td>
-                                        <td className="text-center">
-                                            <button onClick={() => { setIsEditing(true); setCurrentId(p.product_id); setFormData({ name: p.product_name, unitPrice: p.unit_price, stock: p.stock_quantity, category_id: p.category_id }); setImagePreview(p.images?.[0]?.image_url); setModalType('product'); }} className="p-2 text-blue-500 bg-blue-50 rounded-lg mr-2 border-none cursor-pointer hover:bg-blue-100"><Edit3 size={16}/></button>
-                                            {isAdminManager && <button onClick={() => handleDeleteProduct(p.product_id)} className="p-2 text-red-400 bg-red-50 rounded-lg border-none cursor-pointer hover:bg-red-100"><Trash2 size={16}/></button>}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {filteredProducts.map(p => {
+                                    const stockStatus = getStockStatus(p.stock_quantity);
+                                    const imageUrl = p.Product_Images?.[0]?.image_url || p.images?.[0]?.image_url;
+                                    return (
+                                        <tr key={p.product_id} className="group hover:bg-slate-50 transition-all text-center">
+                                            <td className="px-4 py-4 md:py-6 rounded-l-2xl md:rounded-l-3xl border-y border-l border-slate-50 group-hover:border-slate-100 text-left">
+                                                <div className="flex items-center gap-3 md:gap-4">
+                                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl overflow-hidden border border-slate-50 shadow-sm bg-slate-50 shrink-0">
+                                                        {imageUrl ? (
+                                                            <img src={imageUrl} className="w-full h-full object-cover" alt="prod" />
+                                                        ) : <ImageIcon className="w-full h-full p-3 text-slate-200" />}
+                                                    </div>
+                                                    <span className="font-black text-base md:text-xl text-slate-900 truncate max-w-[150px] md:max-w-[200px]">{p.product_name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4 md:py-6 border-y border-slate-50 group-hover:border-slate-100">
+                                                <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-lg font-black text-[9px] md:text-[10px] uppercase tracking-wider whitespace-nowrap">{p.category?.category_name}</span>
+                                            </td>
+                                            <td className="px-4 py-4 md:py-6 text-right font-black text-lg md:text-2xl text-slate-900 border-y border-slate-50 group-hover:border-slate-100 whitespace-nowrap">฿{p.unit_price.toLocaleString()}</td>
+                                            <td className="px-4 py-4 md:py-6 font-black text-lg md:text-2xl text-slate-500 border-y border-slate-50 group-hover:border-slate-100">{p.stock_quantity}</td>
+                                            <td className="px-4 py-4 md:py-6 border-y border-slate-50 group-hover:border-slate-100">
+                                                <span className={`px-3 py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase border whitespace-nowrap ${stockStatus.color}`}>
+                                                    {stockStatus.label}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-4 md:py-6 rounded-r-2xl md:rounded-r-3xl border-y border-r border-slate-50 group-hover:border-slate-100">
+                                                <div className="flex justify-center gap-2">
+                                                    <button 
+                                                        onClick={() => { setIsEditing(true); setCurrentId(p.product_id); setFormData({ name: p.product_name, unitPrice: p.unit_price, stock: p.stock_quantity, category_id: p.category_id }); setImagePreview(imageUrl); setModalType('product'); }} 
+                                                        className="p-2 md:p-3 text-blue-600 bg-white border border-slate-100 rounded-lg md:rounded-xl hover:border-blue-600 transition-all shadow-sm"
+                                                    >
+                                                        <Edit3 size={18}/>
+                                                    </button>
+                                                    {isAdminManager && (
+                                                        <button onClick={() => handleDeleteProduct(p.product_id)} className="p-2 md:p-3 text-rose-400 bg-white border border-slate-100 rounded-lg md:rounded-xl hover:border-rose-500 hover:text-rose-500 transition-all shadow-sm">
+                                                            <Trash2 size={18}/>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
+            </main>
 
-                {/* MODAL: สินค้า */}
-                {modalType === 'product' && (
-                    <div className="modal-overlay" onClick={() => setModalType(null)}>
-                        <div className="modal-box" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => setModalType(null)} className="absolute top-8 right-8 text-slate-400 bg-transparent border-none cursor-pointer hover:text-red-500 transition-all"><X size={24}/></button>
-                            <h2 className="text-2xl font-bold mb-10 text-[#1b2559]">{isEditing ? '📝 แก้ไขข้อมูลสินค้า' : '📦 เพิ่มสินค้าใหม่'}</h2>
-                            <form onSubmit={handleProductSubmit}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <div className="flex flex-col gap-5">
-                                        <div className="input-group">
-                                            <label className="input-label">ชื่อสินค้า</label>
-                                            <input className="input-field-premium" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required placeholder="ระบุชื่อสินค้า..." />
+            {/* ✅ Optimized Modal - Responsive for All Screens */}
+            {modalType && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 md:p-6 bg-slate-900/40 backdrop-blur-md" onClick={() => setModalType(null)}>
+                    <div className={`bg-white w-full ${modalType === 'product' ? 'max-w-5xl' : 'max-w-2xl'} rounded-[30px] md:rounded-[45px] shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col animate-in fade-in zoom-in duration-300`} onClick={e => e.stopPropagation()}>
+                        
+                        <div className="p-6 md:p-10 flex justify-between items-center border-b border-slate-50">
+                            <h2 className="text-xl md:text-4xl font-black text-slate-900 tracking-tight uppercase">
+                                {modalType === 'product' ? (isEditing ? 'Edit Item' : 'New Item') : 'Categories'}
+                            </h2>
+                            <button onClick={() => setModalType(null)} className="p-2 md:p-4 bg-slate-50 hover:bg-slate-100 rounded-xl md:rounded-2xl transition-all text-slate-400"><X size={20}/></button>
+                        </div>
+
+                        <div className="overflow-y-auto p-6 md:p-10 flex-1 hide-scrollbar">
+                            {modalType === 'product' ? (
+                                <form onSubmit={handleProductSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10">
+                                    <div className="space-y-4 md:space-y-6 text-left">
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Product Name</label>
+                                            <input className="w-full p-4 md:p-5 rounded-xl md:rounded-2xl bg-slate-50 border-none outline-none font-bold text-base md:text-lg focus:bg-white focus:ring-2 focus:ring-slate-100 transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
                                         </div>
-                                        <div className="input-group">
-                                            <label className="input-label">หมวดหมู่</label>
-                                            <select className="input-field-premium" value={formData.category_id} onChange={e => setFormData({...formData, category_id: e.target.value})} required>
-                                                <option value="">เลือกกลุ่มสินค้า</option>
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Category</label>
+                                            <select className="w-full p-4 md:p-5 rounded-xl md:rounded-2xl bg-slate-50 border-none outline-none font-bold text-base md:text-lg appearance-none cursor-pointer focus:bg-white focus:ring-2 focus:ring-slate-100 transition-all" value={formData.category_id} onChange={e => setFormData({...formData, category_id: e.target.value})} required>
+                                                <option value="">Select Category</option>
                                                 {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
                                             </select>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-5">
-                                            <div className="input-group">
-                                                <label className="input-label">ราคา (฿)</label>
-                                                <input type="number" className="input-field-premium" value={formData.unitPrice} onChange={e => setFormData({...formData, unitPrice: e.target.value})} required />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Price (฿)</label>
+                                                <input type="number" className="w-full p-4 md:p-5 rounded-xl md:rounded-2xl bg-slate-50 border-none outline-none font-bold text-base md:text-lg" value={formData.unitPrice} onChange={e => setFormData({...formData, unitPrice: e.target.value})} required />
                                             </div>
-                                            <div className="input-group">
-                                                <label className="input-label">สต็อก (ชิ้น)</label>
-                                                <input type="number" className="input-field-premium" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} required />
+                                            <div>
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Stock</label>
+                                                <input type="number" className="w-full p-4 md:p-5 rounded-xl md:rounded-2xl bg-slate-50 border-none outline-none font-bold text-base md:text-lg" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} required />
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col items-center justify-center bg-slate-50/50 rounded-[30px] p-8 border border-dashed border-slate-200">
-                                        <div style={{ width: '200px', height: '200px', borderRadius: '25px', overflow: 'hidden', marginBottom: '20px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
-                                            {imagePreview ? <img src={imagePreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <ImageIcon size={50} color="#cbd5e1" />}
+
+                                    {/* Photo Upload Area */}
+                                    <div className="flex flex-col items-center justify-center bg-white rounded-[25px] md:rounded-[35px] p-6 md:p-8 border-2 border-slate-50">
+                                        <div className="w-full aspect-square max-w-[200px] md:max-w-[280px] bg-slate-50 rounded-2xl md:rounded-3xl overflow-hidden mb-6 shadow-sm border border-slate-100 flex items-center justify-center">
+                                            {imagePreview ? <img src={imagePreview} className="w-full h-full object-cover" alt="prev" /> : <ImageIcon size={40} className="text-slate-200 md:w-16 md:h-16" />}
                                         </div>
-                                        <label className="px-6 py-3 bg-white text-[#4318ff] border border-[#4318ff] rounded-xl font-bold cursor-pointer text-sm flex items-center gap-2 hover:bg-[#4318ff] hover:text-white transition-all shadow-sm"><Upload size={16}/> เลือกรูปสินค้า<input type="file" className="hidden" accept="image/*" onChange={handleImageChange} /></label>
-                                        <p className="text-[11px] text-slate-400 mt-4 text-center">แนะนำรูปทรงจัตุรัส ขนาดไม่เกิน 5MB</p>
+                                        <label className="w-full sm:w-auto px-6 md:px-10 py-3 md:py-4 bg-slate-900 text-white rounded-xl md:rounded-2xl font-black cursor-pointer hover:bg-slate-800 transition-all text-[10px] md:text-xs tracking-widest uppercase flex items-center justify-center gap-2">
+                                            <Upload size={16}/> Upload Photo
+                                            <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                                        </label>
+                                    </div>
+
+                                    <button 
+                                        type="submit" 
+                                        disabled={isUploading} 
+                                        className="lg:col-span-2 py-4 md:py-6 bg-blue-600 text-white rounded-xl md:rounded-[25px] font-black text-base md:text-xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex justify-center items-center gap-4 uppercase"
+                                    >
+                                        {isUploading ? <Loader2 className="animate-spin" /> : <Check />} 
+                                        {isEditing ? 'Save Changes' : 'Confirm Add'}
+                                    </button>
+                                </form>
+                            ) : (
+                                <div className="space-y-6 md:space-y-8">
+                                    <div className="flex gap-3">
+                                        <input 
+                                            className="flex-1 p-4 md:p-5 rounded-xl md:rounded-2xl bg-slate-50 border-none outline-none font-bold text-sm md:text-lg" 
+                                            placeholder="New Category Name..." 
+                                            value={newCatName} 
+                                            onChange={e => setNewCatName(e.target.value)} 
+                                        />
+                                        <button className="px-5 md:px-8 bg-slate-900 text-white rounded-xl md:rounded-2xl font-black hover:bg-black transition-all uppercase text-[10px] md:text-xs">Add</button>
+                                    </div>
+                                    <div className="space-y-3 max-h-[300px] md:max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                                        {categories.map(c => (
+                                            <div key={c.category_id} className="flex justify-between items-center p-4 md:p-5 bg-white border border-slate-100 rounded-xl md:rounded-2xl shadow-sm hover:border-slate-300 transition-all">
+                                                <span className="font-black text-sm md:text-lg text-slate-700 uppercase tracking-widest">{c.category_name}</span>
+                                                <button className="p-2 md:p-3 text-rose-500 hover:bg-rose-50 rounded-lg md:rounded-xl transition-all"><Trash2 size={18}/></button>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                                <button type="submit" disabled={isUploading} className="w-full mt-10 py-5 bg-[#4318ff] text-white rounded-[22px] font-bold text-lg border-none cursor-pointer shadow-xl shadow-blue-100 flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
-                                    {isUploading ? <Loader2 className="animate-spin" /> : <><Check size={22}/> {isEditing ? 'บันทึกการแก้ไข' : 'ยืนยันเพิ่มสินค้า'}</>}
-                                </button>
-                            </form>
+                            )}
                         </div>
                     </div>
-                )}
-
-                {/* MODAL: หมวดหมู่ */}
-                {modalType === 'category' && (
-                    <div className="modal-overlay" onClick={() => setModalType(null)}>
-                        <div className="modal-box max-w-md" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => setModalType(null)} className="absolute top-6 right-6 text-slate-400 bg-transparent border-none cursor-pointer"><X size={20}/></button>
-                            <h2 className="text-xl font-bold mb-6 text-[#1b2559]">🏷️ จัดการหมวดหมู่สินค้า</h2>
-                            <div className="flex gap-2 mb-8">
-                                <input className="input-field-premium" placeholder="ชื่อหมวดหมู่ใหม่..." value={newCatName} onChange={e => setNewCatName(e.target.value)} />
-                                <button onClick={handleAddCategory} className="px-5 bg-[#4318ff] text-white rounded-xl font-bold border-none cursor-pointer hover:bg-blue-700">เพิ่ม</button>
-                            </div>
-                            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                                {categories.map(c => (
-                                    <div key={c.category_id} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <span className="font-bold text-sm">{c.category_name}</span>
-                                        <Trash2 size={16} className="text-red-400 cursor-pointer hover:text-red-600" onClick={() => handleDeleteCategory(c.category_id)} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </main>
+                </div>
+            )}
         </div>
     );
 };
 
-const StatBox = ({ title, value, icon, color }) => (
-    <div className="bg-white p-6 rounded-[30px] flex justify-between items-center border border-slate-100 shadow-sm transition-transform hover:scale-[1.02]">
-        <div className="min-w-0">
-            <p className="text-[#a3aed0] text-[10px] sm:text-xs mb-1 font-bold uppercase truncate">{title}</p>
-            <h2 className="text-lg sm:text-2xl font-black text-[#1b2559] truncate">{typeof value === 'number' ? value.toLocaleString() : value}</h2>
+// Adjusted StatCard component for Product Management
+const StatCardWhite = ({ title, value, icon, color }) => (
+    <div className="bg-white p-5 md:p-8 rounded-[25px] md:rounded-[35px] border border-slate-100 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all hover:-translate-y-1 duration-300">
+        <div className="flex-1 text-left min-w-0">
+            <p className="text-[10px] md:text-[12px] font-black text-slate-400 uppercase tracking-widest mb-1 md:mb-3 truncate">{title}</p>
+            <h2 className="text-slate-900 text-2xl md:text-4xl lg:text-5xl font-black italic tracking-tighter leading-none truncate">{typeof value === 'number' ? value.toLocaleString() : value}</h2>
         </div>
-        <div style={{ background: `${color}10`, color: color }} className="p-3 sm:p-4 rounded-2xl flex-shrink-0">{icon}</div>
+        <div style={{ background: `${color}08`, color: color }} className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-[22px] flex items-center justify-center border-2 md:border-4 border-white shadow-lg shadow-slate-50 shrink-0 ml-2">
+            {icon}
+        </div>
     </div>
 );
 

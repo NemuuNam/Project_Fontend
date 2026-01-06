@@ -15,13 +15,13 @@ export const API_ENDPOINTS = {
     ADMIN: {
         DASHBOARD: `${BASE_URL}/api/admin/dashboard/stats`,
         PRODUCTS: `${BASE_URL}/api/admin/products`,
+        SHIPPING_PROVIDERS: `${BASE_URL}/api/admin/shipping-providers`,
         ORDERS: `${BASE_URL}/api/admin/orders`,
         USERS: `${BASE_URL}/api/admin/users`,
         SHOP_SETTINGS: `${BASE_URL}/api/admin/shop-settings`,
         SYSTEM_LOG: `${BASE_URL}/api/admin/system-log`,
         INVENTORY_LOG: `${BASE_URL}/api/admin/inv-log`,
         REPORTS: `${BASE_URL}/api/admin/reports/sales`,
-        SHIPPING_PROVIDERS: `${BASE_URL}/api/admin/shipping-providers`,
     }
 };
 

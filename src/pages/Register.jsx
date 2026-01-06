@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, Loader2, Home, UserPlus } from 'lucide-react';
-import { FcGoogle } from 'react-icons/fc';
 import toast, { Toaster } from 'react-hot-toast';
 
 import axiosInstance from '../api/axiosInstance';
@@ -10,17 +9,15 @@ import { API_ENDPOINTS } from '../api/config';
 const Register = () => {
     const [formData, setFormData] = useState({ first_name: '', last_name: '', email: '', password: '' });
     const [loading, setLoading] = useState(false);
-    const [shopName, setShopName] = useState('SOOO GUICHAI'); // ค่าเริ่มต้น
+    const [shopName, setShopName] = useState('กรุณาใส่ชื่อร้าน'); 
     const navigate = useNavigate();
 
-    // ✅ 1. ดึงชื่อร้านค้าผ่าน Endpoint /public เหมือนที่ Footer และ Login ทำ
     useEffect(() => {
         const fetchShopInfo = async () => {
             try {
                 const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
                 if (res.success && res.data) {
                     const d = res.data;
-                    // ดึงค่า shop_name จากฐานข้อมูล
                     if (d.shop_name && d.shop_name !== "EMPTY") {
                         setShopName(d.shop_name); 
                     }
@@ -36,14 +33,11 @@ const Register = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            // Normalize อีเมลให้เป็นตัวพิมพ์เล็กเสมอ
             const normalizedData = {
                 ...formData,
                 email: formData.email.toLowerCase().trim()
             };
-
             const res = await axiosInstance.post(`${API_ENDPOINTS.AUTH}/register`, normalizedData);
-            
             if (res.success) {
                 toast.success("สมัครสมาชิกสำเร็จ!");
                 setTimeout(() => navigate('/login'), 1500);
@@ -55,152 +49,110 @@ const Register = () => {
         }
     };
 
-    const handleGoogleLogin = () => {
-        window.location.href = `${API_ENDPOINTS.AUTH}/google`;
-    };
-
     return (
-        <div className="register-wrapper">
+        <div className="min-h-screen bg-[#ffffff] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-['Kanit'] overflow-x-hidden">
             <Toaster position="top-right" />
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500;600;700;800&display=swap');
+            
+            {/* Main Register Card */}
+            <div className="w-full max-w-xl bg-white p-8 sm:p-12 md:p-14 rounded-[40px] md:rounded-[60px] border border-slate-50 shadow-[0_20px_70px_rgba(0,0,0,0.03)] relative animate-in fade-in zoom-in duration-500">
                 
-                :root {
-                    --navy: #1B2559;
-                    --gold: #C5A059;
-                    --bg-soft: #F4F7FE;
-                }
+                {/* Back Home Button */}
+                <Link to="/" className="absolute top-8 left-8 sm:top-12 sm:left-12 flex items-center gap-2 text-slate-400 hover:text-slate-900 font-bold text-xs uppercase tracking-widest transition-all hover:-translate-x-1">
+                    <Home size={16} /> Home
+                </Link>
 
-                .register-wrapper { 
-                    display: flex; justify-content: center; align-items: center; 
-                    min-height: 100vh; background: var(--bg-soft); 
-                    font-family: 'Kanit', sans-serif; padding: 20px; box-sizing: border-box;
-                }
+                <div className="text-center mt-6">
+                    {/* Header Icon */}
+                    <div className="inline-flex p-5 sm:p-6 bg-slate-50 rounded-[25px] sm:rounded-[30px] border border-slate-100 text-blue-600 mb-6 shadow-sm">
+                        <UserPlus size={40} strokeWidth={2.5} className="sm:w-12 sm:h-12" />
+                    </div>
 
-                .register-card { 
-                    background: #fff; padding: 45px 35px; border-radius: 40px; 
-                    box-shadow: 0 40px 80px -15px rgba(27, 37, 89, 0.15); 
-                    width: 100%; max-width: 480px; text-align: center;
-                    border: 1px solid rgba(197, 160, 89, 0.25); position: relative;
-                }
-
-                .back-home {
-                    position: absolute; top: 30px; left: 35px; color: var(--navy);
-                    text-decoration: none; display: flex; align-items: center; gap: 8px;
-                    font-size: 14px; font-weight: 600; opacity: 0.6; transition: 0.3s;
-                }
-                .back-home:hover { opacity: 1; color: var(--gold); transform: translateX(-3px); }
-
-                .brand-icon { 
-                    display: inline-flex; padding: 20px; background: rgba(27, 37, 89, 0.04); 
-                    border-radius: 28px; margin-bottom: 20px; color: var(--gold); 
-                }
-
-                h2 { font-weight: 800; font-size: 28px; color: var(--navy); margin: 0; }
-                .shop-display { color: var(--gold); font-size: 14px; font-weight: 600; margin-top: 5px; text-transform: uppercase; letter-spacing: 2px; }
-
-                .form-area { margin-top: 35px; }
-                .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-                .input-group { text-align: left; margin-bottom: 20px; }
-                .input-group label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 700; color: var(--navy); margin-left: 5px; }
-
-                .input-box { position: relative; display: flex; align-items: center; }
-                .input-box svg { position: absolute; left: 18px; color: var(--navy); opacity: 0.4; }
-                
-                .reg-input { 
-                    width: 100%; padding: 15px 15px 15px 48px; border-radius: 18px; 
-                    border: 2px solid #E2E8F0; background: #F8FAFC; font-family: 'Kanit'; 
-                    font-size: 15px; outline: none; transition: 0.4s; box-sizing: border-box;
-                }
-                .reg-input:focus { border-color: var(--gold); background: #fff; box-shadow: 0 10px 25px -5px rgba(197, 160, 89, 0.15); }
-
-                .submit-btn { 
-                    width: 100%; padding: 18px; background: linear-gradient(135deg, #1B2559 0%, #11183A 100%); 
-                    color: #fff; border: none; border-radius: 22px; font-size: 17px; font-weight: 700; 
-                    cursor: pointer; display: flex; justify-content: center; align-items: center; 
-                    gap: 12px; transition: 0.3s; box-shadow: 0 15px 30px -10px rgba(27, 37, 89, 0.3);
-                }
-                .submit-btn:hover { transform: translateY(-3px); box-shadow: 0 20px 35px -10px rgba(27, 37, 89, 0.4); }
-
-                .divider { display: flex; align-items: center; margin: 25px 0; color: #A0AEC0; font-size: 12px; font-weight: 600; }
-                .divider::before, .divider::after { content: ""; flex: 1; height: 1.5px; background: #E2E8F0; }
-                .divider span { padding: 0 15px; }
-
-                .google-btn { 
-                    width: 100%; padding: 14px; border: 2.5px solid #F4F7FE; border-radius: 20px; 
-                    background: #fff; cursor: pointer; display: flex; justify-content: center; 
-                    align-items: center; gap: 12px; font-weight: 700; font-family: 'Kanit'; 
-                    transition: 0.2s; color: var(--navy);
-                }
-                .google-btn:hover { border-color: var(--gold); background: #F8FAFC; }
-
-                .login-link { margin-top: 30px; font-size: 14px; color: #718096; }
-                .login-link a { color: var(--gold); font-weight: 800; text-decoration: none; }
-
-                @media (max-width: 480px) {
-                    .input-row { grid-template-columns: 1fr; gap: 0; }
-                    .register-card { padding: 50px 25px 40px; }
-                }
-            `}</style>
-
-            <div className="register-card">
-                <Link to="/" className="back-home"><Home size={18}/> หน้าหลัก</Link>
-                
-                <div className="brand-icon">
-                    <UserPlus size={40} />
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tighter mb-1">Join Us</h2>
+                    <p className="text-blue-600 font-black text-sm sm:text-base uppercase tracking-widest italic">{shopName}</p>
                 </div>
-                
-                <h2>สมัครสมาชิก</h2>
-                <div className="shop-display">{shopName}</div>
 
-                <form onSubmit={handleRegister} className="form-area">
-                    <div className="input-row">
-                        <div className="input-group">
-                            <label>ชื่อ</label>
-                            <div className="input-box">
-                                <User size={18} />
-                                <input className="reg-input" type="text" placeholder="ชื่อ" onChange={(e) => setFormData({...formData, first_name: e.target.value})} required />
+                <form onSubmit={handleRegister} className="mt-10 sm:mt-12 space-y-5">
+                    
+                    {/* First & Last Name Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">First Name</label>
+                            <div className="relative flex items-center group">
+                                <User className="absolute left-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+                                <input 
+                                    className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent outline-none font-bold text-slate-900 transition-all focus:border-blue-600 focus:bg-white"
+                                    type="text" 
+                                    placeholder="ชื่อ" 
+                                    onChange={(e) => setFormData({...formData, first_name: e.target.value})} 
+                                    required 
+                                />
                             </div>
                         </div>
-                        <div className="input-group">
-                            <label>นามสกุล</label>
-                            <div className="input-box">
-                                <User size={18} />
-                                <input className="reg-input" type="text" placeholder="นามสกุล" onChange={(e) => setFormData({...formData, last_name: e.target.value})} required />
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Last Name</label>
+                            <div className="relative flex items-center group">
+                                <User className="absolute left-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+                                <input 
+                                    className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent outline-none font-bold text-slate-900 transition-all focus:border-blue-600 focus:bg-white"
+                                    type="text" 
+                                    placeholder="นามสกุล" 
+                                    onChange={(e) => setFormData({...formData, last_name: e.target.value})} 
+                                    required 
+                                />
                             </div>
                         </div>
                     </div>
 
-                    <div className="input-group">
-                        <label>อีเมล</label>
-                        <div className="input-box">
-                            <Mail size={18} />
-                            <input className="reg-input" type="email" placeholder="example@mail.com" onChange={(e) => setFormData({...formData, email: e.target.value})} required />
+                    {/* Email Input */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Email Address</label>
+                        <div className="relative flex items-center group">
+                            <Mail className="absolute left-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+                            <input 
+                                className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent outline-none font-bold text-slate-900 transition-all focus:border-blue-600 focus:bg-white"
+                                type="email" 
+                                placeholder="example@mail.com" 
+                                onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                                required 
+                            />
                         </div>
                     </div>
 
-                    <div className="input-group">
-                        <label>รหัสผ่าน</label>
-                        <div className="input-box">
-                            <Lock size={18} />
-                            <input className="reg-input" type="password" placeholder="อย่างน้อย 6 ตัวอักษร" onChange={(e) => setFormData({...formData, password: e.target.value})} required />
+                    {/* Password Input */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Password</label>
+                        <div className="relative flex items-center group">
+                            <Lock className="absolute left-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+                            <input 
+                                className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent outline-none font-bold text-slate-900 transition-all focus:border-blue-600 focus:bg-white"
+                                type="password" 
+                                placeholder="อย่างน้อย 6 ตัวอักษร" 
+                                onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                                required 
+                            />
                         </div>
                     </div>
 
-                    <button className="submit-btn" type="submit" disabled={loading}>
-                        {loading ? <Loader2 className="animate-spin" size={24} /> : <>สร้างบัญชีสมาชิก <ArrowRight size={22} /></>}
+                    {/* Submit Button */}
+                    <button 
+                        className="w-full py-5 bg-slate-900 text-white rounded-[25px] font-black text-lg flex justify-center items-center gap-3 transition-all hover:bg-black hover:-translate-y-1 shadow-xl shadow-slate-100 mt-6 disabled:bg-slate-200 disabled:cursor-not-allowed"
+                        type="submit" 
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <Loader2 className="animate-spin" size={24} />
+                        ) : (
+                            <>Create Account <ArrowRight size={22} /></>
+                        )}
                     </button>
                 </form>
 
-                <div className="divider"><span>หรือสมัครผ่าน</span></div>
-
-                <button className="google-btn" type="button" onClick={handleGoogleLogin}>
-                    <FcGoogle size={24} /> Google Account
-                </button>
-
-                <div className="login-link">
-                    มีบัญชีอยู่แล้ว? <Link to="/login">เข้าสู่ระบบที่นี่</Link>
+                {/* Login Link */}
+                <div className="mt-10 text-center text-slate-400 font-bold text-sm">
+                    Already have an account? 
+                    <Link to="/login" className="ml-2 text-blue-600 font-black hover:underline underline-offset-4 transition-all">Sign In</Link>
                 </div>
+
             </div>
         </div>
     );
