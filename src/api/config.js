@@ -1,5 +1,5 @@
 // 1. กำหนด BASE_URL ก่อน
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://your-backend-vercel-url.vercel.app';
 
 // 2. ประกาศตัวแปร API_ENDPOINTS
 export const API_ENDPOINTS = {
