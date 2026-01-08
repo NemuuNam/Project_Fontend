@@ -49,6 +49,11 @@ const Checkout = ({ userData }) => {
         return cleaned;
     };
 
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        toast.success("คัดลอกเลขบัญชีแล้ว", { style: { borderRadius: '15px', background: '#2D241E', color: '#fff' } });
+    };
+
     // --- 🧮 การคำนวณยอดรวม ---
     const { subtotal, shippingCost, isFreeShipping, totalAmount, totalItemsCount } = useMemo(() => {
         const sub = cartItems.reduce((acc, item) => acc + (Number(item.unit_price) * item.quantity), 0);
@@ -124,6 +129,7 @@ const Checkout = ({ userData }) => {
         }
     };
 
+    // --- 🚀 แก้ไขฟังก์ชัน handleSubmitOrder ---
     const handleSubmitOrder = async () => {
         if (!validateForm()) {
             toast.error("กรุณาตรวจสอบข้อมูลให้ถูกต้อง");
@@ -131,27 +137,63 @@ const Checkout = ({ userData }) => {
         }
         try {
             Swal.fire({ title: 'กำลังประมวลผล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
             let finalAddressId = selectedAddressId;
+
+            // ✨ แก้ไขจุด Error 500: Clean ข้อมูลที่อยู่ก่อนส่ง
             if (isAddingNew) {
-                const addrRes = await axiosInstance.post(API_ENDPOINTS.ADDRESSES, addressForm);
-                finalAddressId = addrRes.data.address_id;
+                const cleanedAddressData = {
+                    recipient_name: addressForm.recipient_name.trim(),
+                    phone_number: addressForm.phone_number.replace(/\D/g, ''), // ลบขีดออกให้เหลือ 10 หลัก
+                    address_detail: addressForm.address_detail.trim()
+                };
+
+                const addrRes = await axiosInstance.post(API_ENDPOINTS.ADDRESSES, cleanedAddressData);
+                
+                if (addrRes.success) {
+                    finalAddressId = addrRes.data.address_id;
+                } else {
+                    throw new Error(addrRes.message || "ไม่สามารถบันทึกที่อยู่ได้");
+                }
             }
+
             const formData = new FormData();
             formData.append('slip', slipFile);
             formData.append('order_data', JSON.stringify({
                 address_id: finalAddressId,
                 total_amount: totalAmount,
                 shipping_cost: shippingCost,
-                items: cartItems.map(i => ({ product_id: i.product_id, quantity: i.quantity, price: i.unit_price }))
+                items: cartItems.map(i => ({ 
+                    product_id: i.product_id, 
+                    quantity: i.quantity, 
+                    price: i.unit_price 
+                }))
             }));
-            const res = await axiosInstance.post(API_ENDPOINTS.ORDERS, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+
+            const res = await axiosInstance.post(API_ENDPOINTS.ORDERS, formData, { 
+                headers: { 'Content-Type': 'multipart/form-data' } 
+            });
+
             if (res.success) {
                 localStorage.removeItem('cart');
                 window.dispatchEvent(new Event('storage'));
-                Swal.fire({ icon: 'success', title: 'สั่งซื้อสำเร็จ!', confirmButtonColor: '#2D241E' }).then(() => navigate('/my-orders'));
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'สั่งซื้อสำเร็จ!', 
+                    text: 'เราได้รับออเดอร์ของคุณเรียบร้อยแล้ว',
+                    confirmButtonColor: '#2D241E',
+                    customClass: { popup: 'rounded-[3rem] font-["Kanit"]' }
+                }).then(() => navigate('/my-orders'));
             }
         } catch (err) {
-            Swal.fire({ icon: 'error', title: 'ขออภัย!', text: err.response?.data?.message || 'เกิดข้อผิดพลาด' });
+            console.error("Order Error:", err);
+            Swal.fire({ 
+                icon: 'error', 
+                title: 'ขออภัย!', 
+                text: err.response?.data?.message || 'เกิดข้อผิดพลาดในการสั่งซื้อ กรุณาลองใหม่อีกครั้ง',
+                confirmButtonColor: '#2D241E',
+                customClass: { popup: 'rounded-[3rem] font-["Kanit"]' }
+            });
         }
     };
 
@@ -332,6 +374,13 @@ const Checkout = ({ userData }) => {
                 </div>
             </main>
             <Footer />
+
+            <style dangerouslySetInnerHTML={{ __html: `
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #F3E9DC; border-radius: 10px; }
+                @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+                .animate-bounce-slow { animation: bounce-slow 4s ease-in-out infinite; }
+            `}} />
         </div>
     );
 };
