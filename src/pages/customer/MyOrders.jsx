@@ -386,11 +386,11 @@ const MyOrders = ({ userData }) => {
                                 <button onClick={() => setSelectedOrder(null)} className="p-4 bg-white text-[#2D241E]/30 hover:text-[#2D241E] rounded-full transition-all border border-slate-100"><X size={24}/></button>
                             </div>
                             <div className="bg-slate-50/50 rounded-[3rem] p-10 mb-12 border border-white">
-                                <p className="text-[10px] font-black text-[#2D241E]/40 uppercase tracking-[0.4em] mb-4">สถานะการจัดส่ง / เลขพัสดุ</p>
+                                <p className="text-[20px] font-black text-[#2D241E]/40 uppercase tracking-[0.4em] mb-4">สถานะการจัดส่ง / เลขพัสดุ</p>
                                 <p className="text-3xl md:text-4xl font-black italic text-[#2D241E] uppercase leading-tight">{selectedOrder.tracking_number || 'กำลังจัดเตรียมพัสดุของคุณ'}</p>
                             </div>
                             <div className="space-y-10">
-                                <h4 className="text-[10px] font-black text-[#2D241E]/40 uppercase tracking-[0.5em] border-b border-slate-50 pb-6 ml-2">รายการสินค้าในกล่อง</h4>
+                                <h4 className="text-[20px] font-black text-[#2D241E]/40 uppercase tracking-[0.5em] border-b border-slate-50 pb-6 ml-2">รายการสินค้าในกล่อง</h4>
                                 {selectedOrder.items?.map(item => (
                                     <div key={item.item_id} className="flex items-center justify-between group">
                                         <div className="flex items-center gap-6 md:gap-8">
@@ -399,7 +399,7 @@ const MyOrders = ({ userData }) => {
                                             </div>
                                             <div>
                                                 <p className="font-black text-[#2D241E] text-xl md:text-2xl tracking-tighter uppercase leading-none italic">{item.product?.product_name}</p>
-                                                <p className="text-[#2D241E]/40 font-bold uppercase text-[10px] tracking-widest mt-3">จำนวน: {item.quantity}</p>
+                                                <p className="text-[#2D241E]/40 font-bold uppercase text-[15px] tracking-widest mt-3">จำนวน: {item.quantity}</p>
                                             </div>
                                         </div>
                                         <p className="font-black text-[#2D241E] text-xl md:text-2xl tracking-tighter">฿{(item.price_at_order * item.quantity).toLocaleString()}</p>
@@ -410,31 +410,31 @@ const MyOrders = ({ userData }) => {
                         <div className="w-full md:w-[420px] bg-white p-8 lg:p-16 flex flex-col justify-between border-l border-slate-50 relative z-10">
                             <div className="space-y-12">
                                 <div className="space-y-6">
-                                    <p className="text-[10px] font-black text-[#2D241E]/40 uppercase tracking-[0.4em] ml-2">ที่อยู่จัดส่ง</p>
+                                    <p className="text-[20px] font-black text-[#2D241E]/40 uppercase tracking-[0.4em] ml-2">ที่อยู่จัดส่ง</p>
                                     <div className="bg-[#fff] p-8 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden group">
                                         <MapPin className="absolute -right-4 -bottom-4 opacity-[0.03] text-[#2D241E] rotate-12 transition-transform group-hover:scale-110" size={100}/>
                                         <p className="font-black text-[#2D241E] text-xl mb-3 italic leading-none">{selectedOrder.address?.recipient_name}</p>
-                                        <p className="text-[#2D241E]/60 leading-relaxed font-light text-xs mb-8 italic">"{selectedOrder.address?.address_detail}"</p>
+                                        <p className="text-[#2D241E]/60 leading-relaxed font-light text-sm mb-8 italic">"{selectedOrder.address?.address_detail}"</p>
                                         <div className="flex items-center gap-3 text-[#2D241E] font-black text-sm bg-slate-50/50 px-5 py-3 rounded-2xl w-fit border border-white"><Phone size={14}/> {selectedOrder.address?.phone_number}</div>
                                     </div>
                                 </div>
                                 <div className="pt-8 border-t border-slate-50 space-y-4">
-                                    <div className="flex justify-between font-black text-[#2D241E]/30 text-[10px] uppercase tracking-widest"><span>ยอดรวมสินค้า</span><span className="text-[#2D241E]">฿{(Number(selectedOrder.total_amount) - Number(selectedOrder.shipping_cost)).toLocaleString()}</span></div>
-                                    <div className="flex justify-between font-black text-[#2D241E]/30 text-[10px] uppercase tracking-widest">
+                                    <div className="flex justify-between font-black text-[#2D241E]/30 text-[20px] uppercase tracking-widest"><span>ยอดรวมสินค้า</span><span className="text-[#2D241E] text-[20px]">฿{(Number(selectedOrder.total_amount) - Number(selectedOrder.shipping_cost)).toLocaleString()}</span></div>
+                                    <div className="flex justify-between font-black text-[#2D241E]/30 text-[20px] uppercase tracking-widest">
                                         <span>ค่าจัดส่ง</span>
                                         {Number(selectedOrder.shipping_cost) > 0 ? (
-                                            <span className="text-[#2D241E]">฿{Number(selectedOrder.shipping_cost).toLocaleString()}</span>
+                                            <span className="text-[#2D241E] text-[20px]">฿{Number(selectedOrder.shipping_cost).toLocaleString()}</span>
                                         ) : (
                                             <span className="text-green-500 italic">ฟรี</span>
                                         )}
                                     </div>
                                     <div className="flex justify-between items-end pt-8">
-                                        <span className="text-6xl font-black text-[#2D241E] tracking-tighter italic leading-none">สุทธิ.</span>
+                                        <span className="text-4xl font-black text-[#2D241E] tracking-tighter italic leading-none">สุทธิ.</span>
                                         <span className="text-4xl font-black text-[#2D241E] tracking-tighter">฿{Number(selectedOrder.total_amount).toLocaleString()}</span>
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={() => setSelectedOrder(null)} className="w-full py-6 bg-[#fff] border border-[#2D241E] text-[#2D241E] rounded-full font-black uppercase tracking-widest text-[11px] shadow-sm hover:bg-[#2D241E] hover:text-[#fff] transition-all mt-10">กลับไปหน้ารวม</button>
+                            <button onClick={() => setSelectedOrder(null)} className="w-full py-6 bg-[#fff] border border-[#2D241E] text-[#2D241E] rounded-full font-black uppercase tracking-widest text-[15px] shadow-sm hover:bg-[#2D241E] hover:text-[#fff] transition-all mt-10">กลับไปหน้ารวม</button>
                         </div>
                     </div>
                 </div>
