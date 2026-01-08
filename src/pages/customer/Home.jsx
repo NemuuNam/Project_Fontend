@@ -1,267 +1,236 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Edit3, ArrowRight, ShoppingBag, X, Loader2, Save, Settings,
-  Star, Image as ImageIcon, Heart, Plus, Quote, MapPin, Clock, 
-  Phone, MessageCircle 
+  Edit3, X, Loader2, Save, Settings,
+  Star, ImageIcon, Heart, Plus, MessageCircle, 
+  Quote, MoveRight, Trash2, ChevronLeft, 
+  ChevronRight, Sparkles, Leaf, Cookie, Utensils, Smile, 
+  MapPin, Phone, Instagram, Send, Navigation, Compass
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
-// --- API Config & Axios ---
 import axiosInstance from '../../api/axiosInstance';
 import { API_ENDPOINTS } from '../../api/config';
-
-// --- Components ---
 import HeaderHome from '../../components/HeaderHome';
 import Footer from '../../components/Footer';
 
 const Home = ({ userData }) => {
   const navigate = useNavigate();
 
-  // --- States ---
+  // --- 📦 Data States ---
   const [products, setProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [wishlistedIds, setWishlistedIds] = useState([]);
   const [homeData, setHomeData] = useState({
-    hero_title: 'SOOO GUICHAI',
-    hero_subtitle: 'PREMIUM GUICHAI RECIPE',
-    hero_description: '',
-    hero_image_url: '',
-    promotion_text: '',
-    address: 'กำลังโหลดข้อมูลที่อยู่ร้าน...'
+    hero_title: 'เติมเต็มความหวานให้วันพิเศษของคุณ',
+    hero_subtitle: 'รังสรรค์ด้วยความใส่ใจ',
+    hero_description: 'คุกกี้และขนมโฮมเมด อบสดใหม่จากเตาทุกวัน เพื่อส่งมอบความสุขผ่านรสชาติที่กลมกล่อมและวัตถุดิบชั้นเลิศ',
+    shop_address: 'กำลังโหลดข้อมูลที่ตั้งร้าน...',
+    shop_phone: '',
+    line_url: ''
   });
 
+  const [heroImages, setHeroImages] = useState([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
+  
+  // --- 🛠️ Admin States ---
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [newHeroFiles, setNewHeroFiles] = useState([]);
+  const [newPreviews, setNewPreviews] = useState([]);
 
-  // ตรวจสอบสิทธิ์
-  const isAdminManager = userData && [1, 2].includes(Number(userData.role_level));
   const isStaff = userData && [1, 2, 3].includes(Number(userData.role_level));
 
-  // 1. ดึงข้อมูลหน้าเว็บ
+  // --- 🔄 Data Fetching ---
   const initPage = useCallback(async () => {
     try {
       setLoading(true);
-      const [homeRes, prodRes, publicRes, reviewRes] = await Promise.allSettled([
+      const [homeRes, prodRes, publicRes, reviewRes, wishRes] = await Promise.allSettled([
         axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/home`),
-        axiosInstance.get(API_ENDPOINTS.ADMIN.PRODUCTS),
+        axiosInstance.get(API_ENDPOINTS.PRODUCTS),
         axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`),
-        axiosInstance.get(API_ENDPOINTS.REVIEWS)
+        axiosInstance.get('/api/reviews/all'),
+        userData ? axiosInstance.get('/api/wishlist') : Promise.resolve({ success: true, data: [] })
       ]);
 
-      if (homeRes.status === 'fulfilled' && homeRes.value.success) setHomeData(prev => ({ ...prev, ...homeRes.value.data }));
-      
-      if (prodRes.status === 'fulfilled' && prodRes.value.success) {
-        const pData = prodRes.value.data || prodRes.value;
-        setProducts(Array.isArray(pData) ? pData.slice(0, 4) : []);
+      if (homeRes.status === 'fulfilled' && homeRes.value.success) {
+        const data = homeRes.value.data;
+        setHomeData(prev => ({ ...prev, ...data }));
+        try {
+          const parsed = JSON.parse(data.hero_image_url || '[]');
+          setHeroImages(Array.isArray(parsed) ? parsed : []);
+        } catch (e) { setHeroImages([]); }
       }
-
-      if (publicRes.status === 'fulfilled' && publicRes.value.success) setHomeData(prev => ({ ...prev, address: publicRes.value.data.address }));
+      
+      if (prodRes.status === 'fulfilled' && prodRes.value.success) setProducts((prodRes.value.data || []).slice(0, 4));
+      
+      if (publicRes.status === 'fulfilled' && publicRes.value.success) {
+        const d = publicRes.value.data;
+        setHomeData(prev => ({ 
+            ...prev, 
+            shop_address: d.contact_address || d.address, 
+            shop_phone: d.contact_phone || d.phone, 
+            line_url: d.line_url 
+        }));
+      }
 
       if (reviewRes.status === 'fulfilled' && reviewRes.value.success) {
-        const rData = reviewRes.value.data || reviewRes.value;
-        setReviews(Array.isArray(rData) ? rData.slice(0, 3) : []);
+        setReviews((reviewRes.value.data || []).slice(0, 3));
       }
-    } catch (err) {
-      console.error("Fetch Error:", err);
-    } finally {
-      setLoading(false);
+
+      if (wishRes.status === 'fulfilled' && wishRes.value.success) {
+        setWishlistedIds((wishRes.value.data || []).map(w => w.product_id));
+      }
+    } catch (err) { 
+      console.error("Initialization failed", err); 
+    } finally { 
+      setLoading(false); 
     }
-  }, []);
+  }, [userData]);
 
   useEffect(() => { initPage(); }, [initPage]);
 
-  // 2. ระบบจัดการตะกร้าสินค้า
-  const addToCart = (product) => {
-    if (product.stock_quantity <= 0) return toast.error("ขออภัย สินค้าหมดชั่วคราว");
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const existing = cart.find(item => item.product_id === product.product_id);
-    
-    if (existing) {
-        if (existing.quantity + 1 > product.stock_quantity) return toast.error("สินค้าในสต็อกไม่พอ");
-        existing.quantity += 1;
-    } else {
-        cart.push({ 
-            product_id: product.product_id, 
-            name: product.product_name, 
-            price: product.unit_price, 
-            image: product.images?.[0]?.image_url || '/placeholder.png', 
-            quantity: 1 
-        });
-    }
-    
-    localStorage.setItem('cart', JSON.stringify(cart));
-    window.dispatchEvent(new Event('storage')); 
-    toast.success(`เพิ่ม ${product.product_name} ลงตะกร้าแล้ว`);
+  // --- 🎠 Slider Logic ---
+  const nextSlide = useCallback(() => {
+    if (heroImages.length <= 1) return;
+    setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+  }, [heroImages.length]);
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + heroImages.length) % heroImages.length);
   };
 
-  // 3. Admin Actions
-  const handleSavePromotion = async () => {
-    setIsUpdating(true);
-    try {
-      await axiosInstance.put(API_ENDPOINTS.ADMIN.SHOP_SETTINGS, { promotion_text: homeData.promotion_text });
-      toast.success("บันทึกประกาศสำเร็จ!");
-    } catch (err) { toast.error("ล้มเหลว"); }
-    finally { setIsUpdating(false); }
-  };
+  useEffect(() => {
+    const timer = setInterval(nextSlide, 6000);
+    return () => clearInterval(timer);
+  }, [nextSlide]);
 
-  const handleHeroUpdate = async (e) => {
+  // --- ✍️ Handlers ---
+  const handleUpdateContent = async (e) => {
     e.preventDefault();
     setIsUpdating(true);
     const formData = new FormData();
     formData.append('hero_title', homeData.hero_title);
     formData.append('hero_subtitle', homeData.hero_subtitle);
     formData.append('hero_description', homeData.hero_description);
-    if (selectedFile) formData.append('image', selectedFile);
+    formData.append('images_to_delete', JSON.stringify(imagesToDelete));
+    newHeroFiles.forEach(file => formData.append('hero_image_url', file));
 
     try {
-      const res = await axiosInstance.put(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/home`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const res = await axiosInstance.put(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/home`, formData);
       if (res.success) {
+        toast.success('อัปเดตข้อมูลเรียบร้อยแล้ว ✨');
         setIsEditModalOpen(false);
         initPage();
-        Swal.fire({ title: 'สำเร็จ!', text: 'อัปเดตหน้าแรกเรียบร้อย', icon: 'success' });
       }
-    } catch (err) { toast.error("เกิดข้อผิดพลาด"); }
-    finally { setIsUpdating(false); }
+    } catch (err) {
+      toast.error("บันทึกข้อมูลไม่สำเร็จ");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) { setSelectedFile(file); setPreviewUrl(URL.createObjectURL(file)); }
+  const addToCart = (p) => {
+    if (p.stock_quantity <= 0) return toast.error("สินค้าหมดชั่วคราว");
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    cart.push({ ...p, quantity: 1 });
+    localStorage.setItem('cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('storage')); 
+    toast.success(`เพิ่ม ${p.product_name} ลงตะกร้าแล้ว! 🍪`);
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-slate-900" size={60} /></div>;
+  if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={40} /></div>;
 
   return (
-    <div className="min-h-screen bg-white font-['Kanit'] text-slate-900 selection:bg-slate-100">
-      <Toaster position="top-right" />
+    <div className="min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden selection:bg-[#F3E9DC] relative">
+      
+      {/* ☁️ Global Cozy Patterns (Background Icons) */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <Leaf className="absolute top-[10%] left-[-5%] text-[#2D241E] opacity-[0.02] rotate-12" size={300} />
+        <Cookie className="absolute top-[60%] right-[-5%] text-[#2D241E] opacity-[0.03] -rotate-12" size={250} />
+        <Smile className="absolute bottom-[5%] left-[10%] text-[#2D241E] opacity-[0.02]" size={200} />
+      </div>
+
+      <Toaster position="bottom-right" />
       <HeaderHome userData={userData} />
 
-      {/* --- 1. Admin Control Bar (Light Mode) --- */}
-      {isAdminManager && (
-        <div className="bg-white/90 backdrop-blur-lg py-4 px-6 sticky top-[72px] z-40 border-b border-slate-100 shadow-sm">
-          <div className="container mx-auto flex items-center justify-between gap-4">
-            <div className="hidden md:flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400"><Settings size={18} /> Shop Manager</div>
-            <input 
-              type="text" 
-              className="flex-1 max-w-xl px-5 py-3 rounded-xl bg-slate-50 text-slate-900 text-base outline-none focus:bg-white border border-slate-100 focus:border-slate-300 transition-all" 
-              placeholder="ประกาศด่วนถึงลูกค้า..." 
-              value={homeData.promotion_text || ''} 
-              onChange={(e) => setHomeData({...homeData, promotion_text: e.target.value})} 
-            />
-            <button onClick={handleSavePromotion} disabled={isUpdating} className="bg-white border border-slate-200 text-slate-900 px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm active:scale-95">
-               {isUpdating ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} บันทึก
+      {/* --- 🛠️ Admin Tool --- */}
+      {isStaff && (
+        <div className="bg-white/80 py-4 flex justify-center backdrop-blur-md sticky top-[72px] z-[90] border-b border-slate-100">
+            <button onClick={() => setIsEditModalOpen(true)} className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#2D241E] bg-white px-8 py-2.5 rounded-full shadow-sm border border-slate-100 active:scale-95 transition-all">
+                <Settings size={14} className={isUpdating ? "animate-spin" : ""} /> 
+                {isUpdating ? "กำลังบันทึก..." : "โหมดปรับแต่งหน้าเว็บ"}
+            </button>
+        </div>
+      )}
+
+      {/* --- 🥧 Hero Section --- */}
+      <section className="relative min-h-[85vh] flex flex-col lg:flex-row items-center px-6 lg:px-24 py-12 lg:py-0 bg-white z-10">
+        <div className="w-full lg:w-1/2 space-y-8 text-center lg:text-left order-2 lg:order-1 mt-12 lg:mt-0">
+          <div className="inline-flex items-center gap-3 px-6 py-2 bg-white rounded-full shadow-sm border border-slate-50 text-[#8B7E66]">
+            <Sparkles size={14} className="text-[#D97706]" />
+            <span className="text-[10px] font-bold tracking-[0.4em] uppercase">{homeData.hero_subtitle}</span>
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[1.1] text-[#2D241E] tracking-tighter">
+            {homeData.hero_title}
+          </h1>
+
+          <p className="max-w-md mx-auto lg:mx-0 text-[#2D241E]/60 text-lg lg:text-xl leading-relaxed font-light">
+            {homeData.hero_description}
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-4">
+            <button onClick={() => navigate('/products')} className="w-full sm:w-auto bg-white text-[#2D241E] px-14 py-5 rounded-full font-bold text-xs shadow-lg hover:shadow-xl border border-slate-100 hover:-translate-y-1 transition-all uppercase tracking-widest">
+              เริ่มสั่งซื้อขนม
+            </button>
+            <button className="group flex items-center gap-4 font-bold text-xs text-[#2D241E] uppercase tracking-widest hover:text-[#8B7E66] transition-colors py-3">
+              เรื่องราวของเรา <MoveRight size={18} className="group-hover:translate-x-3 transition-transform" />
             </button>
           </div>
         </div>
-      )}
 
-      {/* --- 2. Promotion Banner (ตัวอักษรใหญ่ชัดเจน) --- */}
-      {homeData.promotion_text && (
-        <div className="bg-slate-50 py-5 px-4 text-center font-bold text-2xl border-b border-slate-100 text-slate-700">
-          <span className="inline-block animate-pulse mr-3 text-slate-900">📢</span> {homeData.promotion_text}
-        </div>
-      )}
-
-      {/* --- 3. Hero Section (Modern White & Large Font) --- */}
-      <section className="relative pt-16 pb-24 lg:pt-28 lg:pb-36 px-6 bg-white">
-        <div className="container mx-auto flex flex-col lg:flex-row items-center gap-20 relative z-10">
-          <div className="lg:w-[50%] text-center lg:text-left space-y-12 order-2 lg:order-1">
-            {isStaff && (
-              <button onClick={() => setIsEditModalOpen(true)} className="inline-flex items-center gap-2 bg-white border border-slate-200 px-6 py-3 rounded-full text-sm font-bold text-slate-400 hover:text-slate-900 transition-all shadow-sm">
-                <Edit3 size={18} /> ปรับแต่งหน้าเว็บไซต์
-              </button>
-            )}
-            <div className="space-y-8">
-              <span className="text-slate-400 font-bold text-lg tracking-[0.5em] uppercase block">{homeData.hero_subtitle}</span>
-              <h1 className="text-6xl md:text-8xl lg:text-9xl font-black leading-[0.95] tracking-tighter text-slate-900">
-                {homeData.hero_title.split(' ')[0]} <br />
-                <span className="text-slate-200 italic">{homeData.hero_title.split(' ').slice(1).join(' ')}</span>
-              </h1>
-              <p className="text-slate-500 text-2xl md:text-3xl max-w-xl mx-auto lg:mx-0 font-light leading-relaxed">
-                {homeData.hero_description || 'พรีเมียมกุยช่าย สูตรดั้งเดิมที่ถูกยกระดับความอร่อยเพื่อคุณ ส่งตรงความสดใหม่ทุกวัน'}
-              </p>
+        <div className="w-full lg:w-1/2 h-[45vh] lg:h-[75vh] relative order-1 lg:order-2">
+            <div className="absolute inset-0 bg-white rounded-[4rem] lg:rounded-[6rem] shadow-2xl overflow-hidden border-[12px] border-white group">
+              {heroImages.length > 0 ? heroImages.map((url, idx) => (
+                <img key={url} src={url} alt="Display" className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1500ms] ease-in-out ${idx === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`} />
+              )) : (
+                <div className="flex flex-col items-center justify-center h-full bg-slate-50/50"><ImageIcon size={40} className="text-slate-200" /></div>
+              )}
+              {heroImages.length > 1 && (
+                <div className="absolute bottom-10 right-10 flex gap-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={prevSlide} className="p-4 bg-white/90 backdrop-blur-md rounded-full text-[#2D241E] hover:text-[#D97706] transition-all shadow-xl active:scale-90"><ChevronLeft size={20}/></button>
+                  <button onClick={nextSlide} className="p-4 bg-white/90 backdrop-blur-md rounded-full text-[#2D241E] hover:text-[#D97706] transition-all shadow-xl active:scale-90"><ChevronRight size={20}/></button>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-6">
-              {/* ปุ่มสีขาวใส่เงาขนาดใหญ่ */}
-              <button onClick={() => navigate('/products')} className="bg-white text-slate-900 border border-slate-100 px-14 py-7 rounded-[2.5rem] font-black text-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] hover:shadow-[0_25px_60px_rgba(0,0,0,0.15)] hover:-translate-y-1 transition-all active:scale-95 w-full sm:w-auto">
-                เริ่มสั่งซื้อเลย
-              </button>
-              <button onClick={() => navigate('/products')} className="flex items-center gap-4 font-black text-2xl text-slate-900 hover:gap-6 transition-all group">
-                ดูเมนูทั้งหมด <ArrowRight size={32} className="text-slate-300" />
-              </button>
-            </div>
-          </div>
-
-          {/* Hero Image - จัดรูปภาพให้พอดีกรอบเสมอ */}
-          <div className="lg:w-[50%] flex justify-center order-1 lg:order-2 w-full">
-            <div className="relative w-full max-w-[700px]">
-              <div className="absolute -inset-10 bg-slate-50 rounded-full blur-3xl opacity-60"></div>
-              <div className="relative overflow-hidden rounded-[4rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.12)] border border-slate-50 aspect-[16/11] bg-slate-100">
-                <img 
-                  src={homeData.hero_image_url || "/placeholder-hero.png"} 
-                  alt="Hero" 
-                  className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-1000 ease-out" 
-                />
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* --- 4. Best Sellers (แสดงสต็อกสินค้าและตัวอักษรใหญ่) --- */}
-      <section className="py-32 border-t border-slate-50 bg-[#FBFBFC]">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-24 gap-8 text-center md:text-left">
-            <div className="space-y-4">
-              <h2 className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 uppercase">เมนูยอดนิยม</h2>
-              <div className="h-2 w-24 bg-slate-900 mx-auto md:mx-0 rounded-full"></div>
-            </div>
-            <button onClick={() => navigate('/products')} className="flex items-center gap-3 text-slate-400 font-bold hover:text-slate-900 transition-all group uppercase text-lg tracking-[0.2em]">
-              ดูสินค้าทั้งหมด <Plus size={24} />
-            </button>
+      {/* --- 🥖 Signature Menu --- */}
+      <section className="py-24 lg:py-44 relative bg-white z-10 overflow-hidden">
+        <Cookie className="absolute top-[10%] left-[-2%] text-[#2D241E] opacity-[0.02]" size={150} />
+        <div className="container mx-auto px-6 text-center">
+          <div className="mb-24 space-y-4">
+            <h2 className="text-4xl lg:text-6xl font-black text-[#2D241E] uppercase tracking-tighter">เมนู <span className="font-light text-[#8B7E66] italic">ยอดนิยม</span></h2>
+            <div className="h-1 w-24 bg-[#F3E9DC] mx-auto rounded-full"></div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
-            {products.map((product) => (
-              <div key={product.product_id} className="group bg-white rounded-[3.5rem] p-6 border border-slate-100 shadow-sm hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] transition-all duration-700 flex flex-col h-full">
-                {/* Image & Stock Info */}
-                <div className="relative aspect-square overflow-hidden rounded-[2.5rem] mb-8 bg-slate-50">
-                  <img src={product.images[0]?.image_url || '/placeholder.png'} alt={product.product_name} className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ${product.stock_quantity <= 0 ? 'grayscale opacity-50' : ''}`} />
-                  
-                  {/* Stock Status Badge */}
-                  <div className="absolute top-5 left-5 right-5 flex justify-between items-start">
-                    <span className="bg-white/90 backdrop-blur text-slate-900 text-[10px] font-black px-4 py-2 rounded-full shadow-sm tracking-widest">TOP SELLER</span>
-                    <span className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-md border ${
-                        product.stock_quantity > 10 
-                        ? 'bg-white text-slate-900 border-slate-100' 
-                        : product.stock_quantity > 0 
-                        ? 'bg-amber-500 text-white border-amber-400' 
-                        : 'bg-red-600 text-white border-red-500'
-                    }`}>
-                        {product.stock_quantity > 0 ? `คงเหลือ: ${product.stock_quantity}` : 'สินค้าหมด'}
-                    </span>
+            {products.map((p) => (
+              <div key={p.product_id} className="group flex flex-col bg-white p-7 rounded-[4.5rem] transition-all duration-700 hover:shadow-2xl border border-slate-50 relative overflow-hidden">
+                <div className="relative aspect-[1/1.1] w-full rounded-[3.5rem] overflow-hidden mb-8 bg-slate-50">
+                  <img src={p.images?.[0]?.image_url || '/placeholder.png'} className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-110" alt={p.product_name} />
+                  <div className="absolute top-6 right-6 flex flex-col gap-3 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                    <button onClick={() => addToCart(p)} className="w-12 h-12 bg-white/90 backdrop-blur-md text-[#2D241E] rounded-full flex items-center justify-center shadow-lg border border-white hover:bg-[#2D241E] hover:text-white"><Plus size={24} /></button>
                   </div>
                 </div>
-
-                <div className="px-2 flex flex-col flex-grow">
-                  <span className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">{product.category?.category_name || 'Signature'}</span>
-                  <h3 className="text-3xl font-black text-slate-900 mb-6 line-clamp-1">{product.product_name}</h3>
-                  
-                  <div className="mt-auto flex justify-between items-center pt-8 border-t border-slate-50">
-                    <span className="text-4xl font-black text-slate-900">฿{product.unit_price}</span>
-                    {/* ปุ่มขาวเงา เส้นดำ */}
-                    <button 
-                        onClick={() => addToCart(product)} 
-                        disabled={product.stock_quantity <= 0}
-                        className="bg-white border-2 border-slate-100 text-slate-900 p-6 rounded-2xl hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all active:scale-90 shadow-md group/btn"
-                    >
-                      <ShoppingBag size={28} className="group-hover/btn:scale-110 transition-transform" />
-                    </button>
-                  </div>
+                <div className="text-center space-y-2">
+                  <h3 className="text-xl font-bold text-[#2D241E]">{p.product_name}</h3>
+                  <p className="text-[#8B7E66] text-sm font-medium tracking-widest italic">฿{Number(p.unit_price).toLocaleString()}</p>
                 </div>
               </div>
             ))}
@@ -269,140 +238,127 @@ const Home = ({ userData }) => {
         </div>
       </section>
 
-      {/* --- 5. Customer Reviews (ตัวอักษรใหญ่พิเศษ) --- */}
-      <section className="py-32 bg-white border-y border-slate-100">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-24 space-y-6">
-            <h2 className="text-5xl md:text-6xl font-black text-slate-900 uppercase tracking-tighter">เสียงจากลูกค้าจริง</h2>
-            <p className="text-slate-400 text-2xl font-light">ความประทับใจที่คุณวางใจได้</p>
+      {/* --- 🍯 Customer Reviews --- */}
+      <section className="py-32 bg-white relative z-10 border-y border-slate-50 overflow-hidden">
+        <Smile className="absolute top-[20%] right-[-2%] text-[#2D241E] opacity-[0.02]" size={180} />
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center justify-between mb-24 gap-10">
+            <div className="space-y-4 text-center lg:text-left">
+               <h2 className="text-4xl lg:text-6xl font-black text-[#2D241E] uppercase tracking-tighter italic">รีวิวจาก <span className="font-light text-[#8B7E66]">คุณลูกค้า</span></h2>
+               <p className="text-[#8B7E66] text-[10px] tracking-[0.5em] font-medium uppercase">เรื่องราวความประทับใจจากถาดขนมของเรา</p>
+            </div>
+            <Quote size={50} className="text-slate-100 hidden lg:block" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {reviews.length > 0 ? reviews.map((review, idx) => (
-              <div key={idx} className="bg-slate-50/50 p-12 rounded-[4rem] border border-slate-100 hover:bg-white hover:shadow-2xl transition-all duration-500">
-                <div className="flex gap-2 mb-10 text-slate-900">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={24} fill={i < review.rating_score ? "currentColor" : "none"} className={i < review.rating_score ? "" : "text-slate-200"} />)}
+            {reviews.map((rev, idx) => (
+              <div key={idx} className="bg-white p-12 rounded-[4.5rem] shadow-sm border border-slate-50 hover:shadow-xl transition-all duration-700">
+                <div className="flex text-amber-400 gap-1.5 mb-10">
+                    {[...Array(5)].map((_, i) => <Star key={i} size={15} fill={i < rev.rating_score ? "currentColor" : "none"} />)}
                 </div>
-                <p className="text-slate-600 mb-12 leading-relaxed font-light italic text-2xl">"{review.comment || 'อร่อย แป้งบาง ไส้เยอะมากครับ แนะนำเลย'}"</p>
-                <div className="flex items-center gap-6 pt-8 border-t border-slate-200">
-                  <div className="w-16 h-16 bg-white text-slate-900 rounded-3xl border border-slate-100 flex items-center justify-center font-black text-xl shadow-sm">
-                    {review.user?.first_name?.charAt(0) || 'U'}
-                  </div>
-                  <div>
-                    <span className="font-black text-slate-900 block text-xl">{review.user?.first_name ? `${review.user.first_name} ${review.user.last_name}` : 'ลูกค้าผู้ใช้งาน'}</span>
-                    <span className="text-sm text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">Verified Purchase</span>
-                  </div>
+                <p className="text-lg text-[#2D241E]/70 italic leading-[1.8] mb-12 font-light">"{rev.comment}"</p>
+                <div className="flex items-center gap-5 pt-10 border-t border-slate-50">
+                    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center font-black text-[#2D241E] border border-white shadow-sm">{rev.user?.first_name?.[0]}</div>
+                    <span className="font-bold text-[#2D241E] text-[11px] uppercase tracking-widest">{rev.user?.first_name}</span>
                 </div>
               </div>
-            )) : (
-              <div className="col-span-full py-20 text-center text-slate-300 text-2xl font-light">ยังไม่มีข้อมูลรีวิวในขณะนี้</div>
-            )}
+            ))}
           </div>
         </div>
       </section>
 
-      {/* --- 6. Contact & Map --- */}
-      <section className="py-32 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col lg:flex-row gap-28 items-center">
-            <div className="lg:w-5/12 space-y-16 w-full text-center lg:text-left">
-              <div className="space-y-6">
-                <h2 className="text-5xl md:text-7xl font-black text-slate-900 uppercase">มาหาเราได้ที่ร้าน</h2>
-                <p className="text-slate-400 leading-relaxed font-light text-2xl">เรายินดีต้อนรับทุกท่านสู่หน้าร้านกุยช่ายพรีเมียม <br/>สดใหม่จากเตาทุกวัน</p>
-              </div>
-              
-              <div className="space-y-12">
-                <div className="flex items-start gap-8 group justify-center lg:justify-start">
-                  <div className="p-6 bg-white rounded-3xl text-slate-900 border border-slate-100 shadow-sm transition-all group-hover:bg-slate-900 group-hover:text-white"><MapPin size={40}/></div>
-                  <div className="text-left">
-                    <h4 className="font-black text-slate-900 text-2xl uppercase tracking-tight">ที่อยู่ร้าน</h4>
-                    <p className="text-xl text-slate-400 mt-2 leading-relaxed max-w-[350px] font-light">{homeData.address}</p>
+      {/* --- 📍 Map Section --- */}
+      <section className="relative w-full h-[650px] bg-white z-10">
+          <iframe 
+            title="Map" 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3875.2818610738!2d100.536294!3d13.7516!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTPCsDQ1JzA1LjgiTiAxMDDCsDMyJzEwLjciRQ!5e0!3m2!1sth!2sth!4v1625000000000!5m2!1sth!2sth" 
+            className="w-full h-full border-none grayscale-[0.8] opacity-50" 
+            allowFullScreen="" 
+            loading="lazy"
+          ></iframe>
+          <div className="absolute inset-x-0 bottom-16 px-6 z-20">
+              <div className="max-w-4xl mx-auto bg-white/95 backdrop-blur-xl p-10 md:p-14 rounded-[5rem] shadow-2xl border border-white flex flex-col md:flex-row items-center gap-14">
+                  <div className="flex-1 space-y-6 text-center md:text-left">
+                    <div className="inline-flex items-center gap-2 text-emerald-600 text-[10px] font-bold uppercase tracking-[0.4em] bg-emerald-50 px-5 py-2 rounded-full border border-emerald-100/40">
+                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div> เปิดให้บริการปกติ
+                    </div>
+                    <h4 className="text-3xl lg:text-5xl font-black text-[#2D241E] tracking-tight italic uppercase">แวะมาหาเราได้ที่ร้าน</h4>
+                    <p className="text-sm text-[#2D241E]/50 leading-relaxed font-light italic">{homeData.shop_address}</p>
                   </div>
-                </div>
-                <div className="flex items-start gap-8 group justify-center lg:justify-start">
-                  <div className="p-6 bg-white rounded-3xl text-slate-900 border border-slate-100 shadow-sm transition-all group-hover:bg-slate-900 group-hover:text-white"><Clock size={40}/></div>
-                  <div className="text-left">
-                    <h4 className="font-black text-slate-900 text-2xl uppercase tracking-tight">เวลาทำการ</h4>
-                    <p className="text-xl text-slate-400 mt-2 font-light">เปิดทุกวัน: 08:00 น. - 18:00 น.</p>
+                  <div className="w-full md:w-auto flex flex-col gap-5">
+                      <a href={homeData.line_url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 bg-white text-[#2D241E] px-12 py-5 rounded-full border border-slate-100 hover:shadow-xl transition-all text-xs font-bold tracking-widest shadow-md">
+                        <Send size={18} className="text-[#D97706]"/> ติดต่อผ่าน LINE
+                      </a>
+                      <div className="text-center">
+                         <p className="text-[9px] font-bold text-[#8B7E66] uppercase tracking-[0.3em] mb-1">โทรศัพท์ติดต่อ</p>
+                         <p className="text-xl font-black text-[#2D241E]">{homeData.shop_phone}</p>
+                      </div>
                   </div>
-                </div>
               </div>
-
-              <div className="flex flex-col sm:flex-row gap-8 pt-10">
-                <button className="flex-1 py-7 bg-white border border-slate-200 text-slate-900 rounded-[2rem] font-black text-2xl flex items-center justify-center gap-4 hover:bg-slate-50 shadow-lg transition-all active:scale-95">
-                  <Phone size={30} /> โทรติดต่อเรา
-                </button>
-                <button className="flex-1 py-7 bg-white border border-slate-200 text-slate-900 rounded-[2rem] font-black text-2xl flex items-center justify-center gap-4 hover:bg-slate-50 shadow-lg transition-all active:scale-95">
-                  <MessageCircle size={30} /> ไลน์ของร้าน
-                </button>
-              </div>
-            </div>
-
-            {/* Google Map - Grayscale Look */}
-            <div className="lg:w-7/12 w-full">
-              <div className="rounded-[5rem] overflow-hidden shadow-[0_60px_120px_-30px_rgba(0,0,0,0.15)] border-8 border-white h-[600px] relative group">
-                <iframe
-                  title="Shop Location"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3875.559134958046!2d100.52845071533385!3d13.744726401135205!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTPCsDQ0JzQxLjAiTiAxMDDCsDMxJzUwLjQiRQ!5e0!3m2!1sen!2sth!4v1625000000000!5m2!1sen!2sth"
-                  width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy"
-                  className="grayscale opacity-90 hover:grayscale-0 hover:opacity-100 transition-all duration-1000"
-                ></iframe>
-              </div>
-            </div>
           </div>
-        </div>
       </section>
 
       <Footer userData={userData} />
 
-      {/* --- Edit Modal (Modern White Style) --- */}
+      {/* --- 📝 Admin Modal --- */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-900/10 backdrop-blur-md p-4">
-          <div className="bg-white rounded-[4rem] w-full max-w-2xl p-14 shadow-[0_50px_100px_rgba(0,0,0,0.2)] relative border border-slate-50 animate-in zoom-in-95 duration-300">
-            <button onClick={() => setIsEditModalOpen(false)} className="absolute top-12 right-12 p-4 bg-slate-50 text-slate-400 hover:text-slate-900 rounded-full transition-colors"><X size={32} /></button>
-            <h2 className="text-4xl font-black mb-12 flex items-center gap-5 text-slate-900 tracking-tighter">
-              <Settings size={40} className="text-slate-200" /> 
-              จัดการเนื้อหา
-            </h2>
-            <form onSubmit={handleHeroUpdate} className="space-y-10">
-              <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">หัวข้อหลัก</label>
-                  <input type="text" value={homeData.hero_title} onChange={(e) => setHomeData({...homeData, hero_title: e.target.value})} className="w-full px-6 py-4 bg-slate-50 rounded-2xl border border-transparent focus:border-slate-300 outline-none transition-all text-xl font-medium" />
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/20 backdrop-blur-xl p-6 animate-in fade-in zoom-in duration-300">
+          <div className="bg-white rounded-[5rem] w-full max-w-3xl p-12 lg:p-20 shadow-2xl border border-white relative max-h-[92vh] overflow-y-auto no-scrollbar">
+            <button onClick={() => setIsEditModalOpen(false)} className="absolute top-12 right-12 p-4 text-slate-300 hover:text-red-500 transition-colors bg-white rounded-full border border-slate-50 shadow-sm"><X size={20}/></button>
+            <div className="mb-16 text-center">
+                <p className="text-[#D97706] font-bold text-[10px] uppercase tracking-[0.6em] mb-4">Branding Studio</p>
+                <h2 className="text-4xl font-black text-[#2D241E] tracking-tight uppercase italic leading-none">ปรับปรุงเนื้อหา <span className="font-light text-slate-300">หน้าหลัก</span></h2>
+            </div>
+            <form onSubmit={handleUpdateContent} className="space-y-12 text-left">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-4">
+                  <label className="text-[11px] font-bold text-[#8B7E66] uppercase ml-6 tracking-widest">หัวข้อหลัก (Title)</label>
+                  <input name="hero_title" type="text" value={homeData.hero_title} onChange={(e) => setHomeData({...homeData, hero_title: e.target.value})} className="w-full px-8 py-5 bg-slate-50 border border-transparent rounded-full focus:bg-white focus:border-[#F3E9DC] outline-none font-bold text-[#2D241E] transition-all shadow-inner" />
                 </div>
-                <div className="space-y-3">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">หัวข้อรอง</label>
-                  <input type="text" value={homeData.hero_subtitle} onChange={(e) => setHomeData({...homeData, hero_subtitle: e.target.value})} className="w-full px-6 py-4 bg-slate-50 rounded-2xl border border-transparent focus:border-slate-300 outline-none transition-all text-xl font-medium" />
+                <div className="space-y-4">
+                  <label className="text-[11px] font-bold text-[#8B7E66] uppercase ml-6 tracking-widest">หัวข้อย่อย (Subtitle)</label>
+                  <input name="hero_subtitle" type="text" value={homeData.hero_subtitle} onChange={(e) => setHomeData({...homeData, hero_subtitle: e.target.value})} className="w-full px-8 py-5 bg-slate-50 border border-transparent rounded-full focus:bg-white focus:border-[#F3E9DC] outline-none font-bold text-[#2D241E] transition-all shadow-inner" />
                 </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">คำอธิบาย</label>
-                <textarea value={homeData.hero_description} onChange={(e) => setHomeData({...homeData, hero_description: e.target.value})} className="w-full px-6 py-4 bg-slate-50 rounded-2xl border border-transparent focus:border-slate-300 outline-none transition-all text-xl h-32 resize-none" />
+              <div className="space-y-4">
+                <label className="text-[11px] font-bold text-[#8B7E66] uppercase ml-6 tracking-widest">คำอธิบาย</label>
+                <textarea name="hero_description" value={homeData.hero_description} onChange={(e) => setHomeData({...homeData, hero_description: e.target.value})} className="w-full px-10 py-8 bg-slate-50 border border-transparent rounded-[3rem] focus:bg-white focus:border-[#F3E9DC] outline-none h-40 resize-none font-light shadow-inner transition-all" />
               </div>
-              <div className="border-4 border-dashed border-slate-100 rounded-[3rem] aspect-video flex items-center justify-center relative bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer overflow-hidden">
-                {previewUrl || homeData.hero_image_url ? (
-                  <div className="relative w-full h-full">
-                    <img src={previewUrl || homeData.hero_image_url} className="w-full h-full object-cover" alt="Preview" />
-                    <label className="absolute inset-0 bg-slate-900/10 opacity-0 hover:opacity-100 transition-all flex items-center justify-center text-white cursor-pointer">
-                      <ImageIcon size={48} />
-                      <input type="file" className="hidden" onChange={handleFileChange} />
+
+              <div className="space-y-6">
+                  <label className="text-[11px] font-bold text-[#8B7E66] uppercase ml-6 tracking-widest">รูปภาพแบนเนอร์</label>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-5">
+                    {heroImages.map((url) => (
+                        <div key={url} className={`relative aspect-square rounded-[2rem] overflow-hidden border-4 group ${imagesToDelete.includes(url) ? 'opacity-30' : 'border-white shadow-md'}`}>
+                            <img src={url} className="w-full h-full object-cover" alt="" />
+                            <button type="button" onClick={() => setImagesToDelete(prev => prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url])} className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/10 transition-all">
+                                {imagesToDelete.includes(url) ? <Plus className="rotate-45 text-red-500" size={30} /> : <Trash2 className="text-white opacity-0 group-hover:opacity-100" />}
+                            </button>
+                        </div>
+                    ))}
+                    <label className="aspect-square flex flex-col items-center justify-center bg-slate-50 border-4 border-dashed border-slate-100 rounded-[2rem] cursor-pointer hover:border-[#F3E9DC] transition-all group">
+                        <Plus className="text-slate-300 group-hover:text-[#2D241E] transition-colors" size={32}/>
+                        <input type="file" multiple className="hidden" onChange={(e) => {
+                             const files = Array.from(e.target.files);
+                             setNewHeroFiles(prev => [...prev, ...files]);
+                             setNewPreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
+                        }} accept="image/*" />
                     </label>
                   </div>
-                ) : (
-                  <label className="cursor-pointer text-slate-300 flex flex-col items-center">
-                    <ImageIcon size={60} />
-                    <span className="text-lg font-bold mt-5 uppercase">อัปโหลดรูปภาพ Banner</span>
-                    <input type="file" className="hidden" onChange={handleFileChange} />
-                  </label>
-                )}
               </div>
-              <button type="submit" disabled={isUpdating} className="w-full bg-slate-900 text-white py-8 rounded-[2.5rem] font-black text-2xl shadow-xl hover:bg-slate-800 transition-all flex justify-center gap-5 active:scale-95 uppercase tracking-widest">
-                {isUpdating ? <Loader2 className="animate-spin" size={32} /> : <Save size={32} />} บันทึกข้อมูล
+
+              <button type="submit" disabled={isUpdating} className="w-full bg-[#2D241E] text-white py-6 rounded-full font-black uppercase tracking-widest text-xs shadow-xl hover:bg-black transition-all active:scale-95 disabled:bg-slate-200">
+                {isUpdating ? <Loader2 className="animate-spin mx-auto" size={24} /> : "บันทึกการเปลี่ยนแปลง"}
               </button>
             </form>
           </div>
         </div>
       )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}} />
     </div>
   );
 };

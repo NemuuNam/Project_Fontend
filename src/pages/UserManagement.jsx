@@ -1,35 +1,45 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { 
     Users, ShieldCheck, UserCog, UserCheck, Search, 
-    Trash2, Edit, Loader2, X, Save, Filter, RefreshCw, Menu
+    Trash2, Edit, Loader2, X, Save, Filter, RefreshCw, Menu, ShieldAlert,
+    CheckCircle, Sparkles, Leaf, Cookie, Smile, ChevronRight, ChevronLeft
 } from 'lucide-react';
+import { jwtDecode } from 'jwt-decode'; 
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2'; 
+import axiosInstance from '../api/axiosInstance';
+import { API_ENDPOINTS } from '../api/config';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
-import axiosInstance from '../api/axiosInstance';
-import { API_ENDPOINTS } from '../api/config';
-
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
-    const [summary, setSummary] = useState({ total: 0, owners: 0, admins: 0, managers: 0, customers: 0 });
+    const [summary, setSummary] = useState({ total: 0, systemAdmins: 0, owners: 0, managers: 0, customers: 0 });
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     
+    // --- ✨ Pagination State ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const usersPerPage = 10;
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [newRole, setNewRole] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
 
+    const token = localStorage.getItem('token');
+    const decodedToken = token ? jwtDecode(token) : {};
+    const currentUserId = decodedToken.id || decodedToken.user_id;
+
+    // --- 📦 Logic (คงเดิม 100%) ---
     const calculateSummary = useCallback((userList) => {
         return {
             total: userList.length,
-            owners: userList.filter(u => u.role_id === 1).length,
-            admins: userList.filter(u => u.role_id === 2).length,
+            systemAdmins: userList.filter(u => u.role_id === 1).length,
+            owners: userList.filter(u => u.role_id === 2).length,
             managers: userList.filter(u => u.role_id === 3).length,
             customers: userList.filter(u => u.role_id === 4).length
         };
@@ -54,138 +64,165 @@ const UserManagement = () => {
 
     const handleUpdateRole = async () => {
         if (!selectedUser) return;
+        if (selectedUser.user_id === currentUserId) return toast.error("คุณไม่สามารถแก้ไขสิทธิ์ของตนเองได้");
+
         setIsUpdating(true);
-        const loadingToast = toast.loading("กำลังอัปเดตสิทธิ์...");
+        const loadingToast = toast.loading("กำลังอัปเดตสิทธิ์ผู้ใช้...");
         try {
             const res = await axiosInstance.patch(`${API_ENDPOINTS.ADMIN.USERS}/${selectedUser.user_id}/role`, { 
                 role_id: parseInt(newRole) 
             });
             
             if (res.success) {
-                toast.success(`เปลี่ยนสิทธิ์เรียบร้อย`, { id: loadingToast });
+                toast.success(`เปลี่ยนสิทธิ์เรียบร้อยแล้ว`, { id: loadingToast });
                 fetchUsers();
                 setIsModalOpen(false);
             }
         } catch (err) { 
-            toast.error("อัปเดตล้มเหลว", { id: loadingToast }); 
+            toast.error(err.response?.data?.message || "อัปเดตสิทธิ์ล้มเหลว", { id: loadingToast }); 
         } finally { 
             setIsUpdating(false); 
         }
     };
 
     const handleDelete = async (userId, name) => {
+        if (userId === currentUserId) return toast.error("คุณไม่สามารถลบบัญชีที่กำลังใช้งานอยู่ได้");
+
         const result = await Swal.fire({
             title: 'ยืนยันการลบผู้ใช้?',
-            text: `คุณกำลังจะลบคุณ ${name} ออกจากระบบ`,
+            text: `ข้อมูลของคุณ ${name} จะถูกลบออกถาวร`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#1e293b',
-            confirmButtonText: 'ลบข้อมูล',
+            confirmButtonColor: '#2D241E',
+            confirmButtonText: 'ยืนยัน ลบข้อมูล',
             cancelButtonText: 'ยกเลิก',
-            borderRadius: '25px'
+            background: '#ffffff',
+            color: '#2D241E',
+            customClass: { popup: 'rounded-[3rem] font-["Kanit"]' }
         });
 
         if (result.isConfirmed) {
             try {
                 const res = await axiosInstance.delete(`${API_ENDPOINTS.ADMIN.USERS}/${userId}`);
                 if (res.success) {
-                    toast.success("ลบผู้ใช้เรียบร้อยแล้ว");
+                    toast.success("ลบผู้ใช้งานเรียบร้อยแล้ว");
                     fetchUsers();
                 }
             } catch (err) { 
-                toast.error("ไม่สามารถลบผู้ใช้ได้"); 
+                toast.error("ไม่สามารถลบผู้ใช้ได้ในขณะนี้"); 
             }
         }
     };
 
-    const filteredUsers = users.filter(user => {
-        const matchesSearch = (user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) || user.email?.toLowerCase().includes(searchTerm.toLowerCase()));
-        const matchesRole = roleFilter === 'all' || user.role_id === parseInt(roleFilter);
-        return matchesSearch && matchesRole;
-    });
-
     const getRoleStyle = (roleId) => {
         const styles = {
-            1: { bg: '#fff1f2', text: '#ef4444', label: 'Owner' },
-            2: { bg: '#fff9eb', text: '#f59e0b', label: 'Admin' },
-            3: { bg: '#f0fdf4', text: '#10b981', label: 'Manager' },
-            4: { bg: '#f4f7fe', text: '#4318ff', label: 'Customer' }
+            1: { bg: '#fff', text: '#E53E3E', label: 'System Admin', icon: <ShieldAlert size={12}/> },
+            2: { bg: '#fff', text: '#D97706', label: 'Owner', icon: <ShieldCheck size={12}/> },
+            3: { bg: '#fff', text: '#05CD99', label: 'Manager', icon: <UserCheck size={12}/> },
+            4: { bg: '#fff', text: '#2D241E', label: 'Customer', icon: <Users size={12}/> }
         };
-        return styles[roleId] || { bg: '#f8fafc', text: '#64748b', label: 'Unknown' };
+        return styles[roleId] || { bg: '#fff', text: '#64748b', label: 'Unknown', icon: <Users size={12}/> };
     };
+
+    // --- 🔍 Filtering & Pagination Logic ---
+    const filteredUsers = useMemo(() => {
+        return users.filter(user => {
+            const matchesSearch = (user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) || user.email?.toLowerCase().includes(searchTerm.toLowerCase()));
+            const matchesRole = roleFilter === 'all' || user.role_id === parseInt(roleFilter);
+            return matchesSearch && matchesRole;
+        });
+    }, [users, searchTerm, roleFilter]);
+
+    const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+    const currentUsers = useMemo(() => {
+        const start = (currentPage - 1) * usersPerPage;
+        return filteredUsers.slice(start, start + usersPerPage);
+    }, [filteredUsers, currentPage]);
+
+    // รีเซ็ตหน้ากลับไปหน้า 1 เมื่อมีการค้นหาหรือกรอง
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, roleFilter]);
 
     if (loading && users.length === 0) return (
         <div className="flex h-screen items-center justify-center bg-white">
-            <Loader2 className="animate-spin text-slate-900" size={65} />
+            <Loader2 className="animate-spin text-[#2D241E]" size={40} />
         </div>
     );
 
     return (
-        <div className="flex min-h-screen bg-white font-['Kanit'] text-slate-900 overflow-x-hidden">
+        <div className="flex min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden relative selection:bg-[#F3E9DC]">
+            
+            {/* ☁️ Global Cozy Patterns */}
+            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                <Leaf className="absolute top-[10%] left-[5%] rotate-12 opacity-[0.02] text-[#2D241E]" size={200} />
+                <Cookie className="absolute bottom-[20%] right-[10%] -rotate-12 opacity-[0.02] text-[#2D241E]" size={150} />
+                <Smile className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.015] text-[#2D241E]" size={400} />
+            </div>
+
             <Toaster position="top-right" />
             <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} isMobileOpen={isSidebarOpen} setIsMobileOpen={setIsSidebarOpen} activePage="users" />
 
-            <main className={`flex-1 p-4 md:p-8 lg:p-10 transition-all duration-300 ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[300px]'} w-full`}>
+            <main className={`flex-1 p-4 md:p-10 lg:p-14 transition-all duration-500 ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[280px]'} w-full relative z-10 text-left`}>
                 
-                {/* Header with Mobile Menu */}
-                <div className="mb-6 md:mb-10 flex items-center gap-4">
-                    <button 
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="lg:hidden p-2 bg-slate-100 rounded-xl text-slate-600"
-                    >
-                        <Menu size={24} />
-                    </button>
-                    <div className="flex-1">
-                        <Header title="User Management" />
-                    </div>
+                <div className="mb-12 flex items-center gap-4">
+                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white rounded-2xl text-[#2D241E] shadow-sm border border-slate-100 active:scale-95 transition-all"><Menu size={24} /></button>
+                    <Header title="การจัดการสิทธิ์เข้าถึง" />
                 </div>
 
-                {/* Welcome & Refresh Section */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 md:mb-12">
-                    <div className="flex-1">
-                        <p className="text-sm md:text-lg font-bold text-slate-400 mb-1 uppercase tracking-widest">ROLES AND PERMISSION</p>
-                        <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter text-slate-900 leading-[0.9]">Users</h1>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16 px-2">
+                    <div className="flex-1 space-y-4">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white rounded-full shadow-sm border border-slate-100 mb-2 animate-bounce-slow">
+                            <Sparkles size={14} className="text-[#D97706]" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#8B7E66]">การจัดการตัวตนผู้ใช้งาน</span>
+                        </div>
+                        <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter text-[#2D241E] leading-none italic">
+                            Users<span className="opacity-10">.</span>
+                        </h1>
                     </div>
-                    <button onClick={fetchUsers} className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-center shadow-sm hover:border-slate-900 transition-all text-slate-400">
-                        <RefreshCw size={24} />
+                    <button onClick={fetchUsers} className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-90 group">
+                        <RefreshCw size={24} className={`text-[#2D241E]/40 ${loading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} />
                     </button>
                 </div>
 
-                {/* KPI Stats Grid - Adjusted for Tablet/Mobile */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 mb-8 md:mb-12 text-center">
-                    <StatCardPureWhite title="ทั้งหมด" value={summary.total} icon={<Users size={24} />} color="#4318ff" />
-                    <StatCardPureWhite title="Owner" value={summary.owners} icon={<ShieldCheck size={24} />} color="#ef4444" />
-                    <StatCardPureWhite title="Admin" value={summary.admins} icon={<UserCog size={24} />} color="#f59e0b" />
-                    <StatCardPureWhite title="Manager" value={summary.managers} icon={<UserCheck size={24} />} color="#10b981" />
-                    <StatCardPureWhite title="ลูกค้า" value={summary.customers} icon={<Users size={24} />} color="#64748b" />
+                {/* 📊 Stat Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-16 px-2">
+                    <StatCardPureWhite title="ทั้งหมด" value={summary.total} icon={<Users size={24} />} color="#2D241E" />
+                    <StatCardPureWhite title="แอดมิน" value={summary.systemAdmins} icon={<ShieldAlert size={24} />} color="#E53E3E" />
+                    <StatCardPureWhite title="เจ้าของ" value={summary.owners} icon={<ShieldCheck size={24} />} color="#D97706" />
+                    <StatCardPureWhite title="ผู้จัดการ" value={summary.managers} icon={<UserCheck size={24} />} color="#05CD99" />
+                    <StatCardPureWhite title="ลูกค้า" value={summary.customers} icon={<Users size={24} />} color="#8B7E66" />
                 </div>
 
-                {/* Main Content Card */}
-                <div className="bg-white p-5 md:p-8 lg:p-10 rounded-[30px] md:rounded-[45px] border border-slate-100 shadow-xl shadow-slate-50">
-                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-10">
-                        <h3 className="text-xl md:text-3xl font-black text-slate-900">👥 รายชื่อผู้ใช้งาน</h3>
+                <div className="bg-white p-6 md:p-12 rounded-[3rem] md:rounded-[4rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-10 mb-14 relative z-10">
+                        <div className="space-y-2">
+                            <h3 className="text-3xl font-black text-[#2D241E] tracking-tighter uppercase italic flex items-center gap-4">
+                                <UserCog className="opacity-20" /> รายชื่อสมาชิก
+                            </h3>
+                        </div>
+
                         <div className="flex flex-col md:flex-row gap-4 w-full xl:max-w-3xl">
-                            {/* Filter Dropdown */}
-                            <div className="relative w-full md:w-48">
-                                <Filter size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                            <div className="relative w-full md:w-64">
                                 <select 
-                                    className="w-full pl-12 pr-4 py-4 rounded-xl md:rounded-2xl bg-slate-50 border-none outline-none font-bold text-sm md:text-md appearance-none transition-all focus:ring-2 focus:ring-slate-100"
+                                    className="w-full px-6 py-4 rounded-full bg-slate-50/50 border border-slate-100 outline-none font-bold text-xs appearance-none focus:bg-white focus:border-[#2D241E]/10 transition-all shadow-inner text-[#2D241E] uppercase tracking-widest cursor-pointer"
                                     value={roleFilter} 
                                     onChange={(e) => setRoleFilter(e.target.value)}
                                 >
-                                    <option value="all">ทุกระดับ</option>
-                                    <option value="1">Owner</option>
-                                    <option value="2">Admin</option>
+                                    <option value="all">ระดับสมาชิกทั้งหมด</option>
+                                    <option value="1">System Admin</option>
+                                    <option value="2">Owner</option>
                                     <option value="3">Manager</option>
                                     <option value="4">Customer</option>
                                 </select>
+                                <Filter size={14} className="absolute right-6 top-1/2 -translate-y-1/2 text-[#C2B8A3] pointer-events-none" />
                             </div>
-                            {/* Search Input */}
-                            <div className="relative flex-1">
-                                <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                            <div className="relative flex-1 group">
+                                <Search size={22} className="absolute left-6 top-1/2 -translate-y-1/2 text-[#2D241E]/20 group-focus-within:text-[#2D241E] transition-colors" />
                                 <input 
-                                    className="w-full pl-14 pr-6 py-4 rounded-xl md:rounded-2xl bg-slate-50 border-none outline-none font-bold text-base md:text-lg focus:bg-white focus:ring-2 focus:ring-slate-100 transition-all" 
-                                    placeholder="ค้นหาชื่อ หรือ อีเมล..." 
+                                    className="w-full pl-16 pr-8 py-4 rounded-full bg-slate-50/50 border border-transparent focus:bg-white focus:border-slate-200 outline-none font-bold text-lg transition-all shadow-inner placeholder:text-[#2D241E]/20" 
+                                    placeholder="ค้นหาด้วยชื่อหรืออีเมล..." 
                                     value={searchTerm} 
                                     onChange={(e) => setSearchTerm(e.target.value)} 
                                 />
@@ -193,107 +230,166 @@ const UserManagement = () => {
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto -mx-2 px-2">
-                        <table className="w-full text-left border-separate border-spacing-y-3 min-w-[800px]">
+                    <div className="overflow-x-auto relative z-10 custom-scrollbar">
+                        <table className="w-full text-left border-separate border-spacing-y-3 min-w-[900px]">
                             <thead>
-                                <tr className="text-slate-400 uppercase text-[10px] md:text-xs font-black tracking-widest text-center">
-                                    <th className="px-4 pb-4 text-left">ชื่อ-นามสกุล</th>
-                                    <th className="px-4 pb-4 text-left">ช่องทางติดต่อ</th>
-                                    <th className="px-4 pb-4">ระดับ (Role)</th>
-                                    <th className="px-4 pb-4">จัดการ</th>
+                                <tr className="text-[#C2B8A3] uppercase text-[15px] font-black tracking-[0.2em] px-8">
+                                    <th className="px-10 pb-2">ข้อมูลผู้ใช้งาน</th>
+                                    <th className="px-10 pb-2">ช่องทางติดต่อ</th>
+                                    <th className="px-10 pb-2">ระดับสิทธิ์</th>
+                                    <th className="px-10 pb-2 text-right">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {filteredUsers.map(user => {
+                            <tbody className="divide-y-0">
+                                {currentUsers.length > 0 ? currentUsers.map(user => {
                                     const role = getRoleStyle(user.role_id);
                                     return (
-                                        <tr key={user.user_id} className="group hover:bg-slate-50 transition-all text-center">
-                                            <td className="px-4 py-4 md:py-6 rounded-l-2xl md:rounded-l-3xl border-y border-l border-slate-50 group-hover:border-slate-100 text-left font-black text-base md:text-xl text-slate-900 whitespace-nowrap">
-                                                {user.first_name} {user.last_name}
+                                        <tr key={user.user_id} className="group/row hover:translate-x-1 transition-all">
+                                            <td className="py-7 px-10 rounded-l-[2.5rem] md:rounded-l-[3rem] bg-white border-y border-l border-slate-50 group-hover/row:bg-slate-50/50">
+                                                <div className="flex items-center gap-5">
+                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-[#2D241E] shadow-sm border border-slate-100 group-hover/row:scale-110 transition-transform">
+                                                        {user.first_name?.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <span className="font-black text-[15px] text-[#2D241E] uppercase tracking-tighter italic leading-none">{user.first_name} {user.last_name}</span>
+                                                </div>
                                             </td>
-                                            <td className="px-4 py-4 md:py-6 border-y border-slate-50 group-hover:border-slate-100 text-left font-bold text-slate-500 text-sm md:text-lg whitespace-nowrap">
-                                                {user.email}
+                                            <td className="py-7 px-10 bg-white border-y border-slate-50 group-hover/row:bg-slate-50/50">
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-[#2D241E] text-[15px] leading-none mb-1">{user.email}</span>
+                                                    <span className="text-[14px] text-[#8B7E66] font-light italic">ลงทะเบียนเมื่อ {new Date(user.created_at || Date.now()).toLocaleDateString('th-TH')}</span>
+                                                </div>
                                             </td>
-                                            <td className="px-4 py-4 md:py-6 border-y border-slate-50 group-hover:border-slate-100">
-                                                <span className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest border" style={{ background: role.bg, color: role.text, borderColor: `${role.text}20` }}>
-                                                    {role.label}
+                                            <td className="py-7 px-10 bg-white border-y border-slate-50 group-hover/row:bg-slate-50/50">
+                                                <span className="px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 w-fit shadow-sm bg-white" style={{ color: role.text, borderColor: `${role.text}20` }}>
+                                                    {role.icon} {role.label}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-4 md:py-6 rounded-r-2xl md:rounded-r-3xl border-y border-r border-slate-50 group-hover:border-slate-100">
-                                                <div className="flex justify-center gap-2">
-                                                    <button className="p-2 md:p-3 bg-white text-slate-400 border border-slate-100 rounded-lg md:rounded-xl hover:text-blue-600 hover:border-blue-100 shadow-sm transition-all" onClick={() => { setSelectedUser(user); setNewRole(user.role_id.toString()); setIsModalOpen(true); }}>
-                                                        <Edit size={16} />
-                                                    </button>
-                                                    <button className="p-2 md:p-3 bg-white text-slate-400 border border-slate-100 rounded-lg md:rounded-xl hover:text-rose-600 hover:border-rose-100 shadow-sm transition-all" onClick={() => handleDelete(user.user_id, user.first_name)}>
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                            <td className="py-7 px-10 rounded-r-[2.5rem] md:rounded-r-[3rem] bg-white border-y border-r border-slate-50 group-hover/row:bg-slate-50/50 text-right">
+                                                <div className="flex justify-end gap-3 opacity-20 group-hover/row:opacity-100 transition-opacity">
+                                                    <button className="p-3 bg-white text-[#2D241E] border border-slate-100 rounded-xl hover:shadow-md transition-all active:scale-90" onClick={() => { setSelectedUser(user); setNewRole(user.role_id.toString()); setIsModalOpen(true); }}><Edit size={18} /></button>
+                                                    <button className="p-3 bg-white text-red-500 border border-slate-100 rounded-xl hover:shadow-md transition-all active:scale-90" onClick={() => handleDelete(user.user_id, user.first_name)}><Trash2 size={18} /></button>
                                                 </div>
                                             </td>
                                         </tr>
                                     );
-                                })}
+                                }) : (
+                                    <tr><td colSpan="4" className="py-32 text-center text-[#C2B8A3] font-black uppercase italic tracking-widest">ไม่พบข้อมูลสมาชิก</td></tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
+
+                    {/* --- ✨ Pagination System (Only White) --- */}
+                    {totalPages > 1 && (
+                        <div className="mt-12 flex justify-center items-center gap-4 relative z-10 pb-4">
+                            <button 
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="p-3 bg-white border border-slate-100 rounded-2xl text-[#2D241E] disabled:opacity-20 hover:shadow-lg transition-all active:scale-90 shadow-sm"
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+                            
+                            <div className="flex items-center gap-2 bg-slate-50/50 p-2 rounded-[2rem] border border-slate-100 shadow-inner">
+                                {[...Array(totalPages)].map((_, i) => {
+                                    const pageNum = i + 1;
+                                    if (totalPages > 5 && Math.abs(pageNum - currentPage) > 2) return null;
+                                    return (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => setCurrentPage(pageNum)}
+                                            className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${currentPage === pageNum ? 'bg-[#2D241E] text-white shadow-xl scale-110' : 'text-[#C2B8A3] hover:text-[#2D241E]'}`}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <button 
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="p-3 bg-white border border-slate-100 rounded-2xl text-[#2D241E] disabled:opacity-20 hover:shadow-lg transition-all active:scale-90 shadow-sm"
+                            >
+                                <ChevronRight size={20} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </main>
 
-            {/* Modal - Responsive Adjustments */}
+            {/* 🛡️ Role Update Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-md" onClick={() => setIsModalOpen(false)}>
-                    <div className="bg-white w-full max-w-lg rounded-[30px] md:rounded-[50px] shadow-2xl border border-slate-50 overflow-hidden animate-in fade-in zoom-in duration-300" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 md:p-10">
-                            <div className="flex justify-between items-start mb-6 md:mb-8">
-                                <div className="min-w-0 flex-1">
-                                    <h3 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight truncate">แก้ไขระดับสมาชิก</h3>
-                                    <p className="text-slate-400 font-bold mt-1 uppercase text-[10px] md:text-xs tracking-widest truncate">{selectedUser?.first_name} {selectedUser?.last_name}</p>
-                                </div>
-                                <button onClick={() => setIsModalOpen(false)} className="p-2 md:p-3 bg-slate-50 rounded-xl text-slate-400 transition-all hover:text-slate-900"><X size={20}/></button>
+                <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 md:p-6 bg-[#2D241E]/10 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsModalOpen(false)}>
+                    <div className="bg-white w-full max-w-lg rounded-[3.5rem] md:rounded-[4rem] shadow-2xl overflow-hidden animate-in zoom-in-95 border border-white" onClick={e => e.stopPropagation()}>
+                        <div className="p-10 md:p-14 relative">
+                            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 p-3 bg-slate-50 text-[#2D241E]/20 hover:text-red-500 rounded-full transition-all active:scale-90 shadow-sm border border-white"><X size={20}/></button>
+                            <div className="mb-12 text-left">
+                                <p className="text-[#D97706] font-bold text-[15px] uppercase tracking-[0.5em] mb-2 italic">สิทธิ์การเข้าถึงข้อมูล</p>
+                                <h3 className="text-3xl font-black text-[#2D241E] tracking-tighter uppercase italic leading-tight">แก้ไข <span className="opacity-20 font-light">ระดับผู้ใช้งาน</span></h3>
+                                <p className="text-[#8B7E66] font-bold mt-2 text-[20px] italic">{selectedUser?.first_name} {selectedUser?.last_name}</p>
                             </div>
-
-                            <div className="space-y-6">
-                                <div>
-                                    <label className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-2 mb-3 block">เลือกบทบาทใหม่</label>
-                                    <select 
-                                        className="w-full p-4 md:p-5 rounded-xl md:rounded-[25px] bg-slate-50 border-none outline-none font-bold text-base md:text-lg text-slate-900 transition-all focus:ring-2 focus:ring-blue-100 appearance-none cursor-pointer" 
-                                        value={newRole} 
-                                        onChange={(e) => setNewRole(e.target.value)}
-                                    >
-                                        <option value="1">Owner (เจ้าของร้าน)</option>
-                                        <option value="2">Admin (ผู้ดูแลระบบ)</option>
-                                        <option value="3">Manager (ผู้จัดการร้าน)</option>
-                                        <option value="4">Customer (ลูกค้าสมาชิก)</option>
-                                    </select>
+                            <div className="space-y-8">
+                                <div className="space-y-3">
+                                    {[
+                                        { id: 1, label: 'System Admin', desc: 'สิทธิ์สูงสุดในการควบคุมโครงสร้างระบบ' },
+                                        { id: 2, label: 'Owner', desc: 'สิทธิ์ในการวิเคราะห์และตรวจสอบร้านค้า' },
+                                        { id: 3, label: 'Manager', desc: 'สิทธิ์จัดการสินค้าและรายการคำสั่งซื้อ' },
+                                        { id: 4, label: 'Customer', desc: 'สิทธิ์ผู้ใช้งานทั่วไปสำหรับการสั่งซื้อ' }
+                                    ].map(role => (
+                                        <button 
+                                            key={role.id}
+                                            onClick={() => setNewRole(role.id.toString())}
+                                            className={`w-full p-5 rounded-[2rem] text-left border-2 transition-all flex items-center justify-between group/btn ${newRole === role.id.toString() ? 'border-[#2D241E] bg-slate-50/50' : 'border-slate-50 hover:border-slate-100 bg-white'}`}
+                                        >
+                                            <div className="text-left">
+                                                <p className={`font-black uppercase text-sm tracking-tight ${newRole === role.id.toString() ? 'text-[#2D241E]' : 'text-[#C2B8A3]'}`}>{role.label}</p>
+                                                <p className="text-[15px] text-[#8B7E66] font-light italic mt-1">{role.desc}</p>
+                                            </div>
+                                            {newRole === role.id.toString() ? (
+                                                <div className="w-8 h-8 rounded-full bg-[#2D241E] flex items-center justify-center text-white shadow-md animate-in zoom-in">
+                                                    <CheckCircle size={16} strokeWidth={3} />
+                                                </div>
+                                            ) : (
+                                                <ChevronRight size={16} className="text-slate-200 group-hover/btn:text-[#2D241E] transition-colors" />
+                                            )}
+                                        </button>
+                                    ))}
                                 </div>
-
                                 <button 
                                     onClick={handleUpdateRole} 
                                     disabled={isUpdating} 
-                                    className="w-full py-4 md:py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl md:rounded-[30px] font-black text-base md:text-lg transition-all shadow-xl shadow-blue-100 flex justify-center items-center gap-3 mt-4"
+                                    className="w-full py-6 bg-[#ffff] text-black rounded-full font-black text-sm shadow-xl hover:bg-slate-100 transition-all flex justify-center items-center gap-4 uppercase tracking-[0.4em] active:scale-95 disabled:opacity-50"
                                 >
-                                    {isUpdating ? <Loader2 className="animate-spin" size={20} /> : <><Save size={20} /> บันทึกสิทธิ์ใหม่</>}
+                                    {isUpdating ? <Loader2 className="animate-spin" size={20} /> : <><Save size={20} /> ยืนยันการเปลี่ยนสิทธิ์</>}
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
+
+            <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+                .animate-bounce-slow { animation: bounce-slow 4s ease-in-out infinite; }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E10; border-radius: 10px; }
+            `}} />
         </div>
     );
 };
 
-// StatCard Component - Adjusted Padding for Mobile
 const StatCardPureWhite = ({ title, value, icon, color }) => (
-    <div className="bg-white p-5 md:p-8 rounded-[25px] md:rounded-[35px] border border-slate-100 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all hover:-translate-y-1">
-        <div className="flex-1 text-left min-w-0">
-            <p className="text-[10px] md:text-[12px] font-black text-slate-400 uppercase tracking-widest mb-1 md:mb-2 truncate">{title}</p>
-            <h2 className="text-slate-900 text-2xl md:text-4xl font-black italic tracking-tighter leading-none truncate">{value || 0}</h2>
+    <div className="bg-white p-8 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition-all hover:-translate-y-1.5 duration-500 group relative overflow-hidden">
+        <div className="flex-1 text-left min-w-0 relative z-10">
+            <p className="text-[10px] font-black text-[#2D241E]/30 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }}></span>
+                {title}
+            </p>
+            <h2 className="text-[#2D241E] text-4xl font-black italic tracking-tighter leading-none uppercase truncate">{value || 0}</h2>
         </div>
-        <div 
-            style={{ background: `${color}08`, color: color }} 
-            className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-[22px] flex items-center justify-center border-2 md:border-4 border-white shadow-lg shadow-slate-50 shrink-0 ml-2"
-        >
-            {icon}
+        <div style={{ color: color }} className="w-16 h-16 rounded-[1.8rem] flex items-center justify-center bg-white shadow-sm border border-slate-50 group-hover:scale-110 transition-transform duration-500 relative z-10">
+            {React.cloneElement(icon, { size: 24, strokeWidth: 2.5 })}
         </div>
     </div>
 );

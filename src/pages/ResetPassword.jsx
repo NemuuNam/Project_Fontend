@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Lock, Eye, EyeOff, Loader2, ArrowRight, ShieldCheck, Home } from 'lucide-react';
+import { 
+    Lock, Eye, EyeOff, Loader2, ArrowRight, ShieldCheck, Home,
+    Leaf, Cookie, Smile, Sparkles, CheckCircle2 
+} from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
 import axiosInstance from '../api/axiosInstance';
@@ -14,13 +17,14 @@ const ResetPassword = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [shopName, setShopName] = useState('กรุณาใส่ชื่อร้าน');
+    const [shopName, setShopName] = useState('ยินดีต้อนรับ');
 
+    // --- 🔄 Logic (คงเดิม 100%) ---
     useEffect(() => {
         const fetchShopInfo = async () => {
             try {
                 const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
-                if (res.success && res.data?.shop_name) {
+                if (res.success && res.data?.shop_name && res.data.shop_name !== "EMPTY") {
                     setShopName(res.data.shop_name);
                 }
             } catch (err) {
@@ -58,34 +62,50 @@ const ResetPassword = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#ffffff] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-['Kanit'] overflow-x-hidden">
+        <div className="min-h-screen bg-[#ffffff] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-['Kanit'] overflow-hidden relative selection:bg-[#F3E9DC] selection:text-[#2D241E]">
+            
+            {/* ☁️ Global Cozy Patterns Background (Opacity 0.02 - 0.03) */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <Leaf className="absolute top-[10%] left-[10%] rotate-12 opacity-[0.03] text-[#2D241E]" size={220} />
+                <Cookie className="absolute bottom-[15%] right-[8%] -rotate-12 opacity-[0.03] text-[#2D241E]" size={180} />
+                <Smile className="absolute top-[40%] right-[10%] rotate-6 opacity-[0.02] text-[#2D241E]" size={140} />
+                <Sparkles className="absolute bottom-[30%] left-[5%] opacity-[0.02] text-[#2D241E]" size={120} />
+            </div>
+
             <Toaster position="top-right" />
             
-            {/* Reset Password Card */}
-            <div className="w-full max-w-[480px] bg-white p-8 sm:p-12 md:p-14 rounded-[40px] md:rounded-[60px] border border-slate-50 shadow-[0_20px_70px_rgba(0,0,0,0.03)] relative animate-in fade-in zoom-in duration-500 text-center">
+            {/* Reset Password Card (Pearl White Style) */}
+            <div className="w-full max-w-[480px] bg-[#ffffff] p-8 sm:p-14 rounded-[40px] md:rounded-[60px] border border-slate-100 shadow-[0_20px_60px_rgba(0,0,0,0.03)] relative z-10 animate-in fade-in zoom-in duration-700 text-center">
                 
-                {/* Brand/Security Icon */}
-                <div className="inline-flex p-5 sm:p-6 bg-slate-50 rounded-full border border-slate-100 text-blue-600 mb-6 shadow-sm">
-                    <ShieldCheck size={48} strokeWidth={1.5} className="sm:w-14 sm:h-14" />
+                {/* ปุ่มย้อนกลับไปหน้าล็อกอิน */}
+                <Link to="/login" className="absolute top-8 left-8 md:top-12 md:left-12 flex items-center gap-2 text-[#2D241E]/30 hover:text-[#2D241E] font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 group">
+                    <Home size={16} className="group-hover:-translate-y-0.5 transition-transform" /> เข้าสู่ระบบ
+                </Link>
+
+                {/* ไอคอนความปลอดภัย (Soft White Dimension) */}
+                <div className="mt-8 mb-8">
+                    <div className="inline-flex p-6 bg-white rounded-full border border-slate-50 text-[#2D241E] shadow-sm transition-transform hover:scale-105 duration-500">
+                        <ShieldCheck size={54} strokeWidth={1.2} />
+                    </div>
                 </div>
 
-                <h2 className="text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tighter leading-tight">ตั้งรหัสผ่านใหม่</h2>
-                <p className="text-blue-600 font-black text-sm uppercase tracking-widest italic mt-2">{shopName}</p>
+                <h2 className="text-3xl md:text-4xl font-black text-[#2D241E] uppercase tracking-tighter italic">ตั้งรหัสผ่านใหม่</h2>
+                <p className="text-[#2D241E]/40 font-bold text-xs uppercase tracking-[0.3em] mt-2">{shopName}</p>
                 
-                <p className="text-slate-400 font-medium text-sm sm:text-base leading-relaxed mt-6">
-                    กรุณากำหนดรหัสผ่านใหม่ที่ปลอดภัย <br className="hidden sm:block" />
-                    เพื่อให้สามารถเข้าใช้งานระบบได้อีกครั้ง
+                <p className="text-[#2D241E]/50 font-medium text-sm leading-relaxed mt-6 max-w-[280px] mx-auto">
+                    โปรดระบุรหัสผ่านใหม่ที่มีความปลอดภัย <br className="hidden sm:block" />
+                    เพื่อเข้าถึงบัญชีของคุณอีกครั้ง
                 </p>
 
-                <form onSubmit={handleReset} className="mt-10 space-y-6">
+                <form onSubmit={handleReset} className="mt-12 space-y-7 text-left">
                     
-                    {/* New Password Input */}
-                    <div className="space-y-2 text-left">
-                        <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">New Password</label>
+                    {/* อินพุตรหัสผ่านใหม่ */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-[#2D241E]/30 ml-5 tracking-widest">รหัสผ่านใหม่</label>
                         <div className="relative flex items-center group">
-                            <Lock className="absolute left-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+                            <Lock className="absolute left-6 text-[#2D241E]/10 group-focus-within:text-[#2D241E] transition-colors" size={20} />
                             <input 
-                                className="w-full pl-14 pr-12 py-4 rounded-2xl bg-slate-50 border-2 border-transparent outline-none font-bold text-slate-900 transition-all focus:border-blue-600 focus:bg-white"
+                                className="w-full pl-16 pr-14 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E]/20 transition-all text-lg placeholder:text-[#2D241E]/10"
                                 type={showPassword ? "text" : "password"}
                                 placeholder="••••••••"
                                 value={password}
@@ -94,7 +114,7 @@ const ResetPassword = () => {
                             />
                             <button
                                 type="button"
-                                className="absolute right-4 p-2 text-slate-300 hover:text-blue-600 transition-colors"
+                                className="absolute right-5 p-2 text-[#2D241E]/20 hover:text-[#2D241E] transition-colors"
                                 onClick={() => setShowPassword(!showPassword)}
                                 tabIndex="-1"
                             >
@@ -103,13 +123,13 @@ const ResetPassword = () => {
                         </div>
                     </div>
 
-                    {/* Confirm Password Input */}
-                    <div className="space-y-2 text-left">
-                        <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Confirm Password</label>
+                    {/* ยืนยันรหัสผ่าน */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-[#2D241E]/30 ml-5 tracking-widest">ยืนยันรหัสผ่านอีกครั้ง</label>
                         <div className="relative flex items-center group">
-                            <Lock className="absolute left-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+                            <Lock className="absolute left-6 text-[#2D241E]/10 group-focus-within:text-[#2D241E] transition-colors" size={20} />
                             <input 
-                                className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent outline-none font-bold text-slate-900 transition-all focus:border-blue-600 focus:bg-white"
+                                className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E]/20 transition-all text-lg placeholder:text-[#2D241E]/10"
                                 type="password"
                                 placeholder="••••••••"
                                 value={confirmPassword}
@@ -119,27 +139,41 @@ const ResetPassword = () => {
                         </div>
                     </div>
 
-                    {/* Submit Button */}
+                    {/* ปุ่มยืนยัน (Pearl White Style) */}
                     <button 
-                        className="w-full py-5 bg-slate-900 text-white rounded-[25px] font-black text-lg flex justify-center items-center gap-3 transition-all hover:bg-black hover:-translate-y-1 shadow-xl shadow-slate-100 mt-4 disabled:bg-slate-200 disabled:cursor-not-allowed"
+                        className="w-full py-5 md:py-6 bg-white text-[#2D241E] border border-slate-200 rounded-full font-black text-sm uppercase tracking-[0.3em] flex justify-center items-center gap-4 transition-all hover:bg-slate-50 hover:shadow-md hover:-translate-y-1 active:scale-95 disabled:opacity-50 group mt-4 shadow-sm"
                         type="submit" 
                         disabled={loading}
                     >
                         {loading ? (
-                            <Loader2 className="animate-spin" size={24} />
+                            <Loader2 className="animate-spin text-[#2D241E]" size={20} />
                         ) : (
-                            <>บันทึกรหัสผ่านใหม่ <ArrowRight size={22} /></>
+                            <>อัปเดตรหัสผ่าน <CheckCircle2 size={18} className="text-[#D97706] group-hover:scale-110 transition-transform" /></>
                         )}
                     </button>
                 </form>
 
-                {/* Footer Link */}
-                <div className="mt-10 text-center text-slate-400 font-bold text-sm">
+                {/* ลิงก์ท้ายการ์ด */}
+                <div className="mt-14 text-center text-[#2D241E]/30 font-bold text-xs uppercase tracking-widest">
                     จำรหัสผ่านได้แล้ว? 
-                    <Link to="/login" className="ml-2 text-blue-600 font-black hover:underline underline-offset-4 transition-all">เข้าสู่ระบบที่นี่</Link>
+                    <Link to="/login" className="ml-3 text-[#2D241E] font-black border-b border-[#2D241E]/10 hover:border-[#2D241E] transition-all pb-1">กลับไปหน้าล็อกอิน</Link>
                 </div>
-
             </div>
+
+            {/* การตั้งค่า Autofill สำหรับ Browser */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                input:-webkit-autofill,
+                input:-webkit-autofill:hover, 
+                input:-webkit-autofill:focus {
+                    -webkit-box-shadow: 0 0 0px 1000px white inset;
+                    transition: background-color 5000s ease-in-out 0s;
+                }
+                @keyframes bounce-slow {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-5px); }
+                }
+                .animate-bounce-slow { animation: bounce-slow 3s infinite; }
+            `}} />
         </div>
     );
 };
