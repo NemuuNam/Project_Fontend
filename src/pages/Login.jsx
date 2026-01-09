@@ -90,7 +90,7 @@ const Login = () => {
             <div className="w-full max-w-[480px] bg-[#ffffff] p-8 sm:p-14 rounded-[40px] md:rounded-[60px] border border-slate-100 shadow-[0_20px_60px_rgba(0,0,0,0.03)] relative z-10 animate-in fade-in zoom-in duration-700">
                 
                 {/* ปุ่มกลับหน้าหลัก */}
-                <Link to="/" className="absolute top-8 left-8 md:top-12 md:left-12 flex items-center gap-2 text-[#2D241E]/30 hover:text-[#2D241E] font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 group">
+                <Link to="/" className="absolute top-8 left-8 md:top-12 md:left-12 flex items-center gap-2 text-[#2D241E]/30 hover:text-[#2D241E] font-black  text-[20px] uppercase tracking-[0.1em] transition-all active:scale-95 group">
                     <Home size={16} className="group-hover:-translate-y-0.5 transition-transform" /> หน้าหลัก
                 </Link>
 
@@ -101,18 +101,18 @@ const Login = () => {
                     </div>
 
                     <h2 className="text-3xl md:text-4xl font-black text-[#2D241E] uppercase tracking-tighter mb-2 italic">การยืนยันตัวตน</h2>
-                    <p className="text-[#2D241E]/40 font-bold text-xs uppercase tracking-[0.3em]">{shopName}</p>
+                    <p className="text-[#2D241E]/40 font-bold  text-xl uppercase tracking-[0.1em]">{shopName}</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="mt-12 space-y-7">
                     
                     {/* อินพุต อีเมล */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-[#2D241E]/30 ml-5 tracking-widest">อีเมลผู้ใช้งาน</label>
+                        <label className=" text-[20px] font-black uppercase text-[#2D241E]/30 ml-5 tracking-widest">อีเมลผู้ใช้งาน</label>
                         <div className="relative flex items-center group">
                             <Mail className="absolute left-6 text-[#2D241E]/10 group-focus-within:text-[#2D241E] transition-colors" size={20} />
                             <input 
-                                className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E]/20 transition-all placeholder:text-[#2D241E]/10 text-lg"
+                                className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E]/20 transition-all placeholder:text-[#2D241E]/10 text-xl"
                                 type="email" 
                                 placeholder="ระบุอีเมลของคุณ..." 
                                 value={email} 
@@ -124,11 +124,11 @@ const Login = () => {
 
                     {/* อินพุต รหัสผ่าน */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-[#2D241E]/30 ml-5 tracking-widest">รหัสผ่านความปลอดภัย</label>
+                        <label className=" text-[20px] font-black uppercase text-[#2D241E]/30 ml-5 tracking-widest">รหัสผ่านความปลอดภัย</label>
                         <div className="relative flex items-center group">
                             <Lock className="absolute left-6 text-[#2D241E]/10 group-focus-within:text-[#2D241E] transition-colors" size={20} />
                             <input 
-                                className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E]/20 transition-all placeholder:text-[#2D241E]/10 text-lg"
+                                className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E]/20 transition-all placeholder:text-[#2D241E]/10 text-xl"
                                 type="password" 
                                 placeholder="••••••••" 
                                 value={password} 
@@ -141,7 +141,7 @@ const Login = () => {
                         <div className="flex justify-end pr-2">
                             <Link 
                                 to="/forgot-password" 
-                                className="inline-flex items-center gap-1.5 text-[#2D241E]/20 hover:text-[#2D241E] font-black text-[10px] uppercase tracking-widest transition-all"
+                                className="inline-flex items-center gap-1.5 text-[#2D241E]/20 hover:text-[#2D241E] font-black  text-[20px] uppercase tracking-widest transition-all"
                             >
                                 <KeyRound size={13} /> ลืมรหัสผ่าน?
                             </Link>
@@ -150,20 +150,20 @@ const Login = () => {
 
                     {/* ปุ่มตกลง (Pearl White Style) */}
                     <button 
-                        className="w-full py-5 md:py-6 bg-white text-[#2D241E] border border-slate-200 rounded-full font-black text-sm uppercase tracking-[0.3em] flex justify-center items-center gap-4 transition-all hover:bg-slate-50 hover:shadow-md hover:-translate-y-1 active:scale-95 disabled:opacity-50 group mt-4 shadow-sm"
+                        className="w-full py-5 md:py-6 bg-white text-[#2D241E] border border-slate-200 rounded-full font-black text-[20px] uppercase tracking-[0.1em] flex justify-center items-center gap-4 transition-all hover:bg-slate-50 hover:shadow-md hover:-translate-y-1 active:scale-95 disabled:opacity-50 group mt-4 shadow-sm"
                         type="submit" 
                         disabled={loading}
                     >
                         {loading ? (
                             <Loader2 className="animate-spin text-[#2D241E]" size={20} />
                         ) : (
-                            <>เข้าสู่ระบบ <ArrowRight size={18} className="text-[#D97706] group-hover:translate-x-1 transition-transform" /></>
+                            <>เข้าสู่ระบบ <ArrowRight size={18} className="text-[#2D241E] group-hover:translate-x-1 transition-transform" /></>
                         )}
                     </button>
                 </form>
 
                 {/* ส่วนสมัครสมาชิก */}
-                <div className="mt-14 text-center text-[#2D241E]/30 font-bold text-xs uppercase tracking-widest">
+                <div className="mt-14 text-center text-[#2D241E]/30 font-bold  text-xl uppercase tracking-widest">
                     ยังไม่มีบัญชีสมาชิก? 
                     <Link to="/register" className="ml-3 text-[#2D241E] font-black border-b border-[#2D241E]/10 hover:border-[#2D241E] transition-all pb-1">สมัครสมาชิกใหม่</Link>
                 </div>

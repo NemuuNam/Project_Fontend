@@ -50,8 +50,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen, a
             color: '#2D241E',
             customClass: { 
                 popup: 'rounded-[3rem] shadow-xl border border-slate-50 font-["Kanit"]',
-                confirmButton: 'rounded-full px-10 py-4 text-lg',
-                cancelButton: 'rounded-full px-10 py-4 text-lg text-[#2D241E] border border-slate-100'
+                confirmButton: 'rounded-full px-10 py-4 text-xl',
+                cancelButton: 'rounded-full px-10 py-4 text-xl text-[#2D241E] border border-slate-100'
             }
         }).then((result) => {
             if (result.isConfirmed) {
@@ -117,7 +117,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen, a
                     .nav-body { flex: 1; padding: 0 18px; overflow-y: auto; scrollbar-width: none; position: relative; z-index: 10; }
                     .nav-body::-webkit-scrollbar { display: none; }
                     
-                    .nav-category { font-size: 11px; text-transform: uppercase; color: #2D241E; opacity: 0.4; font-weight: 800; margin: 25px 0 15px 20px; letter-spacing: 4px; }
+                    .nav-category { font-size: 20px; text-transform: uppercase; color: #2D241E; opacity: 0.4; font-weight: 800; margin: 25px 0 15px 20px; letter-spacing: 4px; }
                     .collapsed .nav-category { opacity: 0; }
 
                     .nav-item { 
@@ -141,7 +141,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen, a
                         width: 100%; display: flex; align-items: center; gap: 12px; padding: 18px; 
                         background: #fff; color: #ef4444; border: 1px solid #fee2e2; border-radius: 20px; 
                         font-weight: 800; cursor: pointer; transition: 0.3s; justify-content: center;
-                        font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
+                        font-size: 20px; text-transform: uppercase; letter-spacing: 1px;
                     }
                     .btn-signout:hover { background: #fef2f2; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(239, 68, 68, 0.05); }
                     .collapsed .btn-signout { padding: 18px 0; border: none; background: transparent; }
@@ -150,7 +150,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen, a
                     .gimmick-pattern {
                         position: absolute; pointer-events: none; opacity: 0.025; z-index: 0; color: #2D241E;
                     }
-                    .label { font-size: 15px; }
+                    .label { font-size: 20px; }
                 `}</style>
 
                 {/* Desktop Toggle Button (ซ่อนบนมือถือ) */}

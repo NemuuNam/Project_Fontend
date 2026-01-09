@@ -61,7 +61,7 @@ const Footer = ({ userData }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-16">
 
           {/* ส่วนที่ 1: แบรนด์และตัวตนร้าน */}
-          <div className="lg:col-span-5 space-y-8 text-left">
+          <div className="lg:col-span-4 space-y-8 text-left">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#2D241E] shadow-sm border border-slate-50">
                 <Cookie size={28} strokeWidth={1.5} />
@@ -70,7 +70,7 @@ const Footer = ({ userData }) => {
                 {shopInfo.shop_name}
               </h2>
             </div>
-            <p className="text-[#2D241E] font-medium leading-relaxed opacity-60 max-w-md text-lg">
+            <p className="text-[#2D241E] font-medium leading-relaxed opacity-60 max-w-md text-xl">
               {shopInfo.hero_description}
             </p>
             <div className="flex space-x-3">
@@ -88,10 +88,10 @@ const Footer = ({ userData }) => {
 
           {/* ส่วนที่ 2: ลิงก์เมนูหลัก */}
           <div className="lg:col-span-3 text-left">
-            <h3 className="text-[15px] font-black text-[#2D241E] opacity-70 mb-8 tracking-[0.5em] uppercase flex items-center gap-2 leading-none">
+            <h3 className="text-xl font-black text-[#2D241E] mb-8 tracking-[0.1em] uppercase flex items-center gap-1 leading-none">
               การสำรวจเว็ปไซต์
             </h3>
-            <ul className="space-y-5 text-[#2D241E] font-bold">
+            <ul className="space-y-5 text-[#2D241E] font-medium relative z-12">
               {[
                 { name: 'หน้าแรก', path: '/' },
                 { name: 'รายการสินค้า', path: '/products' },
@@ -99,7 +99,7 @@ const Footer = ({ userData }) => {
                 { name: 'ประวัติสั่งซื้อ', path: '/my-orders' }
               ].map((item) => (
                 <li key={item.name}>
-                  <Link to={item.path} className="hover:opacity-60 transition-all flex items-center group text-base">
+                  <Link to={item.path} className="hover:opacity-60 transition-all flex items-center group text-xl">
                     <ChevronRight size={14} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all mr-2" />
                     {item.name}
                   </Link>
@@ -108,8 +108,8 @@ const Footer = ({ userData }) => {
 
               {isStaff && (
                 <li className="pt-6">
-                  <Link to="/admin/dashboard" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-100 rounded-full text-[#D97706] text-xs font-black italic uppercase tracking-widest shadow-sm hover:shadow-md transition-all">
-                    <ShieldCheck size={14} />
+                  <Link to="/admin/dashboard" className="inline-flex items-center gap-1 px-8 py-2.5 bg-white border border-slate-100 rounded-full text-[#2D241E] text-sm font-black italic uppercase tracking-widest shadow-sm hover:shadow-md transition-all">
+                    <ShieldCheck size={24} />
                     ระบบจัดการหลังบ้าน
                   </Link>
                 </li>
@@ -119,15 +119,14 @@ const Footer = ({ userData }) => {
 
           {/* ส่วนที่ 3: ข้อมูลการติดต่อ */}
           <div className="lg:col-span-4 text-left">
-            <div className="bg-white p-8 md:p-10 rounded-[3.5rem] border border-slate-50 shadow-sm relative overflow-hidden group">
               <Smile className="absolute -right-4 -bottom-4 opacity-[0.02] rotate-12 transition-transform group-hover:scale-110" size={100} />
-              <h3 className="text-[15px] font-black text-[#2D241E] opacity-70 mb-8 tracking-[0.5em] uppercase leading-none">ติดต่อเรา</h3>
-              <ul className="space-y-8 text-[#2D241E] relative z-10">
+              <h3 className="text-[20px] font-black text-[#2D241E] mb-8 tracking-[0.1em] uppercase leading-none">ติดต่อเรา</h3>
+              <ul className="space-y-4 text-[#2D241E] relative z-12">
                 <li className="flex items-start space-x-5 group/item">
                   <div className="p-3 bg-slate-50/50 rounded-2xl transition-transform group-hover/item:scale-110">
                     <MapPin size={20} className="shrink-0 opacity-40" />
                   </div>
-                  <span className="text-sm font-medium leading-relaxed">
+                  <span className="text-[20px] font-medium leading-relaxed">
                     {shopInfo.address}
                   </span>
                 </li>
@@ -135,30 +134,25 @@ const Footer = ({ userData }) => {
                   <div className="p-3 bg-slate-50/50 rounded-2xl transition-transform group-hover/item:scale-110">
                     <Phone size={20} className="shrink-0 opacity-40" />
                   </div>
-                  <span className="text-base font-black tracking-wider">{shopInfo.phone}</span>
+                  <span className="text-[20px] font-black font-medium tracking-wider">{shopInfo.phone}</span>
                 </li>
                 <li className="flex items-center space-x-5 group/item">
                   <div className="p-3 bg-slate-50/50 rounded-2xl transition-transform group-hover/item:scale-110">
                     <Mail size={20} className="shrink-0 opacity-40" />
                   </div>
-                  <span className="text-base font-black break-all">{shopInfo.email}</span>
+                  <span className="text-[20px] font-black font-medium break-all">{shopInfo.email}</span>
                 </li>
               </ul>
             </div>
           </div>
-
         </div>
-      </div>
 
       {/* --- ส่วนล่างสุดของ Footer --- */}
       <div className="border-t border-slate-50 py-2 bg-white relative z-10">
         <div className="container mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            <p className="text-[15px] font-black text-[#2D241E] opacity-20 tracking-[0.4em] uppercase mb-1">
+            <p className="text-[20px] font-black text-[#2D241E] tracking-[0.1em] uppercase mb-1">
               © {currentYear} {shopInfo.shop_name}
-            </p>
-            <p className="text-[13px] font-bold text-[#2D241E] opacity-10 tracking-widest uppercase">
-              สงวนลิขสิทธิ์ความอร่อยทั้งหมด
             </p>
           </div>
         </div>

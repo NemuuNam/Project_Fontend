@@ -214,11 +214,11 @@ const Checkout = ({ userData }) => {
 
             <main className="relative z-10 max-w-[1366px] mx-auto px-6 md:px-10 pt-28 md:pt-40 pb-32">
                 <div className="mb-16 text-left">
-                    <button onClick={() => navigate('/cart')} className="flex items-center gap-2 text-xs md:text-sm font-black text-[#C2B8A3] hover:text-[#2D241E] mb-6 uppercase tracking-widest transition-all group">
+                    <button onClick={() => navigate('/cart')} className="flex items-center gap-2  text-xl md:text-[20px] font-black text-[#2D241E] hover:text-[#2D241E] mb-6 uppercase tracking-widest transition-all group">
                         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> ย้อนกลับไปตะกร้า
                     </button>
                     <div className="flex items-center gap-4">
-                        <div className="w-2 h-12 bg-[#D97706] rounded-full"></div>
+                        <div className="w-2 h-12 bg-[#2D241E] rounded-full"></div>
                         <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter italic">ยืนยันการสั่งซื้อ</h1>
                     </div>
                 </div>
@@ -230,27 +230,27 @@ const Checkout = ({ userData }) => {
                         <section ref={addressSectionRef} className="bg-white p-8 md:p-14 rounded-[4rem] shadow-sm border border-slate-100 relative">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8 mb-12">
                                 <h2 className="text-2xl md:text-3xl font-black italic uppercase flex items-center gap-5">
-                                    <span className="text-[#C2B8A3] text-xl not-italic">01.</span> ที่อยู่จัดส่ง
+                                    <span className="text-[#2D241E] text-xl not-italic">01.</span> ที่อยู่จัดส่ง
                                 </h2>
                                 <div className="flex bg-white p-1 rounded-full border border-slate-100 shadow-inner">
-                                    <button onClick={() => setIsAddingNew(false)} className={`flex-1 sm:px-10 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${!isAddingNew ? 'bg-white shadow-md text-[#2D241E] border border-slate-100' : 'text-[#C2B8A3]'}`}>เลือกที่อยู่เดิม</button>
-                                    <button onClick={() => setIsAddingNew(true)} className={`flex-1 sm:px-10 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${isAddingNew ? 'bg-white shadow-md text-[#2D241E] border border-slate-100' : 'text-[#C2B8A3]'}`}>+ เพิ่มใหม่</button>
+                                    <button onClick={() => setIsAddingNew(false)} className={`flex-1 sm:px-10 py-3 rounded-full text-[20px] font-black uppercase tracking-widest transition-all ${!isAddingNew ? 'bg-white shadow-md text-[#2D241E] border border-slate-100' : 'text-[#2D241E]'}`}>เลือกที่อยู่เดิม</button>
+                                    <button onClick={() => setIsAddingNew(true)} className={`flex-1 sm:px-10 py-3 rounded-full text-[20px] font-black uppercase tracking-widest transition-all ${isAddingNew ? 'bg-white shadow-md text-[#2D241E] border border-slate-100' : 'text-[#2D241E]'}`}>+ เพิ่มใหม่</button>
                                 </div>
                             </div>
 
                             {isAddingNew ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-[#C2B8A3] ml-4 tracking-widest">ชื่อผู้รับ</label>
-                                        <input placeholder="ชื่อ-นามสกุล" className={`w-full px-8 py-5 rounded-[2rem] bg-white border-2 transition-all text-lg font-bold outline-none ${errors.recipient_name ? 'border-red-100' : 'border-slate-100 focus:border-[#F3E9DC]'}`} value={addressForm.recipient_name} onChange={e => setAddressForm({...addressForm, recipient_name: e.target.value})} />
+                                        <label className="text-[20px] font-black uppercase text-[#2D241E] ml-4 tracking-widest">ชื่อผู้รับ</label>
+                                        <input placeholder="ชื่อ-นามสกุล" className={`w-full px-8 py-5 rounded-[2rem] bg-white border-2 transition-all text-xl font-bold outline-none ${errors.recipient_name ? 'border-red-100' : 'border-slate-100 focus:border-[#F3E9DC]'}`} value={addressForm.recipient_name} onChange={e => setAddressForm({...addressForm, recipient_name: e.target.value})} />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-[#C2B8A3] ml-4 tracking-widest">เบอร์โทรศัพท์</label>
-                                        <input placeholder="08X-XXX-XXXX" className={`w-full px-8 py-5 rounded-[2rem] bg-white border-2 transition-all text-lg font-bold outline-none ${errors.phone_number ? 'border-red-100' : 'border-slate-100 focus:border-[#F3E9DC]'}`} value={addressForm.phone_number} onChange={e => setAddressForm({...addressForm, phone_number: formatPhoneNumber(e.target.value)})} maxLength={12} />
+                                        <label className="text-[20px] font-black uppercase text-[#2D241E] ml-4 tracking-widest">เบอร์โทรศัพท์</label>
+                                        <input placeholder="08X-XXX-XXXX" className={`w-full px-8 py-5 rounded-[2rem] bg-white border-2 transition-all text-xl font-bold outline-none ${errors.phone_number ? 'border-red-100' : 'border-slate-100 focus:border-[#F3E9DC]'}`} value={addressForm.phone_number} onChange={e => setAddressForm({...addressForm, phone_number: formatPhoneNumber(e.target.value)})} maxLength={12} />
                                     </div>
                                     <div className="md:col-span-2 space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-[#C2B8A3] ml-4 tracking-widest">รายละเอียดที่อยู่</label>
-                                        <textarea placeholder="บ้านเลขที่, ถนน, แขวง/ตำบล, รหัสไปรษณีย์" className={`w-full px-8 py-6 rounded-[2.5rem] bg-white border-2 transition-all text-lg font-medium outline-none resize-none ${errors.address_detail ? 'border-red-100' : 'border-slate-100 focus:border-[#F3E9DC]'}`} rows="3" value={addressForm.address_detail} onChange={e => setAddressForm({...addressForm, address_detail: e.target.value})} />
+                                        <label className="text-[20px] font-black uppercase text-[#2D241E] ml-4 tracking-widest">รายละเอียดที่อยู่</label>
+                                        <textarea placeholder="บ้านเลขที่, ถนน, แขวง/ตำบล, รหัสไปรษณีย์" className={`w-full px-8 py-6 rounded-[2.5rem] bg-white border-2 transition-all text-xl font-medium outline-none resize-none ${errors.address_detail ? 'border-red-100' : 'border-slate-100 focus:border-[#F3E9DC]'}`} rows="3" value={addressForm.address_detail} onChange={e => setAddressForm({...addressForm, address_detail: e.target.value})} />
                                     </div>
                                 </div>
                             ) : (
@@ -258,17 +258,17 @@ const Checkout = ({ userData }) => {
                                     {savedAddresses.map(addr => (
                                         <div key={addr.address_id} onClick={() => setSelectedAddressId(addr.address_id)} className={`p-8 rounded-[3rem] border-2 cursor-pointer transition-all duration-500 relative group ${selectedAddressId === addr.address_id ? 'border-[#F3E9DC] bg-white shadow-lg' : 'border-slate-100 bg-white hover:shadow-md'}`}>
                                             <div className="flex justify-between items-start mb-6">
-                                                <div className={`p-3 rounded-2xl ${selectedAddressId === addr.address_id ? 'bg-[#2D241E] text-white' : 'bg-slate-50 text-[#C2B8A3]'}`}><Home size={20} /></div>
-                                                {selectedAddressId === addr.address_id && <CheckCircle2 size={24} className="text-[#D97706]" />}
+                                                <div className={`p-3 rounded-2xl ${selectedAddressId === addr.address_id ? 'bg-[#2D241E] text-white' : 'bg-slate-50 text-[#2D241E]'}`}><Home size={20} /></div>
+                                                {selectedAddressId === addr.address_id && <CheckCircle2 size={24} className="text-[#2D241E]" />}
                                             </div>
                                             <p className="font-black text-xl uppercase italic leading-none mb-3">{addr.recipient_name}</p>
-                                            <p className="text-sm text-[#A8A294] font-medium line-clamp-2 mb-6">{addr.address_detail}</p>
+                                            <p className="text-[20px] text-[#A8A294] font-medium line-clamp-2 mb-6">{addr.address_detail}</p>
                                             <p className="text-base font-black border-t border-slate-100 pt-5">{formatPhoneNumber(addr.phone_number)}</p>
                                         </div>
                                     ))}
-                                    <button onClick={() => setIsAddingNew(true)} className="flex flex-col items-center justify-center p-10 rounded-[3rem] border-2 border-dashed border-slate-100 text-[#C2B8A3] hover:border-[#2D241E] hover:text-[#2D241E] transition-all bg-white group">
+                                    <button onClick={() => setIsAddingNew(true)} className="flex flex-col items-center justify-center p-10 rounded-[3rem] border-2 border-dashed border-slate-100 text-[#2D241E] hover:border-[#2D241E] hover:text-[#2D241E] transition-all bg-white group">
                                         <Plus size={32} />
-                                        <span className="text-[10px] font-black uppercase mt-4 tracking-widest">เพิ่มข้อมูลใหม่</span>
+                                        <span className="text-[20px] font-black uppercase mt-4 tracking-widest">เพิ่มข้อมูลใหม่</span>
                                     </button>
                                 </div>
                             )}
@@ -277,11 +277,11 @@ const Checkout = ({ userData }) => {
                         {/* 2. การชำระเงิน - Pearl White Style */}
                         <section className="bg-white p-8 md:p-14 rounded-[4rem] shadow-sm border border-slate-100">
                             <h2 className="text-2xl md:text-3xl font-black italic uppercase flex items-center gap-5 mb-12">
-                                <span className="text-[#C2B8A3] text-xl not-italic">02.</span> ชำระเงิน
+                                <span className="text-[#2D241E] text-xl not-italic">02.</span> ชำระเงิน
                             </h2>
                             <div className="flex flex-wrap gap-3 mb-10">
                                 {paymentMethods.map(m => (
-                                    <button key={m.method_id} onClick={() => setSelectedMethod(m)} className={`px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border ${selectedMethod?.method_id === m.method_id ? 'bg-[#2D241E] text-white border-[#2D241E] shadow-xl' : 'bg-white text-[#C2B8A3] border-slate-200 hover:border-slate-300'}`}>{m.bank_name}</button>
+                                    <button key={m.method_id} onClick={() => setSelectedMethod(m)} className={`px-10 py-4 rounded-full text-[20px] font-black uppercase tracking-widest transition-all border ${selectedMethod?.method_id === m.method_id ? 'bg-[#2D241E] text-white border-[#2D241E] shadow-xl' : 'bg-white text-[#2D241E] border-slate-200 hover:border-slate-300'}`}>{m.bank_name}</button>
                                 ))}
                             </div>
 
@@ -291,7 +291,7 @@ const Checkout = ({ userData }) => {
                                         <Landmark className="absolute -left-10 -bottom-10 opacity-[0.03] -rotate-12" size={200} />
                                         <div className="flex flex-col md:flex-row justify-between items-center gap-10 relative z-10 text-center md:text-left">
                                             <div>
-                                                <p className="text-[10px] font-black text-[#C2B8A3] uppercase tracking-[0.4em] mb-3">บัญชีธนาคาร</p>
+                                                <p className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] mb-3">บัญชีธนาคาร</p>
                                                 <p className="text-2xl md:text-3xl font-black italic uppercase leading-none">{selectedMethod.account_name}</p>
                                             </div>
                                             <div className="flex items-center gap-4">
@@ -310,9 +310,9 @@ const Checkout = ({ userData }) => {
                                             </div>
                                         ) : (
                                             <div className="text-center pointer-events-none">
-                                                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-100 group-hover:scale-110 transition-transform"><Upload className="text-[#C2B8A3]" size={32} /></div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest mb-2">อัปโหลดสลิปการโอน</p>
-                                                <p className="text-[#C2B8A3] text-[9px] font-bold italic uppercase">รองรับไฟล์รูปภาพเท่านั้น</p>
+                                                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-100 group-hover:scale-110 transition-transform"><Upload className="text-[#2D241E]" size={32} /></div>
+                                                <p className="text-[20px] font-black uppercase tracking-widest mb-2">อัปโหลดสลิปการโอน</p>
+                                                <p className="text-[#2D241E] text-[20px] font-bold italic uppercase">รองรับไฟล์รูปภาพเท่านั้น</p>
                                             </div>
                                         )}
                                     </div>
@@ -331,28 +331,28 @@ const Checkout = ({ userData }) => {
                                     <div key={item.product_id} className="flex gap-6 items-center">
                                         <img src={item.image_url} className="w-16 h-16 rounded-2xl border border-slate-100 shadow-sm shrink-0 object-cover" alt={item.product_name} />
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-black text-xs uppercase truncate italic">{item.product_name}</p>
-                                            <p className="text-[10px] text-[#C2B8A3] font-black uppercase tracking-widest">{item.quantity} ชิ้น — ฿{Number(item.unit_price).toLocaleString()}</p>
+                                            <p className="font-black  text-xl uppercase truncate italic">{item.product_name}</p>
+                                            <p className="text-[20px] text-[#2D241E] font-black uppercase tracking-widest">{item.quantity} ชิ้น — ฿{Number(item.unit_price).toLocaleString()}</p>
                                         </div>
-                                        <p className="font-black text-lg italic tracking-tight text-[#2D241E]">฿{(item.unit_price * item.quantity).toLocaleString()}</p>
+                                        <p className="font-black text-xl italic tracking-tight text-[#2D241E]">฿{(item.unit_price * item.quantity).toLocaleString()}</p>
                                     </div>
                                 ))}
                             </div>
 
                             <div className="space-y-5 mb-14 relative z-10 border-t border-slate-100 pt-8 ">
-                                <div className="flex justify-between text-xs font-black uppercase text-[#C2B8A3] tracking-widest">
-                                    <span className="text-2xl font-black uppercase text-[#C2B8A3] tracking-tighter italic">ยอดรวมสินค้า</span>
+                                <div className="flex justify-between  text-xl font-black uppercase text-[#2D241E] tracking-widest">
+                                    <span className="text-2xl font-black uppercase text-[#2D241E] tracking-tighter italic">ยอดรวมสินค้า</span>
                                     <span className="text-[#2D241E] text-2xl">฿{subtotal.toLocaleString()}</span>
                                 </div>
-                                <div className="flex justify-between text-xs font-black uppercase text-[#C2B8A3] tracking-widest">
-                                    <span className="text-2xl font-black uppercase text-[#C2B8A3] tracking-tighter italic">ค่าจัดส่ง</span>
+                                <div className="flex justify-between  text-xl font-black uppercase text-[#2D241E] tracking-widest">
+                                    <span className="text-2xl font-black uppercase text-[#2D241E] tracking-tighter italic">ค่าจัดส่ง</span>
                                     {isFreeShipping ? <span className="text-emerald-500 italic text-2xl">ฟรีจัดส่ง</span> : <span className="text-[#2D241E] text-2xl">฿{shippingCost.toLocaleString()}</span>}
                                 </div>
                                 {!isFreeShipping && shopSettings.min_free_shipping > 0 && (
-                                    <div className="p-4 bg-white border border-[#F3E9DC] rounded-2xl flex gap-3 items-center text-[#8B7E66] shadow-sm">
-                                        <Info size={16} className="text-[#D97706] shrink-0" />
+                                    <div className="p-4 bg-white border border-[#F3E9DC] rounded-2xl flex gap-3 items-center text-[#2D241E] shadow-sm">
+                                        <Info size={16} className="text-[#2D241E] shrink-0" />
                                         <p className="text-[20px] font-bold uppercase tracking-wider">
-                                            ซื้อเพิ่มอีก <span className="text-[#D97706]">{shopSettings.min_free_shipping - totalItemsCount} ชิ้น</span> เพื่อส่งฟรี!
+                                            ซื้อเพิ่มอีก <span className="text-[#2D241E]">{shopSettings.min_free_shipping - totalItemsCount} ชิ้น</span> เพื่อส่งฟรี!
                                         </p>
                                     </div>
                                 )}
@@ -360,14 +360,14 @@ const Checkout = ({ userData }) => {
 
                             <div className="pt-10 border-t-4 border-[#2D241E] mb-14 relative z-10">
                                 <div className="flex justify-between items-end">
-                                    <div><p className="text-xs font-black text-[#D97706] uppercase tracking-[0.4em] mb-2">ยอดสุทธิ</p><span className="text-3xl font-black uppercase text-[#C2B8A3] tracking-tighter italic">Net total</span></div>
+                                    <div><p className=" text-xl font-black text-[#2D241E] uppercase tracking-[0.1em] mb-2">ยอดสุทธิ</p><span className="text-3xl font-black uppercase text-[#2D241E] tracking-tighter italic">Net total</span></div>
                                     <p className="text-5xl md:text-6xl font-black italic tracking-tighter leading-none">฿{totalAmount.toLocaleString()}</p>
                                 </div>
                             </div>
 
-                            <button onClick={handleSubmitOrder} className="w-full bg-white text-[#2D241E] border border-slate-200 py-7 md:py-9 rounded-full font-black uppercase tracking-[0.4em] text-[10px] md:text-xs shadow-md hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-4 relative z-10 group overflow-hidden">
+                            <button onClick={handleSubmitOrder} className="w-full bg-white text-[#2D241E] border border-slate-200 py-7 md:py-9 rounded-full font-black uppercase tracking-[0.1em] text-[20px] md: text-xl shadow-md hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-4 relative z-10 group overflow-hidden">
                                 <span className="relative z-10">ยืนยันการสั่งซื้อ</span>
-                                <ChevronRight size={18} className="text-[#D97706] relative z-10 transition-transform group-hover:translate-x-1" />
+                                <ChevronRight size={18} className="text-[#2D241E] relative z-10 transition-transform group-hover:translate-x-1" />
                             </button>
                         </div>
                     </div>

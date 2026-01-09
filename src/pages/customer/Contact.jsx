@@ -89,18 +89,18 @@ const Contact = ({ userData }) => {
                 {/* Cozy Gimmick Patterns */}
                 <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
                     <Leaf className="absolute top-10 left-[5%] rotate-12 text-[#2D241E]" size={150} />
-                    <Sparkles className="absolute bottom-10 right-[10%] text-[#D97706]" size={100} />
+                    <Sparkles className="absolute bottom-10 right-[10%] text-[#2D241E]" size={100} />
                 </div>
 
                 <div className="container mx-auto px-6 text-center relative z-10">
                     <div className="inline-flex items-center gap-2 px-5 py-2 bg-white rounded-full shadow-sm border border-slate-100 mb-6">
-                        <Navigation size={14} className="text-[#D97706]" />
-                        <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#8B7E66]">Get In Touch</span>
+                        <Navigation size={14} className="text-[#2D241E]" />
+                        <span className="text-[20px] font-bold uppercase tracking-[0.1em] text-[#2D241E]">Get In Touch</span>
                     </div>
                     <h1 className="text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tighter leading-none mb-6">
-                        Contact <span className="text-[#8B7E66] italic font-light serif">Us</span>
+                        Contact <span className="text-[#2D241E] italic font-light serif">Us</span>
                     </h1>
-                    <p className="text-[#8B7E66] text-lg lg:text-xl font-light max-w-2xl mx-auto italic">
+                    <p className="text-[#2D241E] text-xl lg:text-xl font-light max-w-2xl mx-auto italic">
                         แวะมาทักทายหรือสอบถามข้อมูลเพิ่มเติม เพื่อให้เราได้ดูแลคุณอย่างดีที่สุด
                     </p>
                 </div>
@@ -131,13 +131,13 @@ const Contact = ({ userData }) => {
                                         <h3 className="text-xl font-black uppercase tracking-tight">ที่ตั้งร้าน</h3>
                                         {isEditing ? (
                                             <textarea 
-                                                className="w-full p-5 rounded-[2rem] bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all text-sm shadow-inner" 
+                                                className="w-full p-5 rounded-[2rem] bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all text-[20px] shadow-inner" 
                                                 value={contactInfo.contact_address} 
                                                 onChange={(e) => setContactInfo({...contactInfo, contact_address: e.target.value})} 
                                                 rows="3" 
                                             />
                                         ) : (
-                                            <p className="text-[#8B7E66] font-medium leading-relaxed italic">{contactInfo.contact_address || 'ยังไม่ได้ระบุข้อมูลที่อยู่'}</p>
+                                            <p className="text-[#2D241E] font-medium leading-relaxed italic">{contactInfo.contact_address || 'ยังไม่ได้ระบุข้อมูลที่อยู่'}</p>
                                         )}
                                     </div>
                                 </div>
@@ -151,13 +151,13 @@ const Contact = ({ userData }) => {
                                         <h3 className="text-xl font-black uppercase tracking-tight">ช่องทางติดต่อ</h3>
                                         {isEditing ? (
                                             <div className="space-y-3">
-                                                <input className="w-full p-4 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-sm" placeholder="เบอร์โทรศัพท์" value={contactInfo.contact_phone} onChange={(e) => setContactInfo({...contactInfo, contact_phone: e.target.value})} />
-                                                <input className="w-full p-4 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-sm" placeholder="อีเมล" value={contactInfo.contact_email} onChange={(e) => setContactInfo({...contactInfo, contact_email: e.target.value})} />
+                                                <input className="w-full p-4 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-[20px]" placeholder="เบอร์โทรศัพท์" value={contactInfo.contact_phone} onChange={(e) => setContactInfo({...contactInfo, contact_phone: e.target.value})} />
+                                                <input className="w-full p-4 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-[20px]" placeholder="อีเมล" value={contactInfo.contact_email} onChange={(e) => setContactInfo({...contactInfo, contact_email: e.target.value})} />
                                             </div>
                                         ) : (
                                             <div className="space-y-1">
                                                 <p className="text-[#2D241E] font-black text-2xl tracking-tighter">{contactInfo.contact_phone || '-'}</p>
-                                                <p className="text-[#8B7E66] font-medium text-sm italic">{contactInfo.contact_email || '-'}</p>
+                                                <p className="text-[#2D241E] font-medium text-[20px] italic">{contactInfo.contact_email || '-'}</p>
                                             </div>
                                         )}
                                     </div>
@@ -171,9 +171,9 @@ const Contact = ({ userData }) => {
                                     <div className="space-y-3">
                                         <h3 className="text-xl font-black uppercase tracking-tight">เวลาเปิดทำการ</h3>
                                         {isEditing ? (
-                                            <input className="w-full p-5 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-sm" value={contactInfo.contact_opening_hours} onChange={(e) => setContactInfo({...contactInfo, contact_opening_hours: e.target.value})} />
+                                            <input className="w-full p-5 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-[20px]" value={contactInfo.contact_opening_hours} onChange={(e) => setContactInfo({...contactInfo, contact_opening_hours: e.target.value})} />
                                         ) : (
-                                            <p className="text-[#8B7E66] font-medium leading-relaxed italic">{contactInfo.contact_opening_hours || '-'}</p>
+                                            <p className="text-[#2D241E] font-medium leading-relaxed italic">{contactInfo.contact_opening_hours || '-'}</p>
                                         )}
                                     </div>
                                 </div>
@@ -190,15 +190,15 @@ const Contact = ({ userData }) => {
                                         {isEditing ? (
                                             <div className="grid grid-cols-1 gap-2">
                                                 {['facebook_url', 'line_url', 'instagram_url', 'tiktok_url'].map((key) => (
-                                                    <input key={key} className="w-full p-4 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-[10px]" placeholder={key.replace('_url', '').toUpperCase() + ' Link'} value={contactInfo[key]} onChange={(e) => setContactInfo({...contactInfo, [key]: e.target.value})} />
+                                                    <input key={key} className="w-full p-4 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-[20px]" placeholder={key.replace('_url', '').toUpperCase() + ' Link'} value={contactInfo[key]} onChange={(e) => setContactInfo({...contactInfo, [key]: e.target.value})} />
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="flex flex-wrap gap-x-5 gap-y-2 font-black text-[10px] uppercase tracking-widest text-[#2D241E]">
-                                                {contactInfo.facebook_url && <a href={contactInfo.facebook_url} target="_blank" rel="noreferrer" className="hover:text-[#1877F2] transition-colors underline decoration-[#D97706] underline-offset-4">Facebook</a>}
-                                                {contactInfo.line_url && <a href={contactInfo.line_url} target="_blank" rel="noreferrer" className="hover:text-[#06C755] transition-colors underline decoration-[#D97706] underline-offset-4">Line OA</a>}
-                                                {contactInfo.instagram_url && <a href={contactInfo.instagram_url} target="_blank" rel="noreferrer" className="hover:text-pink-500 transition-colors underline decoration-[#D97706] underline-offset-4">Instagram</a>}
-                                                {contactInfo.tiktok_url && <a href={contactInfo.tiktok_url} target="_blank" rel="noreferrer" className="hover:text-slate-500 transition-colors underline decoration-[#D97706] underline-offset-4">TikTok</a>}
+                                            <div className="flex flex-wrap gap-x-5 gap-y-2 font-black text-[20px] uppercase tracking-widest text-[#2D241E]">
+                                                {contactInfo.facebook_url && <a href={contactInfo.facebook_url} target="_blank" rel="noreferrer" className="hover:text-[#1877F2] transition-colors underline decoration-[#2D241E] underline-offset-4">Facebook</a>}
+                                                {contactInfo.line_url && <a href={contactInfo.line_url} target="_blank" rel="noreferrer" className="hover:text-[#06C755] transition-colors underline decoration-[#2D241E] underline-offset-4">Line OA</a>}
+                                                {contactInfo.instagram_url && <a href={contactInfo.instagram_url} target="_blank" rel="noreferrer" className="hover:text-pink-500 transition-colors underline decoration-[#2D241E] underline-offset-4">Instagram</a>}
+                                                {contactInfo.tiktok_url && <a href={contactInfo.tiktok_url} target="_blank" rel="noreferrer" className="hover:text-slate-500 transition-colors underline decoration-[#2D241E] underline-offset-4">TikTok</a>}
                                             </div>
                                         )}
                                     </div>
@@ -210,22 +210,22 @@ const Contact = ({ userData }) => {
                         <div className="lg:col-span-4 w-full">
                             <div className="bg-white p-10 lg:p-12 rounded-[4rem] border border-slate-100 shadow-lg sticky top-32 group transition-all duration-500 hover:shadow-xl text-left">
                                 <h3 className="text-2xl font-black uppercase tracking-tighter mb-8 flex items-center gap-3">
-                                    {isStaff ? <div className="w-2 h-2 bg-[#D97706] rounded-full animate-pulse" /> : <Send className="text-[#D97706]" size={24} />}
+                                    {isStaff ? <div className="w-2 h-2 bg-[#2D241E] rounded-full animate-pulse" /> : <Send className="text-[#2D241E]" size={24} />}
                                     {isStaff ? "ปรับแต่งข้อมูล" : "ส่งข้อความหาเรา"}
                                 </h3>
 
                                 {isStaff ? (
                                     <div className="space-y-4">
                                         {!isEditing ? (
-                                            <button onClick={() => setIsEditing(true)} className="w-full py-5 bg-white text-[#2D241E] rounded-full font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-md border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all active:scale-95">
+                                            <button onClick={() => setIsEditing(true)} className="w-full py-5 bg-white text-[#2D241E] rounded-full font-black uppercase tracking-widest  text-xl flex items-center justify-center gap-3 shadow-md border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all active:scale-95">
                                                 <Edit3 size={18}/> แก้ไขข้อมูลติดต่อ
                                             </button>
                                         ) : (
                                             <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                                <button onClick={handleSave} disabled={isSaving} className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-95">
+                                                <button onClick={handleSave} disabled={isSaving} className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest  text-xl flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-95">
                                                     {isSaving ? <Loader2 className="animate-spin" size={18}/> : <><Save size={18}/> บันทึกการเปลี่ยนแปลง</>}
                                                 </button>
-                                                <button onClick={() => { setIsEditing(false); fetchContactData(); }} className="w-full py-5 bg-white text-[#8B7E66] rounded-full font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 border border-slate-100 hover:text-red-500 transition-all">
+                                                <button onClick={() => { setIsEditing(false); fetchContactData(); }} className="w-full py-5 bg-white text-[#2D241E] rounded-full font-bold uppercase tracking-widest text-[20px] flex items-center justify-center gap-2 border border-slate-100 hover:text-red-500 transition-all">
                                                     <Undo2 size={14}/> ยกเลิก
                                                 </button>
                                             </div>
@@ -233,10 +233,10 @@ const Contact = ({ userData }) => {
                                     </div>
                                 ) : (
                                     <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); toast.success("ส่งข้อความเรียบร้อย!"); }}>
-                                        <input type="text" placeholder="ชื่อของคุณ" className="w-full p-5 bg-slate-50/50 rounded-[1.5rem] border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all font-medium text-sm shadow-inner" required />
-                                        <input type="email" placeholder="อีเมลสำหรับติดต่อกลับ" className="w-full p-5 bg-slate-50/50 rounded-[1.5rem] border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all font-medium text-sm shadow-inner" required />
-                                        <textarea placeholder="เราสามารถช่วยอะไรคุณได้บ้าง?" className="w-full p-5 bg-slate-50/50 rounded-[2rem] border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all font-medium text-sm min-h-[150px] resize-none shadow-inner" required></textarea>
-                                        <button type="submit" className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-95">
+                                        <input type="text" placeholder="ชื่อของคุณ" className="w-full p-5 bg-slate-50/50 rounded-[1.5rem] border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all font-medium text-[20px] shadow-inner" required />
+                                        <input type="email" placeholder="อีเมลสำหรับติดต่อกลับ" className="w-full p-5 bg-slate-50/50 rounded-[1.5rem] border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all font-medium text-[20px] shadow-inner" required />
+                                        <textarea placeholder="เราสามารถช่วยอะไรคุณได้บ้าง?" className="w-full p-5 bg-slate-50/50 rounded-[2rem] border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all font-medium text-[20px] min-h-[150px] resize-none shadow-inner" required></textarea>
+                                        <button type="submit" className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest  text-xl flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-95">
                                             <Send size={18}/> ส่งข้อมูล
                                         </button>
                                     </form>
@@ -252,7 +252,7 @@ const Contact = ({ userData }) => {
 
             <style dangerouslySetInnerHTML={{ __html: `
                 .serif { font-family: 'Georgia', serif; }
-                input::placeholder, textarea::placeholder { color: #C2B8A3; font-weight: 500; }
+                input::placeholder, textarea::placeholder { color: #2D241E; font-weight: 500; }
             `}} />
         </div>
     );

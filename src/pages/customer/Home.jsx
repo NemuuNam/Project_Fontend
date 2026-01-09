@@ -160,7 +160,7 @@ const Home = ({ userData }) => {
       {/* --- 🛠️ Admin Tool --- */}
       {isStaff && (
         <div className="bg-white/80 py-4 flex justify-center backdrop-blur-md sticky top-[72px] z-[90] border-b border-slate-100">
-            <button onClick={() => setIsEditModalOpen(true)} className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#2D241E] bg-white px-8 py-2.5 rounded-full shadow-sm border border-slate-100 active:scale-95 transition-all">
+            <button onClick={() => setIsEditModalOpen(true)} className="flex items-center gap-2 text-[20px] font-bold uppercase tracking-widest text-[#2D241E] bg-white px-8 py-2.5 rounded-full shadow-sm border border-slate-100 active:scale-95 transition-all">
                 <Settings size={14} className={isUpdating ? "animate-spin" : ""} /> 
                 {isUpdating ? "กำลังบันทึก..." : "โหมดปรับแต่งหน้าเว็บ"}
             </button>
@@ -170,24 +170,24 @@ const Home = ({ userData }) => {
       {/* --- 🥧 Hero Section --- */}
       <section className="relative min-h-[85vh] flex flex-col lg:flex-row items-center px-6 lg:px-24 py-12 lg:py-0 bg-white z-10">
         <div className="w-full lg:w-1/2 space-y-8 text-center lg:text-left order-2 lg:order-1 mt-12 lg:mt-0">
-          <div className="inline-flex items-center gap-3 px-6 py-2 bg-white rounded-full shadow-sm border border-slate-50 text-[#8B7E66]">
-            <Sparkles size={14} className="text-[#D97706]" />
-            <span className="text-[10px] font-bold tracking-[0.4em] uppercase">{homeData.hero_subtitle}</span>
+          <div className="inline-flex items-center gap-3 px-6 py-2 bg-white rounded-full shadow-sm border border-slate-50 text-[#2D241E]">
+            <Sparkles size={14} className="text-[#2D241E]" />
+            <span className="text-[20px] font-bold tracking-[0.1em] uppercase">{homeData.hero_subtitle}</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[1.1] text-[#2D241E] tracking-tighter">
             {homeData.hero_title}
           </h1>
 
-          <p className="max-w-md mx-auto lg:mx-0 text-[#2D241E]/60 text-lg lg:text-xl leading-relaxed font-light">
+          <p className="max-w-md mx-auto lg:mx-0 text-[#2D241E]/60 text-xl lg:text-xl leading-relaxed font-light">
             {homeData.hero_description}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-4">
-            <button onClick={() => navigate('/products')} className="w-full sm:w-auto bg-white text-[#2D241E] px-14 py-5 rounded-full font-bold text-xs shadow-lg hover:shadow-xl border border-slate-100 hover:-translate-y-1 transition-all uppercase tracking-widest">
+            <button onClick={() => navigate('/products')} className="w-full sm:w-auto bg-white text-[#2D241E] px-14 py-5 rounded-full font-bold  text-xl shadow-lg hover:shadow-xl border border-slate-100 hover:-translate-y-1 transition-all uppercase tracking-widest">
               เริ่มสั่งซื้อขนม
             </button>
-            <button className="group flex items-center gap-4 font-bold text-xs text-[#2D241E] uppercase tracking-widest hover:text-[#8B7E66] transition-colors py-3">
+            <button className="group flex items-center gap-4 font-bold  text-xl text-[#2D241E] uppercase tracking-widest hover:text-[#2D241E] transition-colors py-3">
               เรื่องราวของเรา <MoveRight size={18} className="group-hover:translate-x-3 transition-transform" />
             </button>
           </div>
@@ -202,8 +202,8 @@ const Home = ({ userData }) => {
               )}
               {heroImages.length > 1 && (
                 <div className="absolute bottom-10 right-10 flex gap-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={prevSlide} className="p-4 bg-white/90 backdrop-blur-md rounded-full text-[#2D241E] hover:text-[#D97706] transition-all shadow-xl active:scale-90"><ChevronLeft size={20}/></button>
-                  <button onClick={nextSlide} className="p-4 bg-white/90 backdrop-blur-md rounded-full text-[#2D241E] hover:text-[#D97706] transition-all shadow-xl active:scale-90"><ChevronRight size={20}/></button>
+                  <button onClick={prevSlide} className="p-4 bg-white/90 backdrop-blur-md rounded-full text-[#2D241E] hover:text-[#2D241E] transition-all shadow-xl active:scale-90"><ChevronLeft size={20}/></button>
+                  <button onClick={nextSlide} className="p-4 bg-white/90 backdrop-blur-md rounded-full text-[#2D241E] hover:text-[#2D241E] transition-all shadow-xl active:scale-90"><ChevronRight size={20}/></button>
                 </div>
               )}
             </div>
@@ -215,14 +215,14 @@ const Home = ({ userData }) => {
         <Cookie className="absolute top-[10%] left-[-2%] text-[#2D241E] opacity-[0.02]" size={150} />
         <div className="container mx-auto px-6 text-center">
           <div className="mb-24 space-y-4">
-            <h2 className="text-4xl lg:text-6xl font-black text-[#2D241E] uppercase tracking-tighter">เมนู <span className="font-light text-[#8B7E66] italic">ยอดนิยม</span></h2>
+            <h2 className="text-4xl lg:text-6xl font-black text-[#2D241E] uppercase tracking-tighter">เมนู <span className="font-light text-[#2D241E] italic">ยอดนิยม</span></h2>
             <div className="h-1 w-24 bg-[#F3E9DC] mx-auto rounded-full"></div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
             {products.map((p) => (
-              <div key={p.product_id} className="group flex flex-col bg-white p-7 rounded-[4.5rem] transition-all duration-700 hover:shadow-2xl border border-slate-50 relative overflow-hidden">
-                <div className="relative aspect-[1/1.1] w-full rounded-[3.5rem] overflow-hidden mb-8 bg-slate-50">
+              <div key={p.product_id} className="group flex flex-col bg-white p-7 rounded-[2.5rem] transition-all duration-700 hover:shadow-2xl border border-slate-100 relative overflow-hidden">
+                <div className="relative aspect-[1/1.1] w-full rounded-[1.5rem] overflow-hidden mb-8 bg-slate-50">
                   <img src={p.images?.[0]?.image_url || '/placeholder.png'} className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-110" alt={p.product_name} />
                   <div className="absolute top-6 right-6 flex flex-col gap-3 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                     <button onClick={() => addToCart(p)} className="w-12 h-12 bg-white/90 backdrop-blur-md text-[#2D241E] rounded-full flex items-center justify-center shadow-lg border border-white hover:bg-[#2D241E] hover:text-white"><Plus size={24} /></button>
@@ -230,7 +230,7 @@ const Home = ({ userData }) => {
                 </div>
                 <div className="text-center space-y-2">
                   <h3 className="text-xl font-bold text-[#2D241E]">{p.product_name}</h3>
-                  <p className="text-[#8B7E66] text-sm font-medium tracking-widest italic">฿{Number(p.unit_price).toLocaleString()}</p>
+                  <p className="text-[#2D241E] text-2xl font-bold tracking-widest italic">฿{Number(p.unit_price).toLocaleString()}</p>
                 </div>
               </div>
             ))}
@@ -244,22 +244,22 @@ const Home = ({ userData }) => {
         <div className="container mx-auto px-6 relative z-10">
           <div className="flex flex-col lg:flex-row items-center justify-between mb-24 gap-10">
             <div className="space-y-4 text-center lg:text-left">
-               <h2 className="text-4xl lg:text-6xl font-black text-[#2D241E] uppercase tracking-tighter italic">รีวิวจาก <span className="font-light text-[#8B7E66]">คุณลูกค้า</span></h2>
-               <p className="text-[#8B7E66] text-[10px] tracking-[0.5em] font-medium uppercase">เรื่องราวความประทับใจจากถาดขนมของเรา</p>
+               <h2 className="text-4xl lg:text-6xl font-black text-[#2D241E] uppercase tracking-tighter italic">รีวิวจาก <span className="font-light text-[#2D241E]">คุณลูกค้า</span></h2>
+               <p className="text-[#2D241E] text-[20px] tracking-[0.1em] font-medium uppercase">เรื่องราวความประทับใจจากถาดขนมของเรา</p>
             </div>
-            <Quote size={50} className="text-slate-100 hidden lg:block" />
+            <Quote size={100} className="text-slate-100 hidden lg:block" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {reviews.map((rev, idx) => (
               <div key={idx} className="bg-white p-12 rounded-[4.5rem] shadow-sm border border-slate-50 hover:shadow-xl transition-all duration-700">
                 <div className="flex text-amber-400 gap-1.5 mb-10">
                     {[...Array(5)].map((_, i) => <Star key={i} size={15} fill={i < rev.rating_score ? "currentColor" : "none"} />)}
                 </div>
-                <p className="text-lg text-[#2D241E]/70 italic leading-[1.8] mb-12 font-light">"{rev.comment}"</p>
-                <div className="flex items-center gap-5 pt-10 border-t border-slate-50">
+                <p className="text-xl text-[#2D241E] italic leading-[1.8] mb-12 font-light">"{rev.comment}"</p>
+                <div className="flex items-center gap-1 pt-1 border-t border-slate-50">
                     <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center font-black text-[#2D241E] border border-white shadow-sm">{rev.user?.first_name?.[0]}</div>
-                    <span className="font-bold text-[#2D241E] text-[11px] uppercase tracking-widest">{rev.user?.first_name}</span>
+                    <span className="font-bold text-[#2D241E] text-[20px] uppercase tracking-widest">{rev.user?.first_name}</span>
                 </div>
               </div>
             ))}
@@ -279,18 +279,18 @@ const Home = ({ userData }) => {
           <div className="absolute inset-x-0 bottom-16 px-6 z-20">
               <div className="max-w-4xl mx-auto bg-white/95 backdrop-blur-xl p-10 md:p-14 rounded-[5rem] shadow-2xl border border-white flex flex-col md:flex-row items-center gap-14">
                   <div className="flex-1 space-y-6 text-center md:text-left">
-                    <div className="inline-flex items-center gap-2 text-emerald-600 text-[10px] font-bold uppercase tracking-[0.4em] bg-emerald-50 px-5 py-2 rounded-full border border-emerald-100/40">
+                    <div className="inline-flex items-center gap-2 text-emerald-600 text-[20px] font-bold uppercase tracking-[0.1em] bg-emerald-50 px-5 py-2 rounded-full border border-emerald-100/40">
                       <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div> เปิดให้บริการปกติ
                     </div>
                     <h4 className="text-3xl lg:text-5xl font-black text-[#2D241E] tracking-tight italic uppercase">แวะมาหาเราได้ที่ร้าน</h4>
-                    <p className="text-sm text-[#2D241E]/50 leading-relaxed font-light italic">{homeData.shop_address}</p>
+                    <p className="text-[20px] text-[#2D241E]/90 leading-relaxed font-light italic">{homeData.shop_address}</p>
                   </div>
                   <div className="w-full md:w-auto flex flex-col gap-5">
-                      <a href={homeData.line_url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 bg-white text-[#2D241E] px-12 py-5 rounded-full border border-slate-100 hover:shadow-xl transition-all text-xs font-bold tracking-widest shadow-md">
-                        <Send size={18} className="text-[#D97706]"/> ติดต่อผ่าน LINE
+                      <a href={homeData.line_url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 bg-white text-[#2D241E] px-12 py-5 rounded-full border border-slate-100 hover:shadow-xl transition-all  text-xl font-bold tracking-widest shadow-md">
+                        <Send size={18} className="text-[#2D241E]"/> ติดต่อผ่าน LINE
                       </a>
                       <div className="text-center">
-                         <p className="text-[9px] font-bold text-[#8B7E66] uppercase tracking-[0.3em] mb-1">โทรศัพท์ติดต่อ</p>
+                         <p className="text-[20px] font-bold text-[#2D241E] uppercase tracking-[0.1em] mb-1">โทรศัพท์ติดต่อ</p>
                          <p className="text-xl font-black text-[#2D241E]">{homeData.shop_phone}</p>
                       </div>
                   </div>
@@ -306,27 +306,27 @@ const Home = ({ userData }) => {
           <div className="bg-white rounded-[5rem] w-full max-w-3xl p-12 lg:p-20 shadow-2xl border border-white relative max-h-[92vh] overflow-y-auto no-scrollbar">
             <button onClick={() => setIsEditModalOpen(false)} className="absolute top-12 right-12 p-4 text-slate-300 hover:text-red-500 transition-colors bg-white rounded-full border border-slate-50 shadow-sm"><X size={20}/></button>
             <div className="mb-16 text-center">
-                <p className="text-[#D97706] font-bold text-[10px] uppercase tracking-[0.6em] mb-4">Branding Studio</p>
-                <h2 className="text-4xl font-black text-[#2D241E] tracking-tight uppercase italic leading-none">ปรับปรุงเนื้อหา <span className="font-light text-slate-300">หน้าหลัก</span></h2>
+                <p className="text-[#2D241E] font-bold text-[20px] uppercase tracking-[0.6em] mb-4">Branding Studio</p>
+                <h2 className="text-4xl font-black text-[#2D241E] tracking-tight uppercase italic leading-none">ปรับปรุงเนื้อหา <span className="font-light">หน้าหลัก</span></h2>
             </div>
             <form onSubmit={handleUpdateContent} className="space-y-12 text-left">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="space-y-4">
-                  <label className="text-[11px] font-bold text-[#8B7E66] uppercase ml-6 tracking-widest">หัวข้อหลัก (Title)</label>
+                  <label className="text-[20px] font-bold text-[#2D241E] uppercase ml-6 tracking-widest">หัวข้อหลัก (Title)</label>
                   <input name="hero_title" type="text" value={homeData.hero_title} onChange={(e) => setHomeData({...homeData, hero_title: e.target.value})} className="w-full px-8 py-5 bg-slate-50 border border-transparent rounded-full focus:bg-white focus:border-[#F3E9DC] outline-none font-bold text-[#2D241E] transition-all shadow-inner" />
                 </div>
                 <div className="space-y-4">
-                  <label className="text-[11px] font-bold text-[#8B7E66] uppercase ml-6 tracking-widest">หัวข้อย่อย (Subtitle)</label>
+                  <label className="text-[20px] font-bold text-[#2D241E] uppercase ml-6 tracking-widest">หัวข้อย่อย (Subtitle)</label>
                   <input name="hero_subtitle" type="text" value={homeData.hero_subtitle} onChange={(e) => setHomeData({...homeData, hero_subtitle: e.target.value})} className="w-full px-8 py-5 bg-slate-50 border border-transparent rounded-full focus:bg-white focus:border-[#F3E9DC] outline-none font-bold text-[#2D241E] transition-all shadow-inner" />
                 </div>
               </div>
               <div className="space-y-4">
-                <label className="text-[11px] font-bold text-[#8B7E66] uppercase ml-6 tracking-widest">คำอธิบาย</label>
+                <label className="text-[20px] font-bold text-[#2D241E] uppercase ml-6 tracking-widest">คำอธิบาย</label>
                 <textarea name="hero_description" value={homeData.hero_description} onChange={(e) => setHomeData({...homeData, hero_description: e.target.value})} className="w-full px-10 py-8 bg-slate-50 border border-transparent rounded-[3rem] focus:bg-white focus:border-[#F3E9DC] outline-none h-40 resize-none font-light shadow-inner transition-all" />
               </div>
 
               <div className="space-y-6">
-                  <label className="text-[11px] font-bold text-[#8B7E66] uppercase ml-6 tracking-widest">รูปภาพแบนเนอร์</label>
+                  <label className="text-[20px] font-bold text-[#2D241E] uppercase ml-6 tracking-widest">รูปภาพแบนเนอร์</label>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-5">
                     {heroImages.map((url) => (
                         <div key={url} className={`relative aspect-square rounded-[2rem] overflow-hidden border-4 group ${imagesToDelete.includes(url) ? 'opacity-30' : 'border-white shadow-md'}`}>
@@ -347,7 +347,7 @@ const Home = ({ userData }) => {
                   </div>
               </div>
 
-              <button type="submit" disabled={isUpdating} className="w-full bg-[#2D241E] text-white py-6 rounded-full font-black uppercase tracking-widest text-xs shadow-xl hover:bg-black transition-all active:scale-95 disabled:bg-slate-200">
+              <button type="submit" disabled={isUpdating} className="w-full bg-[#2D241E] text-white py-6 rounded-full font-black uppercase tracking-widest  text-xl shadow-xl hover:bg-black transition-all active:scale-95 disabled:bg-slate-200">
                 {isUpdating ? <Loader2 className="animate-spin mx-auto" size={24} /> : "บันทึกการเปลี่ยนแปลง"}
               </button>
             </form>

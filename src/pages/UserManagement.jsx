@@ -117,7 +117,7 @@ const UserManagement = () => {
     const getRoleStyle = (roleId) => {
         const styles = {
             1: { bg: '#fff', text: '#E53E3E', label: 'System Admin', icon: <ShieldAlert size={12}/> },
-            2: { bg: '#fff', text: '#D97706', label: 'Owner', icon: <ShieldCheck size={12}/> },
+            2: { bg: '#fff', text: '#2D241E', label: 'Owner', icon: <ShieldCheck size={12}/> },
             3: { bg: '#fff', text: '#05CD99', label: 'Manager', icon: <UserCheck size={12}/> },
             4: { bg: '#fff', text: '#2D241E', label: 'Customer', icon: <Users size={12}/> }
         };
@@ -164,9 +164,9 @@ const UserManagement = () => {
             <Toaster position="top-right" />
             <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} isMobileOpen={isSidebarOpen} setIsMobileOpen={setIsSidebarOpen} activePage="users" />
 
-            <main className={`flex-1 p-4 md:p-10 lg:p-14 transition-all duration-500 ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[280px]'} w-full relative z-10 text-left`}>
+            <main className={`flex-1 transition-all duration-500 ${isCollapsed ? 'lg:ml-[110px]' : 'lg:ml-[300px]'} p-4 md:p-10 lg:p-14 w-full relative z-10`}>
                 
-                <div className="mb-12 flex items-center gap-4">
+                <div className="mb-8 md:mb-1 flex items-center gap-4">
                     <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white rounded-2xl text-[#2D241E] shadow-sm border border-slate-100 active:scale-95 transition-all"><Menu size={24} /></button>
                     <Header title="การจัดการสิทธิ์เข้าถึง" />
                 </div>
@@ -174,11 +174,11 @@ const UserManagement = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16 px-2">
                     <div className="flex-1 space-y-4">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white rounded-full shadow-sm border border-slate-100 mb-2 animate-bounce-slow">
-                            <Sparkles size={14} className="text-[#D97706]" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#8B7E66]">การจัดการตัวตนผู้ใช้งาน</span>
+                            <Sparkles size={14} className="text-[#2D241E]" />
+                            <span className="text-[20px] font-black uppercase tracking-[0.1em] text-[#2D241E]">การจัดการตัวตนผู้ใช้งาน</span>
                         </div>
                         <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter text-[#2D241E] leading-none italic">
-                            Users<span className="opacity-10">.</span>
+                            Users
                         </h1>
                     </div>
                     <button onClick={fetchUsers} className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-90 group">
@@ -187,10 +187,10 @@ const UserManagement = () => {
                 </div>
 
                 {/* 📊 Stat Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-16 px-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-12 md:mb-16 px-2">
                     <StatCardPureWhite title="ทั้งหมด" value={summary.total} icon={<Users size={24} />} color="#2D241E" />
                     <StatCardPureWhite title="แอดมิน" value={summary.systemAdmins} icon={<ShieldAlert size={24} />} color="#E53E3E" />
-                    <StatCardPureWhite title="เจ้าของ" value={summary.owners} icon={<ShieldCheck size={24} />} color="#D97706" />
+                    <StatCardPureWhite title="เจ้าของ" value={summary.owners} icon={<ShieldCheck size={24} />} color="#2D241E" />
                     <StatCardPureWhite title="ผู้จัดการ" value={summary.managers} icon={<UserCheck size={24} />} color="#05CD99" />
                     <StatCardPureWhite title="ลูกค้า" value={summary.customers} icon={<Users size={24} />} color="#8B7E66" />
                 </div>
@@ -206,7 +206,7 @@ const UserManagement = () => {
                         <div className="flex flex-col md:flex-row gap-4 w-full xl:max-w-3xl">
                             <div className="relative w-full md:w-64">
                                 <select 
-                                    className="w-full px-6 py-4 rounded-full bg-slate-50/50 border border-slate-100 outline-none font-bold text-xs appearance-none focus:bg-white focus:border-[#2D241E]/10 transition-all shadow-inner text-[#2D241E] uppercase tracking-widest cursor-pointer"
+                                    className="w-full px-6 py-5 rounded-full bg-slate-50/50 border border-slate-100 outline-none font-bold text-xl appearance-none focus:bg-white focus:border-[#2D241E]/10 transition-all shadow-inner text-[#2D241E] uppercase tracking-widest cursor-pointer"
                                     value={roleFilter} 
                                     onChange={(e) => setRoleFilter(e.target.value)}
                                 >
@@ -216,12 +216,12 @@ const UserManagement = () => {
                                     <option value="3">Manager</option>
                                     <option value="4">Customer</option>
                                 </select>
-                                <Filter size={14} className="absolute right-6 top-1/2 -translate-y-1/2 text-[#C2B8A3] pointer-events-none" />
+                                <Filter size={14} className="absolute right-6 top-1/2 -translate-y-1/2 text-[#2D241E] pointer-events-none" />
                             </div>
                             <div className="relative flex-1 group">
-                                <Search size={22} className="absolute left-6 top-1/2 -translate-y-1/2 text-[#2D241E]/20 group-focus-within:text-[#2D241E] transition-colors" />
+                                <Search size={22} className="absolute left-6 top-1/2 -translate-y-1/2 text-[#2D241E] group-focus-within:text-[#2D241E] transition-colors" />
                                 <input 
-                                    className="w-full pl-16 pr-8 py-4 rounded-full bg-slate-50/50 border border-transparent focus:bg-white focus:border-slate-200 outline-none font-bold text-lg transition-all shadow-inner placeholder:text-[#2D241E]/20" 
+                                    className="w-full pl-16 pr-8 py-4 rounded-full bg-slate-50/50 border border-transparent focus:bg-white focus:border-slate-200 outline-none font-bold text-xl transition-all shadow-inner placeholder:text-[#2D241E]" 
                                     placeholder="ค้นหาด้วยชื่อหรืออีเมล..." 
                                     value={searchTerm} 
                                     onChange={(e) => setSearchTerm(e.target.value)} 
@@ -233,7 +233,7 @@ const UserManagement = () => {
                     <div className="overflow-x-auto relative z-10 custom-scrollbar">
                         <table className="w-full text-left border-separate border-spacing-y-3 min-w-[900px]">
                             <thead>
-                                <tr className="text-[#C2B8A3] uppercase text-[15px] font-black tracking-[0.2em] px-8">
+                                <tr className="text-[#2D241E] uppercase text-[20px] font-black tracking-[0.1em] px-8">
                                     <th className="px-10 pb-2">ข้อมูลผู้ใช้งาน</th>
                                     <th className="px-10 pb-2">ช่องทางติดต่อ</th>
                                     <th className="px-10 pb-2">ระดับสิทธิ์</th>
@@ -250,17 +250,17 @@ const UserManagement = () => {
                                                     <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-[#2D241E] shadow-sm border border-slate-100 group-hover/row:scale-110 transition-transform">
                                                         {user.first_name?.charAt(0).toUpperCase()}
                                                     </div>
-                                                    <span className="font-black text-[15px] text-[#2D241E] uppercase tracking-tighter italic leading-none">{user.first_name} {user.last_name}</span>
+                                                    <span className="font-black text-[20px] text-[#2D241E] uppercase tracking-tighter italic leading-none">{user.first_name} {user.last_name}</span>
                                                 </div>
                                             </td>
                                             <td className="py-7 px-10 bg-white border-y border-slate-50 group-hover/row:bg-slate-50/50">
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-[#2D241E] text-[15px] leading-none mb-1">{user.email}</span>
-                                                    <span className="text-[14px] text-[#8B7E66] font-light italic">ลงทะเบียนเมื่อ {new Date(user.created_at || Date.now()).toLocaleDateString('th-TH')}</span>
+                                                    <span className="font-bold text-[#2D241E] text-[20px] leading-none mb-1">{user.email}</span>
+                                                    <span className="text-[20px] text-[#2D241E] font-light italic">ลงทะเบียนเมื่อ {new Date(user.created_at || Date.now()).toLocaleDateString('th-TH')}</span>
                                                 </div>
                                             </td>
                                             <td className="py-7 px-10 bg-white border-y border-slate-50 group-hover/row:bg-slate-50/50">
-                                                <span className="px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 w-fit shadow-sm bg-white" style={{ color: role.text, borderColor: `${role.text}20` }}>
+                                                <span className="px-5 py-2 rounded-full text-[20px] font-black uppercase tracking-widest border flex items-center gap-2 w-fit shadow-sm bg-white" style={{ color: role.text, borderColor: `${role.text}20` }}>
                                                     {role.icon} {role.label}
                                                 </span>
                                             </td>
@@ -273,7 +273,7 @@ const UserManagement = () => {
                                         </tr>
                                     );
                                 }) : (
-                                    <tr><td colSpan="4" className="py-32 text-center text-[#C2B8A3] font-black uppercase italic tracking-widest">ไม่พบข้อมูลสมาชิก</td></tr>
+                                    <tr><td colSpan="4" className="py-32 text-center text-[#2D241E] font-black uppercase italic tracking-widest">ไม่พบข้อมูลสมาชิก</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -298,7 +298,7 @@ const UserManagement = () => {
                                         <button
                                             key={pageNum}
                                             onClick={() => setCurrentPage(pageNum)}
-                                            className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${currentPage === pageNum ? 'bg-[#2D241E] text-white shadow-xl scale-110' : 'text-[#C2B8A3] hover:text-[#2D241E]'}`}
+                                            className={`w-10 h-10 rounded-xl font-black  text-xl transition-all ${currentPage === pageNum ? 'bg-[#2D241E] text-white shadow-xl scale-110' : 'text-[#2D241E] hover:text-[#2D241E]'}`}
                                         >
                                             {pageNum}
                                         </button>
@@ -323,11 +323,11 @@ const UserManagement = () => {
                 <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 md:p-6 bg-[#2D241E]/10 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsModalOpen(false)}>
                     <div className="bg-white w-full max-w-lg rounded-[3.5rem] md:rounded-[4rem] shadow-2xl overflow-hidden animate-in zoom-in-95 border border-white" onClick={e => e.stopPropagation()}>
                         <div className="p-10 md:p-14 relative">
-                            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 p-3 bg-slate-50 text-[#2D241E]/20 hover:text-red-500 rounded-full transition-all active:scale-90 shadow-sm border border-white"><X size={20}/></button>
+                            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 p-3 bg-slate-50 text-[#2D241E] hover:text-red-500 rounded-full transition-all active:scale-90 shadow-sm border border-white"><X size={20}/></button>
                             <div className="mb-12 text-left">
-                                <p className="text-[#D97706] font-bold text-[15px] uppercase tracking-[0.5em] mb-2 italic">สิทธิ์การเข้าถึงข้อมูล</p>
-                                <h3 className="text-3xl font-black text-[#2D241E] tracking-tighter uppercase italic leading-tight">แก้ไข <span className="opacity-20 font-light">ระดับผู้ใช้งาน</span></h3>
-                                <p className="text-[#8B7E66] font-bold mt-2 text-[20px] italic">{selectedUser?.first_name} {selectedUser?.last_name}</p>
+                                <p className="text-[#2D241E] font-bold text-[20px] uppercase tracking-[0.1em] mb-2 italic">สิทธิ์การเข้าถึงข้อมูล</p>
+                                <h3 className="text-3xl font-black text-[#2D241E] tracking-tighter uppercase italic leading-tight">แก้ไข <span className=" font-light">ระดับผู้ใช้งาน</span></h3>
+                                <p className="text-[#2D241E] font-bold mt-2 text-[20px] italic">{selectedUser?.first_name} {selectedUser?.last_name}</p>
                             </div>
                             <div className="space-y-8">
                                 <div className="space-y-3">
@@ -343,8 +343,8 @@ const UserManagement = () => {
                                             className={`w-full p-5 rounded-[2rem] text-left border-2 transition-all flex items-center justify-between group/btn ${newRole === role.id.toString() ? 'border-[#2D241E] bg-slate-50/50' : 'border-slate-50 hover:border-slate-100 bg-white'}`}
                                         >
                                             <div className="text-left">
-                                                <p className={`font-black uppercase text-sm tracking-tight ${newRole === role.id.toString() ? 'text-[#2D241E]' : 'text-[#C2B8A3]'}`}>{role.label}</p>
-                                                <p className="text-[15px] text-[#8B7E66] font-light italic mt-1">{role.desc}</p>
+                                                <p className={`font-black uppercase text-[20px] tracking-tight ${newRole === role.id.toString() ? 'text-[#2D241E]' : 'text-[#2D241E]'}`}>{role.label}</p>
+                                                <p className="text-[20px] text-[#2D241E] font-light italic mt-1">{role.desc}</p>
                                             </div>
                                             {newRole === role.id.toString() ? (
                                                 <div className="w-8 h-8 rounded-full bg-[#2D241E] flex items-center justify-center text-white shadow-md animate-in zoom-in">
@@ -359,7 +359,7 @@ const UserManagement = () => {
                                 <button 
                                     onClick={handleUpdateRole} 
                                     disabled={isUpdating} 
-                                    className="w-full py-6 bg-[#ffff] text-black rounded-full font-black text-sm shadow-xl hover:bg-slate-100 transition-all flex justify-center items-center gap-4 uppercase tracking-[0.4em] active:scale-95 disabled:opacity-50"
+                                    className="w-full py-6 bg-[#ffff] text-black rounded-full font-black text-[20px] border border-slate-100 hover:bg-slate-100 transition-all flex justify-center items-center gap-4 uppercase tracking-[0.1em] active:scale-95 disabled:opacity-50"
                                 >
                                     {isUpdating ? <Loader2 className="animate-spin" size={20} /> : <><Save size={20} /> ยืนยันการเปลี่ยนสิทธิ์</>}
                                 </button>
@@ -380,15 +380,15 @@ const UserManagement = () => {
 };
 
 const StatCardPureWhite = ({ title, value, icon, color }) => (
-    <div className="bg-white p-8 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition-all hover:-translate-y-1.5 duration-500 group relative overflow-hidden">
+    <div className="bg-white p-6 md:p-6 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition-all hover:-translate-y-1.5 duration-500 group relative overflow-hidden">
         <div className="flex-1 text-left min-w-0 relative z-10">
-            <p className="text-[10px] font-black text-[#2D241E]/30 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+            <p className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] mb-3 md:mb-4 flex items-center gap-2 leading-none">
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }}></span>
                 {title}
             </p>
-            <h2 className="text-[#2D241E] text-4xl font-black italic tracking-tighter leading-none uppercase truncate">{value || 0}</h2>
+            <h2 className="text-[#2D241E] text-xl md:text-2xl xl:text-3xl font-black italic tracking-tighter leading-none uppercase truncate">{value || 0}</h2>
         </div>
-        <div style={{ color: color }} className="w-16 h-16 rounded-[1.8rem] flex items-center justify-center bg-white shadow-sm border border-slate-50 group-hover:scale-110 transition-transform duration-500 relative z-10">
+        <div style={{ color: color }} className="w-10 h-10 md:w-14 md:h-14 rounded-2xl flex items-center justify-center bg-white shadow-sm border border-slate-50   text-[#2D241E] shrink-0 ml-4 group-hover:scale-110 group-hover:text-[#2D241E] transition-all duration-500 relative z-10">
             {React.cloneElement(icon, { size: 24, strokeWidth: 2.5 })}
         </div>
     </div>

@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { 
-    Activity, Search, Clock, User, ShieldAlert, 
-    Loader2, Trash2, Calendar, ArrowRightLeft, ShieldCheck, 
+import {
+    Activity, Search, Clock, User, ShieldAlert,
+    Loader2, Trash2, Calendar, ArrowRightLeft, ShieldCheck,
     PlusCircle, Package, RefreshCw, Menu, Filter, Info, ChevronRight,
-    ChevronLeft, Sparkles, Leaf, Cookie, Smile
+    ChevronLeft, Sparkles, Leaf, Cookie, Smile, X
 } from 'lucide-react';
-import { jwtDecode } from 'jwt-decode'; 
+import { jwtDecode } from 'jwt-decode';
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
@@ -22,15 +22,19 @@ const SystemLog = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    // --- ✨ New States for Modal ---
+    const [selectedLog, setSelectedLog] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     // --- ✨ Pagination States ---
     const [currentPage, setCurrentPage] = useState(1);
     const logsPerPage = 10;
-    
+
     const token = localStorage.getItem('token');
     const userRole = token ? jwtDecode(token).role_level : 0;
     const isSuperAdmin = Number(userRole) === 1;
 
-    // --- 📦 Logic (คงเดิม 100%) ---
+    // --- 📦 Logic ---
     const fetchLogs = useCallback(async () => {
         try {
             setLoading(true);
@@ -65,7 +69,7 @@ const SystemLog = () => {
             const res = await axiosInstance.delete(`${API_ENDPOINTS.ADMIN.SYSTEM_LOG}/clear`);
             if (res.success) {
                 toast.success("ล้างประวัติระบบเรียบร้อยแล้ว");
-                fetchLogs(); 
+                fetchLogs();
             }
         } catch (err) {
             toast.error("เกิดข้อผิดพลาดในการลบ");
@@ -79,13 +83,19 @@ const SystemLog = () => {
         } else if (details.includes('ลบ')) {
             config = { color: 'text-red-500', bg: 'bg-white', border: 'border-red-100', Icon: ShieldAlert, label: 'การลบข้อมูล' };
         } else if (details.includes('แก้ไข') || details.includes('เปลี่ยน')) {
-            config = { color: 'text-[#D97706]', bg: 'bg-white', border: 'border-amber-100', Icon: ArrowRightLeft, label: 'การอัปเดต' };
+            config = { color: 'text-[#2D241E]', bg: 'bg-white', border: 'border-amber-100', Icon: ArrowRightLeft, label: 'การอัปเดต' };
         } else if (details.includes('เพิ่ม') || details.includes('สร้าง')) {
             config = { color: 'text-emerald-600', bg: 'bg-white', border: 'border-emerald-100', Icon: PlusCircle, label: 'การสร้างใหม่' };
         } else if (details.includes('เข้าสู่ระบบ')) {
             config = { color: 'text-blue-600', bg: 'bg-white', border: 'border-blue-100', Icon: ShieldCheck, label: 'ระบบความปลอดภัย' };
         }
         return config;
+    };
+
+    // --- ✨ Modal Handlers ---
+    const openReasonDetail = (log) => {
+        setSelectedLog(log);
+        setIsModalOpen(true);
     };
 
     // --- 🔍 Filtering & Pagination Logic ---
@@ -95,7 +105,7 @@ const SystemLog = () => {
             const adminName = `${log.user?.first_name} ${log.user?.last_name}`.toLowerCase();
             const details = (log.action_details || "").toLowerCase();
             const matchesSearch = details.includes(search) || adminName.includes(search);
-            
+
             if (activeFilter === 'all') return matchesSearch;
             if (activeFilter === 'create') return matchesSearch && (details.includes('เพิ่ม') || details.includes('สร้าง'));
             if (activeFilter === 'update') return matchesSearch && (details.includes('แก้ไข') || details.includes('เปลี่ยน'));
@@ -105,7 +115,6 @@ const SystemLog = () => {
         });
     }, [logs, searchTerm, activeFilter]);
 
-    // คำนวณข้อมูลสำหรับแสดงในหน้าปัจจุบัน
     const currentLogs = useMemo(() => {
         const lastIndex = currentPage * logsPerPage;
         const firstIndex = lastIndex - logsPerPage;
@@ -114,7 +123,6 @@ const SystemLog = () => {
 
     const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
 
-    // รีเซ็ตหน้ากลับไปหน้า 1 เมื่อมีการค้นหาหรือกรอง
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, activeFilter]);
@@ -127,8 +135,8 @@ const SystemLog = () => {
 
     return (
         <div className="flex min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden relative selection:bg-[#F3E9DC]">
-            
-            {/* ☁️ Global Cozy Patterns (Opacity 0.02) */}
+
+            {/* ☁️ Global Cozy Patterns */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
                 <Leaf className="absolute top-[10%] left-[5%] rotate-12 opacity-[0.02] text-[#2D241E]" size={200} />
                 <Cookie className="absolute bottom-[20%] right-[10%] -rotate-12 opacity-[0.02] text-[#2D241E]" size={150} />
@@ -138,9 +146,9 @@ const SystemLog = () => {
             <Toaster position="top-right" />
             <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} isMobileOpen={isSidebarOpen} setIsMobileOpen={setIsSidebarOpen} activePage="system_log" />
 
-            <main className={`flex-1 p-4 md:p-10 lg:p-14 transition-all duration-500 ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[280px]'} w-full relative z-10 text-left`}>
-                
-                <div className="mb-12 flex items-center gap-4">
+            <main className={`flex-1 transition-all duration-500 ${isCollapsed ? 'lg:ml-[110px]' : 'lg:ml-[300px]'} p-4 md:p-10 lg:p-14 w-full relative z-10`}>
+
+                <div className="mb-8 md:mb-1 flex items-center gap-4">
                     <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white rounded-2xl text-[#2D241E] shadow-sm border border-slate-100 active:scale-95 transition-all"><Menu size={24} /></button>
                     <Header title="ประวัติกิจกรรมระบบ" />
                 </div>
@@ -148,27 +156,27 @@ const SystemLog = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16 px-2">
                     <div className="flex-1 space-y-4">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white rounded-full shadow-sm border border-slate-100 mb-2 animate-bounce-slow">
-                            <Sparkles size={14} className="text-[#D97706]" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#8B7E66]">เส้นทางตรวจสอบผู้ดูแลระบบ</span>
+                            <Sparkles size={14} className="text-[#2D241E]" />
+                            <span className="text-[20px] font-black uppercase tracking-[0.1em] text-[#2D241E]">เส้นทางตรวจสอบผู้ดูแลระบบ</span>
                         </div>
-                        <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter text-[#2D241E] leading-none italic">
-                            Audit<span className="opacity-10">Logs.</span>
+                        <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter text-[#2D241E] leading-none">
+                            Audit<span className="opacity-80">Logs</span>
                         </h1>
                     </div>
                     <div className="flex items-center gap-4 w-full md:w-auto">
                         <div className="hidden md:flex flex-col items-end px-6 border-r border-slate-100">
-                            <span className="text-[10px] font-black text-[#C2B8A3] uppercase tracking-widest">ประวัติทั้งหมด</span>
-                            <span className="text-sm font-bold text-[#2D241E]">{filteredLogs.length} รายการ</span>
+                            <span className="text-[20px] font-black text-[#2D241E] uppercase tracking-widest">ประวัติทั้งหมด</span>
+                            <span className="text-[20px] font-bold text-[#2D241E]">{filteredLogs.length} รายการ</span>
                         </div>
                         <button onClick={fetchLogs} className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-90 group">
-                            <RefreshCw size={24} className={`text-[#2D241E]/40 ${loading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} />
+                            <RefreshCw size={24} className={`text-[#2D241E] ${loading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} />
                         </button>
                     </div>
                 </div>
 
                 <div className="bg-white p-6 md:p-12 rounded-[3rem] md:rounded-[4.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
                     <Smile className="absolute -bottom-10 -right-10 opacity-[0.01] text-[#2D241E]" size={200} />
-                    
+
                     {/* Toolbar */}
                     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-10 mb-14 relative z-10">
                         <div className="flex flex-wrap gap-2 p-1 bg-slate-50/50 rounded-full border border-slate-100 w-fit">
@@ -179,28 +187,28 @@ const SystemLog = () => {
                                 { id: 'delete', label: 'ลบข้อมูล' },
                                 { id: 'auth', label: 'ความปลอดภัย' }
                             ].map((f) => (
-                                <button 
-                                    key={f.id} 
+                                <button
+                                    key={f.id}
                                     onClick={() => setActiveFilter(f.id)}
-                                    className={`px-4 py-2 rounded-full text-[13px] font-black uppercase tracking-widest transition-all duration-300 ${activeFilter === f.id ? 'bg-[#2D241E] text-white shadow-md' : 'text-[#2D241E] hover:text-[#2D241E]'}`}
+                                    className={`px-4 py-2 rounded-full text-[20px] font-black uppercase tracking-widest transition-all duration-300 ${activeFilter === f.id ? 'bg-[#2D241E] text-white shadow-md' : 'text-[#2D241E] hover:text-[#2D241E]'}`}
                                 >
                                     {f.label}
                                 </button>
                             ))}
                         </div>
-                        
+
                         <div className="flex flex-col md:flex-row gap-4 w-full xl:max-w-2xl">
                             <div className="relative flex-1 group">
-                                <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-[#2D241E]/20 transition-colors" />
-                                <input 
-                                    className="w-full pl-16 pr-8 py-4 rounded-full bg-slate-50/50 border border-transparent focus:bg-white focus:border-slate-200 outline-none font-bold text-lg transition-all shadow-inner placeholder:text-[#2D241E]/20" 
-                                    placeholder="ค้นหาชื่อผู้ดูแล หรือ กิจกรรม..." 
-                                    value={searchTerm} 
-                                    onChange={(e) => setSearchTerm(e.target.value)} 
+                                <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-[#2D241E] transition-colors" />
+                                <input
+                                    className="w-full pl-16 pr-8 py-4 rounded-full bg-slate-50/50 border border-transparent focus:bg-white focus:border-slate-200 outline-none font-bold text-xl transition-all shadow-inner placeholder:text-[#2D241E]"
+                                    placeholder="ค้นหาชื่อผู้ดูแล หรือ กิจกรรม..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
                             {isSuperAdmin && (
-                                <button onClick={handleClearAll} className="px-8 py-4 bg-white text-red-500 border border-red-50 rounded-full font-black flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all uppercase text-[10px] tracking-widest shadow-sm active:scale-95">
+                                <button onClick={handleClearAll} className="px-8 py-4 bg-white text-red-500 border border-red-50 rounded-full font-black flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all uppercase text-[20px] tracking-widest shadow-sm active:scale-95">
                                     <Trash2 size={18} /> ล้างข้อมูล
                                 </button>
                             )}
@@ -211,11 +219,11 @@ const SystemLog = () => {
                     <div className="overflow-x-auto relative z-10 custom-scrollbar">
                         <table className="w-full text-left border-separate border-spacing-y-3 min-w-[900px]">
                             <thead>
-                                <tr className="text-[#C2B8A3] uppercase text-[15px] font-black tracking-[0.2em] px-8">
+                                <tr className="text-[#2D241E] uppercase text-[20px] font-black tracking-[0.1em] px-8">
                                     <th className="px-10 pb-2">วันและเวลา</th>
                                     <th className="px-10 pb-2">ผู้ดำเนินการ</th>
-                                    <th className="px-10 pb-2">รายละเอียดกิจกรรม</th>
-                                    <th className="px-10 pb-2 text-right">ผลลัพธ์</th>
+                                    <th className="px-10 pb-2">หัวข้อการกระทำ</th>
+                                    <th className="px-10 pb-2 text-center">รายละเอียด</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y-0">
@@ -225,18 +233,18 @@ const SystemLog = () => {
                                         <tr key={log.log_id} className="group/row hover:translate-x-1 transition-all">
                                             <td className="px-10 py-7 rounded-l-[2.5rem] md:rounded-l-[3rem] bg-white border-y border-l border-slate-50 group-hover/row:bg-slate-50/50">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="p-3 bg-white text-[#2D241E]/20 rounded-2xl shadow-sm border border-slate-100 group-hover/row:text-[#2D241E] transition-colors">
+                                                    <div className="p-3 bg-white text-[#2D241E] rounded-2xl shadow-sm border border-slate-100 group-hover/row:text-[#2D241E] transition-colors">
                                                         <Calendar size={18} />
                                                     </div>
                                                     <div className="flex flex-col leading-tight">
-                                                        <span className="text-sm font-black text-[#2D241E]">
-                                                            {new Date(log.created_at).toLocaleDateString('th-TH', { 
-                                                                day: '2-digit', month: 'short', year: 'numeric' 
+                                                        <span className="text-xl font-black text-[#2D241E]">
+                                                            {new Date(log.created_at).toLocaleDateString('th-TH', {
+                                                                day: '2-digit', month: 'short', year: 'numeric'
                                                             })}
                                                         </span>
-                                                        <span className="text-[10px] font-bold text-[#8B7E66] uppercase tracking-widest flex items-center gap-1 opacity-60">
+                                                        <span className="text-[20px] font-bold text-[#2D241E]/80 uppercase tracking-widest flex items-center gap-1">
                                                             <Clock size={10} />
-                                                            {new Date(log.created_at).toLocaleTimeString('th-TH', { 
+                                                            {new Date(log.created_at).toLocaleTimeString('th-TH', {
                                                                 hour: '2-digit', minute: '2-digit'
                                                             })} น.
                                                         </span>
@@ -245,32 +253,34 @@ const SystemLog = () => {
                                             </td>
                                             <td className="px-10 py-7 bg-white border-y border-slate-50 group-hover/row:bg-slate-50/50">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-white text-[#2D241E] flex items-center justify-center font-black text-sm border border-slate-100 shadow-sm overflow-hidden group-hover/row:scale-110 transition-transform">
-                                                        {log.user?.first_name?.charAt(0) || <User size={16}/>}
+                                                    <div className="w-10 h-10 rounded-xl bg-white text-[#2D241E] flex items-center justify-center font-black text-xl border border-slate-100 shadow-sm overflow-hidden group-hover/row:scale-110 transition-transform">
+                                                        {log.user?.first_name?.charAt(0) || <User size={16} />}
                                                     </div>
-                                                    <span className="font-black text-[#2D241E] text-base tracking-tighter uppercase italic">{log.user?.first_name} {log.user?.last_name}</span>
+                                                    <span className="font-black text-[#2D241E] text-[20px] tracking-tighter uppercase">{log.user?.first_name} {log.user?.last_name}</span>
                                                 </div>
                                             </td>
                                             <td className="px-10 py-7 bg-white border-y border-slate-50 group-hover/row:bg-slate-50/50">
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${style.bg} ${style.color} ${style.border} shrink-0 shadow-sm`}>
+                                                    <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[20px] font-black uppercase tracking-widest border ${style.bg} ${style.color} ${style.border} shrink-0 shadow-sm`}>
                                                         <style.Icon size={12} strokeWidth={3} />
                                                         {style.label}
-                                                    </div>
-                                                    <span className="font-bold text-[#2D241E]/70 text-sm italic group-hover/row:text-[#2D241E] line-clamp-1">{log.action_details}</span>
+                                                    </div>            
                                                 </div>
                                             </td>
-                                            <td className="px-10 py-7 rounded-r-[2.5rem] md:rounded-r-[3rem] bg-white border-y border-r border-slate-50 group-hover/row:bg-slate-50/50 text-right">
-                                                <div className="w-10 h-10 bg-white rounded-full inline-flex items-center justify-center shadow-sm border border-slate-100 text-[#2D241E]/20 group-hover/row:text-[#2D241E] transition-all">
+                                            <td className=" py-7 rounded-r-[2.5rem] md:rounded-r-[3rem] bg-white border-y border-r border-slate-50 group-hover/row:bg-slate-50/50 text-center">
+                                                <button 
+                                                    onClick={() => openReasonDetail(log)}
+                                                    className="w-10 h-10 bg-white rounded-full inline-flex items-center justify-center shadow-sm border border-slate-100 text-[#2D241E] hover:bg-[#2D241E] hover:text-white transition-all active:scale-90"
+                                                >
                                                     <ChevronRight size={18} />
-                                                </div>
+                                                </button>
                                             </td>
                                         </tr>
                                     );
                                 }) : (
                                     <tr>
                                         <td colSpan="4" className="text-center py-40 bg-white">
-                                            <p className="text-2xl font-black uppercase tracking-tighter text-[#2D241E]/20 italic">ไม่พบข้อมูลประวัติ</p>
+                                            <p className="text-2xl font-black uppercase tracking-tighter text-[#2D241E]">ไม่พบข้อมูลประวัติ</p>
                                         </td>
                                     </tr>
                                 )}
@@ -278,35 +288,33 @@ const SystemLog = () => {
                         </table>
                     </div>
 
-                    {/* ✨ Pagination Controls (Only White Style) */}
+                    {/* Pagination Controls */}
                     {totalPages > 1 && (
                         <div className="mt-12 flex justify-center items-center gap-4 relative z-10 pb-4">
-                            <button 
+                            <button
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={currentPage === 1}
                                 className="p-3 bg-white border border-slate-100 rounded-2xl text-[#2D241E] disabled:opacity-20 hover:shadow-lg transition-all active:scale-90"
                             >
                                 <ChevronLeft size={20} />
                             </button>
-                            
+
                             <div className="flex items-center gap-2 bg-slate-50/50 p-2 rounded-[2rem] border border-slate-100 shadow-inner">
                                 {[...Array(totalPages)].map((_, i) => {
                                     const pageNum = i + 1;
-                                    // แสดงเฉพาะเลขใกล้เคียงปัจจุบันถ้าหน้าเยอะเกินไป
                                     if (totalPages > 5 && Math.abs(pageNum - currentPage) > 2) return null;
                                     return (
                                         <button
                                             key={pageNum}
                                             onClick={() => setCurrentPage(pageNum)}
-                                            className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${currentPage === pageNum ? 'bg-[#2D241E] text-white shadow-xl scale-110' : 'text-[#C2B8A3] hover:text-[#2D241E]'}`}
+                                            className={`w-10 h-10 rounded-xl font-black  text-xl transition-all ${currentPage === pageNum ? 'bg-[#2D241E] text-white shadow-xl scale-110' : 'text-[#2D241E] hover:text-[#2D241E]'}`}
                                         >
                                             {pageNum}
                                         </button>
                                     );
                                 })}
                             </div>
-
-                            <button 
+                            <button
                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                 disabled={currentPage === totalPages}
                                 className="p-3 bg-white border border-slate-100 rounded-2xl text-[#2D241E] disabled:opacity-20 hover:shadow-lg transition-all active:scale-90"
@@ -318,7 +326,70 @@ const SystemLog = () => {
                 </div>
             </main>
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            {/* ✨ Modal Component */}
+            {isModalOpen && selectedLog && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
+                    <div 
+                        className="absolute inset-0 bg-[#2D241E]/40 backdrop-blur-md" 
+                        onClick={() => setIsModalOpen(false)} 
+                    />
+                    <div className="bg-white w-full max-w-2xl rounded-[3.5rem] p-8 md:p-12 relative z-10 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-300 overflow-hidden">
+                        <Smile className="absolute -top-10 -left-10 opacity-[0.03] text-[#2D241E]" size={200} />
+                    
+
+                        <div className="flex items-center gap-5 mb-10 relative">
+                            <div className="p-5 bg-[#ffff] rounded-[2rem] text-[#2D241E] shadow-inner">
+                                <Info size={32} />
+                            </div>
+                            <div>
+                                <h2 className="text-3xl font-black uppercase tracking-tighter leading-tight">Activity Details</h2>
+                                <p className="text-[#2D241E]/80 font-bold text-xl">ข้อมูลบันทึกกิจกรรมโดยละเอียด</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6 relative">
+                            <div className="p-8 bg-slate-50/80 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                <span className="block text-[20px] font-black uppercase tracking-widest text-[#2D241E] mb-4">รายละเอียดกิจกรรม</span>
+                                <p className="text-xl font-bold leading-relaxed text-[#2D241E]">
+                                    {selectedLog.action_details}
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="p-6 bg-slate-50/50 rounded-[2rem] border border-slate-100">
+                                    <span className="block text-[20px] font-black uppercase tracking-widest text-[#2D241E] mb-2">ผู้ดำเนินการ</span>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center font-black text-[20px]">
+                                            {selectedLog.user?.first_name?.charAt(0)}
+                                        </div>
+                                        <p className="font-black text-xl uppercase tracking-tighter">
+                                            {selectedLog.user?.first_name} {selectedLog.user?.last_name}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="p-6 bg-slate-50/50 rounded-[2rem] border border-slate-100">
+                                    <span className="block text-[20px] font-black uppercase tracking-widest text-[#2D241E] mb-2">วันและเวลา</span>
+                                    <p className="font-black text-xl uppercase tracking-tighter flex items-center gap-2 tacking-[0.1em]">
+                                        {new Date(selectedLog.created_at).toLocaleString('th-TH', {
+                                            day: '2-digit', month: 'long', year: 'numeric',
+                                            hour: '2-digit', minute: '2-digit', second: '2-digit'
+                                        })}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setIsModalOpen(false)}
+                            className="w-full mt-10 py-6 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-[0.1em] shadow-xl hover:shadow-2xl transition-all active:scale-[0.98] text-xl"
+                        >
+                            ปิดหน้าต่างรายละเอียด
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
                 .animate-bounce-slow { animation: bounce-slow 4s ease-in-out infinite; }
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
