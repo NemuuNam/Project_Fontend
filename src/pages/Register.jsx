@@ -71,7 +71,7 @@ const Register = () => {
             <div className="w-full max-w-xl bg-[#ffffff] p-8 sm:p-12 md:p-16 rounded-[40px] md:rounded-[60px] border border-slate-100 shadow-[0_20px_60px_rgba(0,0,0,0.03)] relative z-10 animate-in fade-in zoom-in duration-700">
                 
                 {/* ปุ่มกลับหน้าหลัก */}
-                <Link to="/" className="absolute top-8 left-8 md:top-12 md:left-12 flex items-center gap-2 text-[#2D241E]/30 hover:text-[#2D241E] font-black  text-[20px] uppercase tracking-[0.1em] transition-all active:scale-95 group">
+                <Link to="/" className="absolute top-8 left-8 md:top-12 md:left-12 flex items-center gap-2 text-[#2D241E] hover:text-[#2D241E] font-black  text-[20px] uppercase tracking-[0.1em] transition-all active:scale-95 group">
                     <Home size={16} className="group-hover:-translate-y-0.5 transition-transform" /> หน้าหลัก
                 </Link>
 
@@ -82,7 +82,7 @@ const Register = () => {
                     </div>
 
                     <h2 className="text-3xl md:text-5xl font-black text-[#2D241E] uppercase tracking-tighter mb-2 italic">สร้างบัญชีใหม่</h2>
-                    <p className="text-[#2D241E]/40 font-bold  text-xl uppercase tracking-[0.1em]">{shopName}</p>
+                    <p className="text-[#2D241E] font-bold  text-xl uppercase tracking-[0.1em]">{shopName}</p>
                 </div>
 
                 <form onSubmit={handleRegister} className="mt-12 space-y-7 text-left">
@@ -90,11 +90,11 @@ const Register = () => {
                     {/* ชื่อและนามสกุล */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className=" text-[20px] font-black uppercase text-[#2D241E]/30 ml-5 tracking-widest">ชื่อจริง</label>
+                            <label className=" text-[20px] font-black uppercase text-[#2D241E] ml-5 tracking-widest">ชื่อจริง</label>
                             <div className="relative flex items-center group">
-                                <User className="absolute left-6 text-[#2D241E]/10 group-focus-within:text-[#2D241E] transition-colors" size={18} />
+                                <User className="absolute left-6 text-[#2D241E] group-focus-within:text-[#2D241E] transition-colors" size={18} />
                                 <input 
-                                    className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E]/20 transition-all text-xl placeholder:text-[#2D241E]/10"
+                                    className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E] transition-all text-xl placeholder:text-[#2D241E]/60"
                                     type="text" 
                                     placeholder="ชื่อของคุณ" 
                                     onChange={(e) => setFormData({...formData, first_name: e.target.value})} 
@@ -103,11 +103,11 @@ const Register = () => {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className=" text-[20px] font-black uppercase text-[#2D241E]/30 ml-5 tracking-widest">นามสกุล</label>
+                            <label className=" text-[20px] font-black uppercase text-[#2D241E] ml-5 tracking-widest">นามสกุล</label>
                             <div className="relative flex items-center group">
-                                <User className="absolute left-6 text-[#2D241E]/10 group-focus-within:text-[#2D241E] transition-colors" size={18} />
+                                <User className="absolute left-6 text-[#2D241E] group-focus-within:text-[#2D241E] transition-colors" size={18} />
                                 <input 
-                                    className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E]/20 transition-all text-xl placeholder:text-[#2D241E]/10"
+                                    className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E] transition-all text-xl placeholder:text-[#2D241E]/60"
                                     type="text" 
                                     placeholder="นามสกุล" 
                                     onChange={(e) => setFormData({...formData, last_name: e.target.value})} 
@@ -119,11 +119,11 @@ const Register = () => {
 
                     {/* อีเมล */}
                     <div className="space-y-2">
-                        <label className=" text-[20px] font-black uppercase text-[#2D241E]/30 ml-5 tracking-widest">อีเมลผู้ใช้งาน</label>
+                        <label className=" text-[20px] font-black uppercase text-[#2D241E] ml-5 tracking-widest">อีเมลผู้ใช้งาน</label>
                         <div className="relative flex items-center group">
-                            <Mail className="absolute left-6 text-[#2D241E]/10 group-focus-within:text-[#2D241E] transition-colors" size={18} />
+                            <Mail className="absolute left-6 text-[#2D241E] group-focus-within:text-[#2D241E] transition-colors" size={18} />
                             <input 
-                                className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E]/20 transition-all text-xl placeholder:text-[#2D241E]/10"
+                                className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E] transition-all text-xl placeholder:text-[#2D241E]/60"
                                 type="email" 
                                 placeholder="name@email.com" 
                                 onChange={(e) => setFormData({...formData, email: e.target.value})} 
@@ -134,11 +134,11 @@ const Register = () => {
 
                     {/* รหัสผ่าน */}
                     <div className="space-y-2">
-                        <label className=" text-[20px] font-black uppercase text-[#2D241E]/30 ml-5 tracking-widest">รหัสผ่านความปลอดภัย</label>
+                        <label className=" text-[20px] font-black uppercase text-[#2D241E] ml-5 tracking-widest">รหัสผ่านความปลอดภัย</label>
                         <div className="relative flex items-center group">
-                            <Lock className="absolute left-6 text-[#2D241E]/10 group-focus-within:text-[#2D241E] transition-colors" size={18} />
+                            <Lock className="absolute left-6 text-[#2D241E] group-focus-within:text-[#2D241E] transition-colors" size={18} />
                             <input 
-                                className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E]/20 transition-all text-xl placeholder:text-[#2D241E]/10"
+                                className="w-full pl-16 pr-8 py-5 rounded-full bg-white border border-slate-200 outline-none font-bold text-[#2D241E] shadow-inner focus:border-[#2D241E] transition-all text-xl placeholder:text-[#2D241E]/60"
                                 type="password" 
                                 placeholder="ระบุรหัสผ่าน 6 ตัวขึ้นไป" 
                                 onChange={(e) => setFormData({...formData, password: e.target.value})} 
@@ -162,9 +162,9 @@ const Register = () => {
                 </form>
 
                 {/* ลิงก์เข้าสู่ระบบ */}
-                <div className="mt-12 text-center text-[#2D241E]/30 font-bold  text-xl uppercase tracking-widest">
+                <div className="mt-12 text-center text-[#2D241E] font-bold  text-xl uppercase tracking-widest">
                     เป็นสมาชิกอยู่แล้ว? 
-                    <Link to="/login" className="ml-3 text-[#2D241E] font-black border-b border-[#2D241E]/10 hover:border-[#2D241E] transition-all pb-1">เข้าสู่ระบบที่นี่</Link>
+                    <Link to="/login" className="ml-3 text-[#2D241E] font-black border-b border-[#2D241E] hover:border-[#2D241E] transition-all pb-1">เข้าสู่ระบบที่นี่</Link>
                 </div>
 
             </div>
