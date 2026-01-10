@@ -51,30 +51,33 @@ const OrderManagement = () => {
 
 
     const fetchShippingProviders = useCallback(async () => {
-    try {
-        const res = await axiosInstance.get(API_ENDPOINTS.ADMIN.SHIPPING_PROVIDERS);
-        console.log("API Response:", res); 
-        console.log("Check res:", res)
-        
-        let providers = [];
-        
-        if (res.success && res.data) {
-            providers = res.data;
-        } else if (Array.isArray(res.data)) {
-            providers = res.data;
-        } else if (Array.isArray(res)) {
-            providers = res;
-        }
+        try {
+            const res = await axiosInstance.get(API_ENDPOINTS.ADMIN.SHIPPING_PROVIDERS);
 
-        if (providers.length > 0) {
-            setShippingProviders(providers);
-            setSelectedProviderId(providers[0].provider_id);
+            // 🚩 เพิ่ม Log เพื่อดูว่าบน Vercel ตัว 'res' มีค่าเป็นอะไร
+            console.log("Response from Vercel API:", res);
+
+            let providers = res.success ? res.data : (Array.isArray(res) ? res : []);
+
+            // 🚩 ตรวจสอบว่าถ้าดึงมาแล้วได้ Array ว่าง ให้แจ้งเตือน
+            if (providers.length === 0) {
+                console.warn("API สำเร็จแต่ไม่มีข้อมูล Shipping Providers กลับมา");
+            }
+
+            if (providers.length > 0) {
+                setShippingProviders(providers);
+                setSelectedProviderId(providers[0].provider_id);
+            }
+        } catch (err) {
+            console.error("API Error on Vercel:", err);
+            const mockData = [
+                { provider_id: 1, provider_name: 'Nim Express' },
+                { provider_id: 2, provider_name: 'Flash' }
+            ];
+            setShippingProviders(mockData);
+            setSelectedProviderId(mockData[0].provider_id);
         }
-    } catch (err) {
-        console.error("Fetch Error:", err);
-        // ... mock data ...
-    }
-}, []);
+    }, []);
 
     const fetchOrders = useCallback(async () => {
         try {
