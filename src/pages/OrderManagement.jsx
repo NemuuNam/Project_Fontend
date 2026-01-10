@@ -51,26 +51,30 @@ const OrderManagement = () => {
 
 
     const fetchShippingProviders = useCallback(async () => {
-        try {
-            const res = await axiosInstance.get(API_ENDPOINTS.ADMIN.SHIPPING_PROVIDERS);
-            // ตรวจสอบโครงสร้างข้อมูลที่ส่งกลับมาจาก API
-            let providers = res.success ? res.data : (Array.isArray(res) ? res : []);
-
-            if (providers.length > 0) {
-                setShippingProviders(providers);
-                // ✅ เก็บ provider_id ของรายการแรกเป็นค่าเริ่มต้น
-                setSelectedProviderId(providers[0].provider_id);
-            }
-        } catch (err) {
-            // กรณี Error ให้ใส่ข้อมูลจำลองที่มีทั้ง ID และ Name
-            const mockData = [
-                { provider_id: 1, provider_name: 'Nim Express' },
-                { provider_id: 2, provider_name: 'Flash' }
-            ];
-            setShippingProviders(mockData);
-            setSelectedProviderId(mockData[0].provider_id);
+    try {
+        const res = await axiosInstance.get(API_ENDPOINTS.ADMIN.SHIPPING_PROVIDERS);
+        console.log("API Response:", res); 
+        console.log("Check res:", res)
+        
+        let providers = [];
+        
+        if (res.success && res.data) {
+            providers = res.data;
+        } else if (Array.isArray(res.data)) {
+            providers = res.data;
+        } else if (Array.isArray(res)) {
+            providers = res;
         }
-    }, []);
+
+        if (providers.length > 0) {
+            setShippingProviders(providers);
+            setSelectedProviderId(providers[0].provider_id);
+        }
+    } catch (err) {
+        console.error("Fetch Error:", err);
+        // ... mock data ...
+    }
+}, []);
 
     const fetchOrders = useCallback(async () => {
         try {
