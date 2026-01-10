@@ -148,27 +148,33 @@ const OrderManagement = () => {
         }
     };
 
-    const handleUpdateTracking = async (id) => {
-        if (!trackingNumber) return toast.error("กรุณาระบุเลขพัสดุ");
+const handleUpdateTracking = async (id) => {
+    if (!trackingNumber) return toast.error("กรุณาระบุเลขพัสดุ");
 
-        const load = toast.loading("บันทึกข้อมูลการจัดส่ง...");
-        try {
-            const res = await axiosInstance.patch(`${API_ENDPOINTS.ADMIN.ORDERS}/${id}/tracking`, {
-                tracking_number: trackingNumber,
-                provider_id: selectedProviderId, // ✅ ส่ง ID ที่เป็นตัวเลขไป (Backend จะหาขนส่งเจอแน่นอน)
-                status: 'กำลังจัดส่ง'
-            });
+    const load = toast.loading("บันทึกข้อมูลการจัดส่ง...");
+    try {
+        // ค้นหาชื่อบริษัทขนส่งจาก ID ที่เลือก เพื่อส่งไปให้ Backend บันทึก Log
+        const selectedProvider = shippingProviders.find(p => p.provider_id === selectedProviderId);
+        const providerName = selectedProvider ? selectedProvider.provider_name : 'ไม่ระบุขนส่ง';
 
-            if (res.success) {
-                toast.success("บันทึกสำเร็จ", { id: load });
-                setSelectedOrder(null);
-                setTrackingNumber('');
-                fetchOrders();
-            }
-        } catch (err) {
-            toast.error("ล้มเหลวในการบันทึก", { id: load });
+        const res = await axiosInstance.patch(`${API_ENDPOINTS.ADMIN.ORDERS}/${id}/tracking`, {
+            tracking_number: trackingNumber,
+            provider_id: selectedProviderId,
+            provider_name: providerName, // ✅ เพิ่มการส่งชื่อไปเพื่อให้ Backend ใช้ใน createLog
+            status: 'กำลังจัดส่ง'
+        });
+
+        if (res.success) {
+            toast.success("บันทึกสำเร็จ", { id: load });
+            setSelectedOrder(null);
+            setTrackingNumber('');
+            fetchOrders();
         }
-    };
+    } catch (err) {
+        console.error("Tracking Update Error:", err);
+        toast.error("ล้มเหลวในการบันทึก", { id: load });
+    }
+};
 
     // --- 🔍 Filtering & Pagination Logic ---
     const filteredOrders = useMemo(() => {
