@@ -11,7 +11,6 @@ import { API_ENDPOINTS } from '../../api/config';
 import toast, { Toaster } from 'react-hot-toast';
 
 const Contact = ({ userData }) => {
-    // --- 📦 สเตทข้อมูล (รักษา Logic เดิม) ---
     const [contactInfo, setContactInfo] = useState({
         address: '',
         contact_phone: '',
@@ -29,30 +28,23 @@ const Contact = ({ userData }) => {
 
     const isStaff = userData && [1, 2, 3].includes(Number(userData.role_level));
 
-    // 🔄 ดึงข้อมูลและเน้นที่อยู่จาก config_key: address
     const fetchContactData = useCallback(async () => {
         try {
             setLoading(true);
             const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
-
             if (res.success) {
-                const rawData = res.data; // สมมติว่าได้มาเป็น [{config_key: 'address', config_value: '...'}, ...]
-
-                // 1. แปลง Array เป็น Object เพื่อให้เรียกใช้ง่ายๆ
+                const rawData = res.data;
                 const settings = {};
                 if (Array.isArray(rawData)) {
                     rawData.forEach(item => {
                         settings[item.config_key] = item.config_value;
                     });
                 } else {
-                    // กรณี Backend แปลงมาให้แล้ว
                     Object.assign(settings, rawData);
                 }
 
-                // 2. Map เข้ากับ State contactInfo โดยเช็ค config_key ให้ตรงกับใน Database
                 setContactInfo({
-                    // ใช้ชื่อ key ให้ตรงกับที่บันทึกในตาราง Shop_Settings
-                    address: settings.address || settings.address || '',
+                    address: settings.address || '',
                     contact_phone: settings.contact_phone || settings.phone || '',
                     contact_email: settings.contact_email || settings.email || '',
                     facebook_url: settings.facebook_url || '',
@@ -63,7 +55,6 @@ const Contact = ({ userData }) => {
                 });
             }
         } catch (err) {
-            console.error("Fetch Error:", err);
             toast.error("โหลดข้อมูลล้มเหลว");
         } finally {
             setLoading(false);
@@ -75,10 +66,9 @@ const Contact = ({ userData }) => {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // ส่งข้อมูลกลับไปบันทึก (Logic เดิม)
             const res = await axiosInstance.put(API_ENDPOINTS.ADMIN.SHOP_SETTINGS, contactInfo);
             if (res.success) {
-                toast.success("อัปเดตข้อมูลการติดต่อเรียบร้อย!");
+                toast.success("อัปเดตข้อมูลเรียบร้อย!");
                 setIsEditing(false);
             }
         } catch (err) {
@@ -90,7 +80,7 @@ const Contact = ({ userData }) => {
 
     if (loading) return (
         <div className="h-screen flex items-center justify-center bg-white">
-            <Loader2 className="animate-spin text-[#2D241E]" size={40} />
+            <Loader2 className="animate-spin text-[#2D241E]" size={48} />
         </div>
     );
 
@@ -99,160 +89,171 @@ const Contact = ({ userData }) => {
             <Toaster position="bottom-right" />
             <HeaderHome userData={userData} />
 
-            {/* --- ☁️ Hero Section (Pearl White Concept) --- */}
-            <section className="relative pt-5 pb-5 lg:pt-12 lg:pb-12 overflow-hidden border-b border-slate-50 bg-white">
-                {/* Cozy Gimmick Patterns */}
-                <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
-                    <Leaf className="absolute top-10 left-[5%] rotate-12 text-[#2D241E]" size={150} />
-                    <Sparkles className="absolute bottom-10 right-[10%] text-[#2D241E]" size={100} />
+            {/* --- ☁️ Hero Section (Balanced Scale) --- */}
+            <section className="relative pt-28 pb-12 md:pt-40 md:pb-16 overflow-hidden bg-[#FAFAFA] border-b-2 border-slate-100">
+                <div className="absolute inset-0 pointer-events-none opacity-[0.05] z-0">
+                    <Leaf className="absolute top-10 left-[5%] rotate-12 text-[#2D241E]" size={250} />
+                    <Sparkles className="absolute bottom-10 right-[10%] text-[#2D241E]" size={150} />
                 </div>
 
                 <div className="container mx-auto px-6 text-center relative z-10">
-                    <div className="inline-flex items-center gap-2 px-5 py-2 bg-white rounded-full shadow-sm border border-slate-100 mb-6">
-                        <Navigation size={14} className="text-[#2D241E]" />
-                        <span className="text-[20px] font-bold uppercase tracking-[0.1em] text-[#2D241E]">Get In Touch</span>
+                    <div className="inline-flex items-center gap-2 px-6 py-2 bg-[#2D241E] rounded-full shadow-lg mb-8 animate-bounce-slow">
+                        <Navigation size={16} className="text-white" strokeWidth={3} />
+                        <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-white">Get In Touch</span>
                     </div>
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tighter leading-none mb-6">
-                        Contact <span className="text-[#2D241E] italic font-light serif">Us</span>
+                    {/* ปรับลดขนาดหัวข้อลงให้พอดี */}
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter leading-none mb-6 italic text-[#2D241E]">
+                        Contact <span className="font-light not-italic opacity-50">Us</span>
                     </h1>
-                    <p className="text-[#2D241E] text-xl lg:text-xl font-light max-w-2xl mx-auto italic">
-                        แวะมาทักทายหรือสอบถามข้อมูลเพิ่มเติม เพื่อให้เราได้ดูแลคุณอย่างดีที่สุด
+                    <p className="text-lg md:text-xl font-bold max-w-2xl mx-auto italic text-[#2D241E] opacity-90 leading-relaxed">
+                        "แวะมาทักทายหรือสอบถามข้อมูลเพิ่มเติม เพื่อให้เราได้ดูแลคุณอย่างดีที่สุด"
                     </p>
                 </div>
             </section>
 
-            {/* --- 🕯️ Main Contact Section --- */}
-            <section className="py-20 lg:py-32 relative bg-white">
-                {/* Background patterns */}
+            {/* --- 🕯️ Main Section --- */}
+            <section className="py-12 md:py-24 relative bg-white">
                 <div className="absolute inset-0 pointer-events-none opacity-[0.02] z-0">
-                    <Cookie className="absolute top-[10%] right-[5%] -rotate-12 text-[#2D241E]" size={150} />
-                    <Smile className="absolute bottom-[5%] left-[5%] rotate-12 text-[#2D241E]" size={130} />
-                    <Compass className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#2D241E]" size={400} />
+                    <Cookie className="absolute top-[10%] right-[5%] -rotate-12 text-[#2D241E]" size={200} />
+                    <Smile className="absolute bottom-[5%] left-[5%] rotate-12 text-[#2D241E]" size={180} />
                 </div>
 
-                <div className="container mx-auto px-6 lg:px-12 relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+                <div className="container mx-auto px-6 lg:px-12 relative z-10 text-left">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16 items-start">
 
-                        {/* 💌 Contact Info Cards */}
+                        {/* 💌 Info Cards (Left Side) */}
                         <div className="lg:col-span-8 space-y-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
 
                                 {/* Location Card */}
-                                <div className="p-10 bg-white rounded-[3.5rem] border border-slate-100 space-y-6 shadow-sm hover:shadow-md transition-all duration-500 group text-left">
-                                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-[#2D241E] shadow-inner border border-slate-50 group-hover:scale-110 transition-transform">
-                                        <MapPin size={28} />
+                                <div className="p-8 md:p-10 bg-white rounded-[3rem] border-2 border-slate-50 space-y-6 shadow-xl hover:border-[#2D241E]/10 transition-all duration-500 group relative overflow-hidden">
+                                    <div className="w-14 h-14 bg-[#2D241E] text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform duration-500">
+                                        <MapPin size={28} strokeWidth={2.5} />
                                     </div>
                                     <div className="space-y-3">
-                                        <h3 className="text-xl font-black uppercase tracking-tight">ที่ตั้งร้าน</h3>
+                                        <h3 className="text-xl font-black uppercase tracking-tighter italic text-[#2D241E]">ที่ตั้งร้าน</h3>
                                         {isEditing ? (
                                             <textarea
-                                                className="w-full p-5 rounded-[2rem] bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all text-[20px] shadow-inner"
+                                                className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:bg-white focus:border-[#2D241E] outline-none transition-all text-lg font-bold italic shadow-inner"
                                                 value={contactInfo.address}
                                                 onChange={(e) => setContactInfo({ ...contactInfo, address: e.target.value })}
-                                                rows="3"
+                                                rows="4"
                                             />
                                         ) : (
-                                            <p className="text-[#2D241E] font-medium leading-relaxed italic">{contactInfo.address || 'ยังไม่ได้ระบุข้อมูลที่อยู่'}</p>
+                                            <p className="text-lg font-bold leading-relaxed italic text-[#2D241E] underline decoration-[#2D241E]/10 underline-offset-8">
+                                                {contactInfo.address || 'ยังไม่ได้ระบุข้อมูลที่อยู่'}
+                                            </p>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* Reach Out Card */}
-                                <div className="p-10 bg-white rounded-[3.5rem] border border-slate-100 space-y-6 shadow-sm hover:shadow-md transition-all duration-500 group text-left">
-                                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-[#2D241E] shadow-inner border border-slate-50 group-hover:scale-110 transition-transform">
-                                        <Phone size={28} />
+                                {/* Contact Card */}
+                                <div className="p-8 md:p-10 bg-white rounded-[3rem] border-2 border-slate-50 space-y-6 shadow-xl hover:border-[#2D241E]/10 transition-all duration-500 group relative overflow-hidden">
+                                    <div className="w-14 h-14 bg-[#2D241E] text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform duration-500">
+                                        <Phone size={28} strokeWidth={2.5} />
                                     </div>
                                     <div className="space-y-3">
-                                        <h3 className="text-xl font-black uppercase tracking-tight">ช่องทางติดต่อ</h3>
+                                        <h3 className="text-xl font-black uppercase tracking-tighter italic text-[#2D241E]">ช่องทางติดต่อ</h3>
                                         {isEditing ? (
                                             <div className="space-y-3">
-                                                <input className="w-full p-4 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-[20px]" placeholder="เบอร์โทรศัพท์" value={contactInfo.contact_phone} onChange={(e) => setContactInfo({ ...contactInfo, contact_phone: e.target.value })} />
-                                                <input className="w-full p-4 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-[20px]" placeholder="อีเมล" value={contactInfo.contact_email} onChange={(e) => setContactInfo({ ...contactInfo, contact_email: e.target.value })} />
+                                                <input className="w-full p-4 rounded-full bg-slate-50 border-2 border-slate-100 focus:bg-white focus:border-[#2D241E] outline-none shadow-inner font-bold italic" placeholder="Phone" value={contactInfo.contact_phone} onChange={(e) => setContactInfo({ ...contactInfo, contact_phone: e.target.value })} />
+                                                <input className="w-full p-4 rounded-full bg-slate-50 border-2 border-slate-100 focus:bg-white focus:border-[#2D241E] outline-none shadow-inner font-bold italic" placeholder="Email" value={contactInfo.contact_email} onChange={(e) => setContactInfo({ ...contactInfo, contact_email: e.target.value })} />
                                             </div>
                                         ) : (
                                             <div className="space-y-1">
-                                                <p className="text-[#2D241E] font-black text-2xl tracking-tighter">{contactInfo.contact_phone || '-'}</p>
-                                                <p className="text-[#2D241E] font-medium text-[20px] italic">{contactInfo.contact_email || '-'}</p>
+                                                <p className="text-2xl md:text-3xl font-black tracking-tighter italic text-[#2D241E]">{contactInfo.contact_phone || '-'}</p>
+                                                <p className="text-base font-bold italic text-[#2D241E] opacity-60">{contactInfo.contact_email || '-'}</p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* Baking Hours Card */}
-                                <div className="p-10 bg-white rounded-[3.5rem] border border-slate-100 space-y-6 shadow-sm hover:shadow-md transition-all duration-500 group text-left">
-                                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-[#2D241E] shadow-inner border border-slate-50 group-hover:scale-110 transition-transform">
-                                        <Clock size={28} />
+                                {/* Opening Hours Card */}
+                                <div className="p-8 md:p-10 bg-white rounded-[3rem] border-2 border-slate-50 space-y-6 shadow-xl hover:border-[#2D241E]/10 transition-all duration-500 group relative overflow-hidden">
+                                    <div className="w-14 h-14 bg-[#2D241E] text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform duration-500">
+                                        <Clock size={28} strokeWidth={2.5} />
                                     </div>
                                     <div className="space-y-3">
-                                        <h3 className="text-xl font-black uppercase tracking-tight">เวลาเปิดทำการ</h3>
+                                        <h3 className="text-xl font-black uppercase tracking-tighter italic text-[#2D241E]">เวลาเปิดทำการ</h3>
                                         {isEditing ? (
-                                            <input className="w-full p-5 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-[20px]" value={contactInfo.contact_opening_hours} onChange={(e) => setContactInfo({ ...contactInfo, contact_opening_hours: e.target.value })} />
+                                            <input className="w-full p-4 rounded-full bg-slate-50 border-2 border-slate-100 focus:bg-white focus:border-[#2D241E] outline-none shadow-inner font-bold italic" value={contactInfo.contact_opening_hours} onChange={(e) => setContactInfo({ ...contactInfo, contact_opening_hours: e.target.value })} />
                                         ) : (
-                                            <p className="text-[#2D241E] font-medium leading-relaxed italic">{contactInfo.contact_opening_hours || '-'}</p>
+                                            <p className="text-lg font-bold italic text-[#2D241E]">{contactInfo.contact_opening_hours || '-'}</p>
                                         )}
                                     </div>
                                 </div>
 
                                 {/* Social Links Card */}
-                                <div className="p-10 bg-white rounded-[3.5rem] border border-slate-100 space-y-6 shadow-sm hover:shadow-md transition-all duration-500 group text-left">
-                                    <div className="flex gap-2">
-                                        <div className="w-10 h-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center shadow-sm text-[#1877F2]"><Facebook size={18} /></div>
-                                        <div className="w-10 h-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center shadow-sm text-[#06C755]"><MessageCircle size={18} /></div>
-                                        <div className="w-10 h-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center shadow-sm text-pink-500"><Instagram size={18} /></div>
+                                <div className="p-8 md:p-10 bg-white rounded-[3rem] border-2 border-slate-50 space-y-6 shadow-xl hover:border-[#2D241E]/10 transition-all duration-500 group relative overflow-hidden">
+                                    <div className="flex gap-3">
+                                        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-[#1877F2] shadow-sm"><Facebook size={20} /></div>
+                                        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-[#06C755] shadow-sm"><MessageCircle size={20} /></div>
+                                        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-pink-500 shadow-sm"><Instagram size={20} /></div>
                                     </div>
                                     <div className="space-y-4">
-                                        <h3 className="text-xl font-black uppercase tracking-tight">โซเชียลมีเดีย</h3>
+                                        <h3 className="text-xl font-black uppercase tracking-tighter italic text-[#2D241E]">โซเชียลมีเดีย</h3>
                                         {isEditing ? (
                                             <div className="grid grid-cols-1 gap-2">
                                                 {['facebook_url', 'line_url', 'instagram_url', 'tiktok_url'].map((key) => (
-                                                    <input key={key} className="w-full p-4 rounded-full bg-slate-50/50 border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none shadow-inner text-[20px]" placeholder={key.replace('_url', '').toUpperCase() + ' Link'} value={contactInfo[key]} onChange={(e) => setContactInfo({ ...contactInfo, [key]: e.target.value })} />
+                                                    <input key={key} className="w-full p-3 rounded-full bg-slate-50 border border-slate-100 focus:bg-white focus:border-[#2D241E] outline-none shadow-inner font-bold italic" placeholder={key.replace('_url', '').toUpperCase() + ' Link'} value={contactInfo[key]} onChange={(e) => setContactInfo({ ...contactInfo, [key]: e.target.value })} />
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="flex flex-wrap gap-x-5 gap-y-2 font-black text-[20px] uppercase tracking-widest text-[#2D241E]">
-                                                {contactInfo.facebook_url && <a href={contactInfo.facebook_url} target="_blank" rel="noreferrer" className="hover:text-[#1877F2] transition-colors underline decoration-[#2D241E] underline-offset-4">Facebook</a>}
-                                                {contactInfo.line_url && <a href={contactInfo.line_url} target="_blank" rel="noreferrer" className="hover:text-[#06C755] transition-colors underline decoration-[#2D241E] underline-offset-4">Line OA</a>}
-                                                {contactInfo.instagram_url && <a href={contactInfo.instagram_url} target="_blank" rel="noreferrer" className="hover:text-pink-500 transition-colors underline decoration-[#2D241E] underline-offset-4">Instagram</a>}
-                                                {contactInfo.tiktok_url && <a href={contactInfo.tiktok_url} target="_blank" rel="noreferrer" className="hover:text-slate-500 transition-colors underline decoration-[#2D241E] underline-offset-4">TikTok</a>}
+                                            <div className="flex flex-wrap gap-x-5 gap-y-2 font-black text-base uppercase tracking-widest text-[#2D241E]">
+                                                {contactInfo.facebook_url && <a href={contactInfo.facebook_url} target="_blank" rel="noreferrer" className="hover:text-[#1877F2] transition-all underline decoration-2 underline-offset-4 decoration-[#2D241E]/20">Facebook</a>}
+                                                {contactInfo.line_url && <a href={contactInfo.line_url} target="_blank" rel="noreferrer" className="hover:text-[#06C755] transition-all underline decoration-2 underline-offset-4 decoration-[#2D241E]/20">Line OA</a>}
+                                                {contactInfo.instagram_url && <a href={contactInfo.instagram_url} target="_blank" rel="noreferrer" className="hover:text-pink-500 transition-all underline decoration-2 underline-offset-4 decoration-[#2D241E]/20">Instagram</a>}
+                                                {contactInfo.tiktok_url && <a href={contactInfo.tiktok_url} target="_blank" rel="noreferrer" className="hover:text-slate-500 transition-all underline decoration-2 underline-offset-4 decoration-[#2D241E]/20">TikTok</a>}
                                             </div>
                                         )}
                                     </div>
                                 </div>
+
                             </div>
                         </div>
 
-                        {/* 📝 Sidebar (Admin/Send Message) */}
+                        {/* 📝 Sidebar (Right Side) */}
                         <div className="lg:col-span-4 w-full">
-                            <div className="bg-white p-10 lg:p-12 rounded-[4rem] border border-slate-100 shadow-lg sticky top-32 group transition-all duration-500 hover:shadow-xl text-left">
-                                <h3 className="text-2xl font-black uppercase tracking-tighter mb-8 flex items-center gap-3">
-                                    {isStaff ? <div className="w-2 h-2 bg-[#2D241E] rounded-full animate-pulse" /> : <Send className="text-[#2D241E]" size={24} />}
-                                    {isStaff ? "ปรับแต่งข้อมูล" : "ส่งข้อความหาเรา"}
+                            <div className="bg-[#2D241E] text-white p-10 rounded-[3.5rem] shadow-2xl sticky top-32 animate-in fade-in slide-in-from-right-4 duration-700">
+                                <h3 className="text-2xl font-black uppercase tracking-widest mb-10 flex items-center gap-4 italic text-left">
+                                    {isStaff ? <Sparkles className="text-[#F3E9DC] animate-pulse" size={24} /> : <Send className="text-[#F3E9DC]" size={24} />}
+                                    {isStaff ? "Admin Panel" : "Send Message"}
                                 </h3>
 
                                 {isStaff ? (
-                                    <div className="space-y-4">
+                                    <div className="space-y-6">
                                         {!isEditing ? (
-                                            <button onClick={() => setIsEditing(true)} className="w-full py-5 bg-white text-[#2D241E] rounded-full font-black uppercase tracking-widest  text-xl flex items-center justify-center gap-3 shadow-md border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all active:scale-95">
-                                                <Edit3 size={18} /> แก้ไขข้อมูลติดต่อ
+                                            <button onClick={() => setIsEditing(true)} className="w-full py-5 bg-white text-[#2D241E] rounded-full font-black uppercase tracking-widest text-base flex items-center justify-center gap-3 shadow-xl hover:scale-105 transition-all active:scale-95 italic">
+                                                <Edit3 size={18} strokeWidth={3} /> แก้ไขข้อมูลร้าน
                                             </button>
                                         ) : (
-                                            <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                                <button onClick={handleSave} disabled={isSaving} className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest  text-xl flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-95">
-                                                    {isSaving ? <Loader2 className="animate-spin" size={18} /> : <><Save size={18} /> บันทึกการเปลี่ยนแปลง</>}
+                                            <div className="space-y-4 animate-in zoom-in-95">
+                                                <button onClick={handleSave} disabled={isSaving} className="w-full py-5 bg-[#F3E9DC] text-[#2D241E] rounded-full font-black uppercase tracking-widest text-base flex items-center justify-center gap-3 shadow-xl hover:bg-white transition-all active:scale-95 italic">
+                                                    {isSaving ? <Loader2 className="animate-spin" size={18} /> : <><Save size={18} strokeWidth={3} /> บันทึกข้อมูล</>}
                                                 </button>
-                                                <button onClick={() => { setIsEditing(false); fetchContactData(); }} className="w-full py-5 bg-white text-[#2D241E] rounded-full font-bold uppercase tracking-widest text-[20px] flex items-center justify-center gap-2 border border-slate-100 hover:text-red-500 transition-all">
-                                                    <Undo2 size={14} /> ยกเลิก
+                                                <button onClick={() => { setIsEditing(false); fetchContactData(); }} className="w-full py-5 bg-white/10 text-white rounded-full font-bold uppercase tracking-widest text-base flex items-center justify-center gap-2 hover:bg-red-500 transition-all italic">
+                                                    <Undo2 size={16} /> ยกเลิก
                                                 </button>
                                             </div>
                                         )}
+                                        <p className="text-[10px] uppercase tracking-[0.3em] opacity-40 mt-10">Shop Identity Control System</p>
                                     </div>
                                 ) : (
-                                    <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); toast.success("ส่งข้อความเรียบร้อย!"); }}>
-                                        <input type="text" placeholder="ชื่อของคุณ" className="w-full p-5 bg-slate-50/50 rounded-[1.5rem] border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all font-medium text-[20px] shadow-inner" required />
-                                        <input type="email" placeholder="อีเมลสำหรับติดต่อกลับ" className="w-full p-5 bg-slate-50/50 rounded-[1.5rem] border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all font-medium text-[20px] shadow-inner" required />
-                                        <textarea placeholder="เราสามารถช่วยอะไรคุณได้บ้าง?" className="w-full p-5 bg-slate-50/50 rounded-[2rem] border-2 border-transparent focus:border-[#F3E9DC] focus:bg-white outline-none transition-all font-medium text-[20px] min-h-[150px] resize-none shadow-inner" required></textarea>
-                                        <button type="submit" className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest  text-xl flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-95">
-                                            <Send size={18} /> ส่งข้อมูล
+                                    <form className="space-y-6 text-left" onSubmit={(e) => { e.preventDefault(); toast.success("ส่งข้อความเรียบร้อย!"); }}>
+                                        <div className="space-y-1">
+                                            <label className="text-[11px] font-black uppercase tracking-widest ml-4 opacity-50">Your Identity</label>
+                                            <input type="text" placeholder="ชื่อของคุณ" className="w-full p-4 bg-white/10 rounded-full border-2 border-transparent focus:border-[#F3E9DC] outline-none transition-all font-bold text-lg placeholder:text-white/30 italic" required />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[11px] font-black uppercase tracking-widest ml-4 opacity-50">Contact Email</label>
+                                            <input type="email" placeholder="อีเมลติดต่อกลับ" className="w-full p-4 bg-white/10 rounded-full border-2 border-transparent focus:border-[#F3E9DC] outline-none transition-all font-bold text-lg placeholder:text-white/30 italic" required />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[11px] font-black uppercase tracking-widest ml-4 opacity-50">Inquiry Details</label>
+                                            <textarea placeholder="เราสามารถช่วยอะไรคุณได้บ้าง?" className="w-full p-5 bg-white/10 rounded-[2rem] border-2 border-transparent focus:border-[#F3E9DC] outline-none transition-all font-bold text-lg min-h-[140px] resize-none placeholder:text-white/30 italic" required></textarea>
+                                        </div>
+                                        <button type="submit" className="w-full py-5 bg-[#F3E9DC] text-[#2D241E] rounded-full font-black uppercase tracking-widest text-lg flex items-center justify-center gap-3 shadow-2xl hover:bg-white transition-all active:scale-95 italic mt-4">
+                                            <Send size={20} strokeWidth={3} /> ส่งข้อมูล
                                         </button>
                                     </form>
                                 )}
@@ -267,8 +268,12 @@ const Contact = ({ userData }) => {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
-                .serif { font-family: 'Georgia', serif; }
-                input::placeholder, textarea::placeholder { color: #2D241E; font-weight: 500; }
+                input::placeholder, textarea::placeholder { color: inherit; opacity: 0.5; }
+                @keyframes bounce-slow {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
+                }
+                .animate-bounce-slow { animation: bounce-slow 4s infinite ease-in-out; }
             `}} />
         </div>
     );

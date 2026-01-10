@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { 
     User, MapPin, Settings, LogOut, Mail, Phone, 
     ShieldCheck, Loader2, Plus, X, Lock, Trash2, Edit2, 
-    CheckCircle, ArrowRight, Heart, ShoppingBag, AlertCircle, Info, Activity,
-    Leaf, Cookie, Smile, Sparkles, Undo2, ChevronRight
+    CheckCircle, Heart, ShoppingBag, Sparkles, ChevronRight, Leaf, Cookie, Smile
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
@@ -13,93 +12,80 @@ import Footer from '../../components/Footer';
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
-// --- 1. ส่วนประกอบย่อย: แบบฟอร์มแก้ไขโปรไฟล์ (Pearl White Style) ---
+// --- 1. แบบฟอร์มแก้ไขโปรไฟล์ (เข้มจัด) ---
 const ProfileEditForm = ({ initialData, onSubmit, isSubmitting }) => {
     const [form, setForm] = useState(initialData);
     const handleChange = (e) => {
         const { name, value } = e.target;
         if (name === 'phone') {
-            // ✨ Auto Format: 0XX-XXX-XXXX
             const nums = value.replace(/\D/g, '');
             let val = nums;
-            if (nums.length > 6) {
-                val = `${nums.slice(0, 3)}-${nums.slice(3, 6)}-${nums.slice(6, 10)}`;
-            } else if (nums.length > 3) {
-                val = `${nums.slice(0, 3)}-${nums.slice(3)}`;
-            }
+            if (nums.length > 6) val = `${nums.slice(0, 3)}-${nums.slice(3, 6)}-${nums.slice(6, 10)}`;
+            else if (nums.length > 3) val = `${nums.slice(0, 3)}-${nums.slice(3)}`;
             setForm(prev => ({ ...prev, [name]: val }));
-        } else {
-            setForm(prev => ({ ...prev, [name]: value }));
-        }
+        } else setForm(prev => ({ ...prev, [name]: value }));
     };
     return (
-        <form onSubmit={(e) => onSubmit(e, form)} className="space-y-6 bg-white">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2 text-left">
-                    <label className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">ชื่อจริง</label>
-                    <input name="first_name" type="text" value={form.first_name} onChange={handleChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2D241E] transition-all font-bold text-[#2D241E] shadow-sm" required />
+        <form onSubmit={(e) => onSubmit(e, form)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <div className="space-y-1">
+                    <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">First Name</label>
+                    <input name="first_name" type="text" value={form.first_name} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
                 </div>
-                <div className="space-y-2 text-left">
-                    <label className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">นามสกุล</label>
-                    <input name="last_name" type="text" value={form.last_name} onChange={handleChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2D241E] transition-all font-bold text-[#2D241E] shadow-sm" required />
+                <div className="space-y-1">
+                    <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Last Name</label>
+                    <input name="last_name" type="text" value={form.last_name} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
                 </div>
             </div>
-            <div className="space-y-2 text-left">
-                <label className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">เบอร์โทรศัพท์ติดต่อ</label>
-                <input name="phone" type="text" value={form.phone} onChange={handleChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2D241E] transition-all font-bold text-[#2D241E] shadow-sm" placeholder="08x-xxx-xxxx" maxLength={12} />
+            <div className="space-y-1 text-left">
+                <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Phone Number</label>
+                <input name="phone" type="text" value={form.phone} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" placeholder="08x-xxx-xxxx" maxLength={12} />
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-white border border-[#2D241E] text-[#2D241E] rounded-2xl font-black  text-xl shadow-md hover:bg-slate-50 transition-all uppercase tracking-[0.1em] active:scale-95">
-                {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : "บันทึกข้อมูลส่วนตัว"}
+            <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest shadow-xl hover:bg-black transition-all active:scale-95 italic">
+                {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : "Save Profile Details"}
             </button>
         </form>
     );
 };
 
-// --- 2. ส่วนประกอบย่อย: แบบฟอร์มจัดการที่อยู่ (Pearl White Style) ---
+// --- 2. แบบฟอร์มจัดการที่อยู่ ---
 const AddressFormSub = ({ initialData, onSubmit, isSubmitting, isEdit }) => {
     const [form, setForm] = useState(initialData || { recipient_name: '', phone_number: '', address_detail: '' });
     const handleChange = (e) => {
         const { name, value } = e.target;
         let val = value;
-        
         if (name === 'phone_number') {
-            // ✨ Auto Format: 0XX-XXX-XXXX
             const nums = value.replace(/\D/g, '');
-            if (nums.length > 6) {
-                val = `${nums.slice(0, 3)}-${nums.slice(3, 6)}-${nums.slice(6, 10)}`;
-            } else if (nums.length > 3) {
-                val = `${nums.slice(0, 3)}-${nums.slice(3)}`;
-            } else {
-                val = nums;
-            }
+            if (nums.length > 6) val = `${nums.slice(0, 3)}-${nums.slice(3, 6)}-${nums.slice(6, 10)}`;
+            else if (nums.length > 3) val = `${nums.slice(0, 3)}-${nums.slice(3)}`;
+            else val = nums;
         }
-        
         setForm(prev => ({ ...prev, [name]: val }));
     };
     return (
-        <form onSubmit={(e) => onSubmit(e, form)} className="space-y-5 bg-white">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-2 text-left">
-                    <label className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">ชื่อผู้รับสินค้า</label>
-                    <input name="recipient_name" type="text" value={form.recipient_name} onChange={handleChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2D241E] font-bold text-[#2D241E] shadow-sm" required />
+        <form onSubmit={(e) => onSubmit(e, form)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <div className="space-y-1">
+                    <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Recipient Name</label>
+                    <input name="recipient_name" type="text" value={form.recipient_name} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
                 </div>
-                <div className="space-y-2 text-left">
-                    <label className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">เบอร์โทรศัพท์ผู้รับ</label>
-                    <input name="phone_number" type="text" value={form.phone_number} onChange={handleChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2D241E] font-bold text-[#2D241E] shadow-sm" placeholder="08x-xxx-xxxx" maxLength={12} required />
+                <div className="space-y-1">
+                    <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Phone</label>
+                    <input name="phone_number" type="text" value={form.phone_number} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" placeholder="08x-xxx-xxxx" maxLength={12} required />
                 </div>
             </div>
-            <div className="space-y-2 text-left">
-                <label className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">ที่อยู่โดยละเอียด</label>
-                <textarea name="address_detail" value={form.address_detail} onChange={handleChange} className="w-full p-5 bg-white border border-slate-200 rounded-3xl outline-none h-32 resize-none focus:border-[#2D241E] font-medium text-[#2D241E] shadow-sm" required />
+            <div className="space-y-1 text-left">
+                <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Address Details</label>
+                <textarea name="address_detail" value={form.address_detail} onChange={handleChange} className="w-full p-5 bg-slate-50 border-2 border-[#2D241E]/20 rounded-3xl outline-none h-32 resize-none focus:border-[#2D241E] font-black text-[#2D241E] italic" required />
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-white border border-[#2D241E] text-[#2D241E] rounded-2xl font-black uppercase tracking-[0.1em]  text-xl shadow-md hover:bg-slate-50 transition-all active:scale-95">
-                {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : (isEdit ? "อัปเดตข้อมูลที่อยู่" : "เพิ่มที่อยู่ใหม่")}
+            <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 italic">
+                {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : (isEdit ? "Update Address" : "Add New Address")}
             </button>
         </form>
     );
 };
 
-// --- 3. ส่วนประกอบย่อย: แบบฟอร์มเปลี่ยนรหัสผ่าน (Pearl White Style) ---
+// --- 3. แบบฟอร์มเปลี่ยนรหัสผ่าน ---
 const ChangePasswordForm = ({ onSubmit, isSubmitting }) => {
     const [form, setForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -109,27 +95,26 @@ const ChangePasswordForm = ({ onSubmit, isSubmitting }) => {
         onSubmit(e, form);
     };
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white">
-            <div className="space-y-2 text-left">
-                <label className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">รหัสผ่านปัจจุบัน</label>
-                <input name="oldPassword" type="password" value={form.oldPassword} onChange={handleChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2D241E] font-bold text-[#2D241E] shadow-sm" required />
+        <form onSubmit={handleSubmit} className="space-y-4 text-left">
+            <div className="space-y-1">
+                <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Current Password</label>
+                <input name="oldPassword" type="password" value={form.oldPassword} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
             </div>
-            <div className="space-y-2 text-left">
-                <label className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">รหัสผ่านใหม่</label>
-                <input name="newPassword" type="password" value={form.newPassword} onChange={handleChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2D241E] font-bold text-[#2D241E] shadow-sm" required />
+            <div className="space-y-1">
+                <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">New Password</label>
+                <input name="newPassword" type="password" value={form.newPassword} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
             </div>
-            <div className="space-y-2 text-left">
-                <label className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">ยืนยันรหัสผ่านใหม่</label>
-                <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2D241E] font-bold text-[#2D241E] shadow-sm" required />
+            <div className="space-y-1">
+                <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Confirm New Password</label>
+                <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-white border border-[#2D241E] text-[#2D241E] rounded-2xl font-black uppercase tracking-[0.1em]  text-xl shadow-md hover:bg-slate-50 transition-all active:scale-95">
-                {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : "เปลี่ยนรหัสผ่านใหม่"}
+            <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 italic mt-4">
+                {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : "Update Security Password"}
             </button>
         </form>
     );
 };
 
-// --- ส่วนหลักของคอมโพเนนต์ ---
 const Profile = ({ userData }) => {
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
@@ -146,19 +131,10 @@ const Profile = ({ userData }) => {
                 axiosInstance.get(`${API_ENDPOINTS.AUTH}/profile`),
                 axiosInstance.get('/api/wishlist') 
             ]);
-
-            if (profileRes.status === 'fulfilled' && profileRes.value.success) {
-                setProfile(profileRes.value.data);
-            }
-
-            if (wishRes.status === 'fulfilled' && wishRes.value.success) {
-                setFavorites(wishRes.value.data || []);
-            }
-        } catch (error) {
-            toast.error("ดึงข้อมูลล้มเหลว");
-        } finally {
-            setLoading(false);
-        }
+            if (profileRes.status === 'fulfilled' && profileRes.value.success) setProfile(profileRes.value.data);
+            if (wishRes.status === 'fulfilled' && wishRes.value.success) setFavorites(wishRes.value.data || []);
+        } catch (error) { toast.error("ดึงข้อมูลล้มเหลว"); } 
+        finally { setLoading(false); }
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
@@ -185,20 +161,9 @@ const Profile = ({ userData }) => {
 
     const handleDeleteAddress = async (id) => {
         const result = await Swal.fire({ 
-            title: 'ต้องการลบที่อยู่นี้?', 
-            text: 'ข้อมูลที่อยู่จะถูกลบออกจากระบบอย่างถาวร',
-            icon: 'warning', 
-            showCancelButton: true, 
-            confirmButtonColor: '#2D241E', 
-            cancelButtonColor: '#fff',
-            confirmButtonText: 'ยืนยันการลบ',
-            cancelButtonText: 'ยกเลิก',
-            background: '#ffffff',
-            customClass: { 
-                popup: 'rounded-[3rem] font-["Kanit"]',
-                confirmButton: 'rounded-full px-8 py-3 text-white',
-                cancelButton: 'rounded-full px-8 py-3 text-[#2D241E] border border-slate-100'
-            } 
+            title: 'ต้องการลบที่อยู่นี้?', text: 'ข้อมูลจะถูกลบออกจากระบบถาวร', icon: 'warning', 
+            showCancelButton: true, confirmButtonColor: '#2D241E', confirmButtonText: 'ยืนยันการลบ',
+            customClass: { popup: 'rounded-[3rem] font-["Kanit"] border-4 border-[#2D241E]' } 
         });
         if (result.isConfirmed) {
             try {
@@ -211,11 +176,7 @@ const Profile = ({ userData }) => {
     const handleRemoveFavorite = async (productId) => {
         try {
             const res = await axiosInstance.post('/api/wishlist/toggle', { product_id: productId });
-            if (res.success) { 
-                toast.success("ลบออกจากรายการโปรดแล้ว"); 
-                setFavorites(prev => prev.filter(item => (item.product?.product_id !== productId && item.product_id !== productId)));
-                fetchData(); 
-            }
+            if (res.success) { toast.success("ลบออกจากรายการโปรดแล้ว"); fetchData(); }
         } catch (err) { toast.error("เกิดข้อผิดพลาด"); }
     };
 
@@ -228,12 +189,11 @@ const Profile = ({ userData }) => {
     };
 
     const Modal = ({ title, children, onClose }) => (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#2D241E]/5 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[3rem] md:rounded-[4rem] w-full max-w-2xl p-8 lg:p-14 shadow-2xl relative animate-in zoom-in-95 overflow-hidden border border-slate-100">
-                <Smile className="absolute -top-10 -left-10 text-[#2D241E] opacity-[0.02]" size={150} />
-                <button onClick={onClose} className="absolute top-8 right-8 p-3 bg-white border border-slate-100 text-[#2D241E] hover:text-red-500 rounded-2xl transition-all shadow-sm z-10"><X size={20} /></button>
-                <h2 className="text-3xl md:text-4xl font-black mb-10 text-[#2D241E] uppercase tracking-tighter italic text-left">จัดการ <span className=" ">{title}</span></h2>
-                <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar relative z-10">{children}</div>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#2D241E]/30 backdrop-blur-md p-4 animate-in fade-in duration-300" onClick={onClose}>
+            <div className="bg-white rounded-[3rem] w-full max-w-lg p-8 lg:p-12 shadow-2xl relative animate-in zoom-in-95 border-4 border-[#2D241E]" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-6 right-6 p-2 bg-slate-50 text-[#2D241E] hover:text-red-500 rounded-full transition-all border-2 border-[#2D241E]"><X size={20} strokeWidth={3} /></button>
+                <h2 className="text-2xl font-black mb-8 text-[#2D241E] uppercase tracking-tighter italic text-left">Manage <span className="opacity-40 not-italic font-light">{title}</span></h2>
+                <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar text-left">{children}</div>
             </div>
         </div>
     );
@@ -242,144 +202,129 @@ const Profile = ({ userData }) => {
 
     return (
         <div className="min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden selection:bg-[#F3E9DC] relative">
-            <Toaster position="bottom-right" />
+            <Toaster position="top-right" />
             <HeaderHome userData={userData} />
 
-            {/* ☁️ ลวดลายพื้นหลัง Gimmick (Cozy Patterns) */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <Leaf className="absolute top-[10%] left-[-5%] rotate-12 text-[#2D241E] opacity-[0.02]" size={300} />
                 <Cookie className="absolute bottom-[20%] right-[-5%] -rotate-12 text-[#2D241E] opacity-[0.03]" size={250} />
                 <Smile className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#2D241E] opacity-[0.02]" size={400} />
-                <Sparkles className="absolute top-[15%] right-[10%] text-[#2D241E] opacity-[0.02]" size={100} />
             </div>
 
-            {/* --- ส่วนหัวโปรไฟล์ --- */}
-            <section className="relative pt-32 pb-16 px-6 bg-white border-b border-slate-50 z-10">
+            {/* --- Profile Header --- */}
+            <section className="relative pt-32 pb-16 px-6 bg-[#FAFAFA] border-b-2 border-slate-100 z-10 text-left">
                 <div className="container mx-auto flex flex-col md:flex-row items-center gap-8 md:gap-12">
-                    <div className="w-40 h-40 md:w-48 md:h-48 bg-white text-[#2D241E] rounded-[3rem] md:rounded-[4rem] shadow-sm flex items-center justify-center relative group overflow-hidden border border-slate-100">
-                        <User size={70} className="group-hover:scale-110 transition-transform duration-700  " />
-                        <Smile className="absolute -bottom-4 -right-4 opacity-[0.05] text-[#2D241E]" size={80} />
+                    <div className="w-40 h-40 md:w-48 md:h-48 bg-white text-[#2D241E] rounded-[4rem] shadow-xl flex items-center justify-center relative border-4 border-[#2D241E]">
+                        <User size={70} strokeWidth={3} />
+                        <div className="absolute -bottom-2 -right-2 bg-[#2D241E] text-white p-3 rounded-2xl shadow-lg"><ShieldCheck size={24} strokeWidth={3} /></div>
                     </div>
-                    <div className="flex-1 text-center md:text-left space-y-4">
-                        <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                            <span className="bg-white text-[#2D241E] text-[20px] font-black px-6 py-2 rounded-full tracking-widest uppercase shadow-sm border border-slate-100">{profile.role_name === 'Customer' ? 'สมาชิกคนสำคัญ' : profile.role_name}</span>
-                        </div>
-                        <h1 className="text-4xl md:text-7xl font-black tracking-tighter uppercase leading-tight text-[#2D241E]">
-                            {profile.first_name} <span className="  italic font-light">{profile.last_name}</span>
+                    <div className="flex-1 text-center md:text-left space-y-3">
+                        <span className="bg-[#2D241E] text-white text-xs font-black px-5 py-1.5 rounded-full tracking-widest uppercase shadow-lg italic">Premium Account</span>
+                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-tight text-[#2D241E]">
+                            {profile.first_name} <span className="font-light italic text-[#2D241E]/60">{profile.last_name}</span>
                         </h1>
                     </div>
                 </div>
             </section>
 
             <section className="relative py-12 md:py-20 px-6 container mx-auto z-10 text-left">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 md:gap-16 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
                     
-                    {/* แถบเมนูด้านข้าง */}
+                    {/* 🛠️ Sidebar Menu */}
                     <div className="lg:col-span-4 space-y-3 sticky top-32">
-                        <h3 className="text-[20px] font-black  text-[#2D241E] uppercase tracking-[0.1em] mb-6 px-4">เมนูจัดการบัญชี</h3>
+                        <h3 className="text-[10px] font-black text-[#2D241E] uppercase tracking-[0.25em] mb-6 px-4 italic">Account Settings</h3>
                         {[
-                            { id: 'profile', icon: Settings, label: 'แก้ไขโปรไฟล์ส่วนตัว' },
-                            { id: 'address', icon: MapPin, label: 'จัดการที่อยู่จัดส่งสินค้า' },
-                            { id: 'favorites', icon: Heart, label: 'รายการสินค้าที่คุณรัก' },
-                            { id: 'password', icon: Lock, label: 'ความปลอดภัยของบัญชี' }
+                            { id: 'profile', icon: Settings, label: 'Personal Information' },
+                            { id: 'address', icon: ShoppingBag, label: 'Shipping Addresses' },
+                            { id: 'favorites', icon: Heart, label: 'Wishlist History' },
+                            { id: 'password', icon: Lock, label: 'Security & Access' }
                         ].map((menu) => (
-                            <button 
-                                key={menu.id} 
-                                onClick={() => menu.id === 'favorites' ? document.getElementById('fav-section').scrollIntoView({ behavior: 'smooth' }) : setActiveModal(menu.id)} 
-                                className="w-full flex items-center justify-between p-5 bg-white hover:bg-slate-50 rounded-[2rem] transition-all group border border-slate-100 shadow-sm"
-                            >
+                            <button key={menu.id} onClick={() => menu.id === 'favorites' ? document.getElementById('fav-section').scrollIntoView({ behavior: 'smooth' }) : setActiveModal(menu.id)} className="w-full flex items-center justify-between p-5 bg-white hover:bg-[#2D241E] hover:text-white rounded-3xl transition-all group border-2 border-slate-200 hover:border-[#2D241E] shadow-sm">
                                 <div className="flex items-center gap-5">
-                                    <div className="p-3 bg-white border border-slate-50 rounded-xl text-[#2D241E] group-hover:text-[#2D241E] transition-all"><menu.icon size={18}/></div>
-                                    <span className="font-black text-[20px] text-[#2D241E] uppercase tracking-tight">{menu.label}</span>
+                                    <div className="p-3 bg-slate-100 rounded-2xl text-[#2D241E] group-hover:bg-white/10 group-hover:text-white transition-all"><menu.icon size={20} strokeWidth={3}/></div>
+                                    <span className="font-black text-sm uppercase tracking-tighter">{menu.label}</span>
                                 </div>
-                                <ChevronRight size={16} className="text-[#2D241E]/20 group-hover:translate-x-1 transition-all" />
+                                <ChevronRight size={18} strokeWidth={3} className="text-[#2D241E] group-hover:text-white transition-all" />
                             </button>
                         ))}
-                        <div className="pt-8 mt-4">
-                             <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }} className="w-full flex items-center justify-center gap-3 p-5 text-red-400 font-black text-[20px] bg-white rounded-[2rem] transition-all uppercase tracking-widest border border-red-50 hover:bg-red-50">
-                                <LogOut size={16}/> ออกจากระบบสมาชิก
-                             </button>
-                        </div>
+                        <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }} className="w-full mt-6 flex items-center justify-center gap-3 p-5 text-red-600 font-black text-sm bg-white rounded-3xl transition-all uppercase tracking-widest border-2 border-red-100 hover:bg-red-600 hover:text-white shadow-sm italic">
+                            <LogOut size={18} strokeWidth={3}/> Logout Session
+                        </button>
                     </div>
 
-                    {/* ส่วนแสดงเนื้อหา */}
-                    <div className="lg:col-span-8 space-y-12 md:space-y-16">
-                        
-                        {/* ข้อมูลประจำตัว */}
-                        <div className="bg-white rounded-[3rem] md:rounded-[4rem] p-10 md:p-16 border border-slate-100 shadow-sm relative overflow-hidden group">
-                            <Sparkles className="absolute top-10 right-10 text-[#2D241E] opacity-[0.02]" size={100} />
-                            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-12 italic">ข้อมูล <span className="  font-light">บัญชีสมาชิก</span></h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10 md:gap-y-12 gap-x-12">
-                                <InfoItem label="ชื่อจริง - นามสกุล" value={`${profile.first_name} ${profile.last_name}`} icon={<User size={24}/>} />
-                                <InfoItem label="อีเมลที่ใช้ลงทะเบียน" value={profile.email} icon={<Mail size={24}/>} />
-                                <InfoItem label="เบอร์โทรศัพท์" value={profile.phone || 'ยังไม่ได้ระบุข้อมูล'} icon={<Phone size={24}/>} />
-                                <InfoItem label="ประเภทสมาชิก" value={profile.role_name === 'Customer' ? 'สมาชิกทั่วไป' : profile.role_name} icon={<ShieldCheck size={24}/>} isGold />
+                    <div className="lg:col-span-8 space-y-12">
+                        <div className="bg-white rounded-[3.5rem] p-10 md:p-14 border-2 border-slate-100 shadow-xl relative overflow-hidden group">
+                            <Sparkles className="absolute top-10 right-10 text-[#2D241E] opacity-[0.05]" size={100} />
+                            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter mb-12 italic text-[#2D241E]">Member <span className="font-light not-italic opacity-40">Identity</span></h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10 gap-x-12">
+                                <InfoItem label="Full Name" value={`${profile.first_name} ${profile.last_name}`} icon={<User size={20} strokeWidth={3}/>} />
+                                <InfoItem label="Email Account" value={profile.email} icon={<Mail size={20} strokeWidth={3}/>} />
+                                <InfoItem label="Contact Phone" value={profile.phone || 'Not Specified'} icon={<Phone size={20} strokeWidth={3}/>} />
+                                <InfoItem label="Account Role" value={profile.role_name === 'Customer' ? 'Gold Member' : profile.role_name} icon={<ShieldCheck size={20} strokeWidth={3}/>} isHigh />
                             </div>
 
-                            {/* จัดการที่อยู่ */}
-                            <div className="mt-20 pt-12 border-t border-slate-50">
+                            <div className="mt-16 pt-12 border-t-2 border-slate-100 text-left">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
-                                    <h4 className="text-2xl md:text-3xl font-black uppercase tracking-tighter flex items-center gap-3 italic">ที่อยู่จัดส่งขนม</h4>
-                                    <button onClick={() => setActiveModal('address')} className="px-8 py-3 bg-white text-[#2D241E] border border-slate-200 rounded-full text-[20px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all">เพิ่มที่อยู่ใหม่</button>
+                                    <h4 className="text-2xl font-black uppercase tracking-tighter italic text-[#2D241E]">Address Registry</h4>
+                                    <button onClick={() => setActiveModal('address')} className="px-6 py-2.5 bg-[#2D241E] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all">+ Register New</button>
                                 </div>
-                                {profile.addresses?.length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {profile.addresses.map(addr => (
-                                            <div key={addr.address_id} className="p-8 bg-white rounded-[2.5rem] border border-slate-100 group relative hover:shadow-md transition-all duration-500">
-                                                <div className="absolute top-6 right-6 flex gap-2">
-                                                    <button onClick={() => { setEditingAddress(addr); setActiveModal('address'); }} className="p-2 text-[#2D241E] hover:text-[#2D241E] transition-all"><Edit2 size={18}/></button>
-                                                    <button onClick={() => handleDeleteAddress(addr.address_id)} className="p-2 text-[#2D241E] hover:text-red-500 transition-all"><Trash2 size={18}/></button>
-                                                </div>
-                                                <p className="font-black text-[#2D241E] text-xl mb-3 uppercase tracking-tighter italic">{addr.recipient_name}</p>
-                                                <p className="text-[20px] leading-relaxed text-[#2D241E] font-light line-clamp-2 mb-6 italic">"{addr.address_detail}"</p>
-                                                <div className="flex items-center gap-2 text-[#2D241E] font-black text-[20px] uppercase tracking-widest  "><Phone size={24}/> {addr.phone_number}</div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {profile.addresses?.map(addr => (
+                                        <div key={addr.address_id} className="p-6 bg-slate-50 rounded-[2.5rem] border-2 border-slate-200 relative group hover:border-[#2D241E]/40 transition-all shadow-sm">
+                                            <div className="absolute top-6 right-6 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                <button onClick={() => { setEditingAddress(addr); setActiveModal('address'); }} className="p-2 text-[#2D241E] hover:scale-110"><Edit2 size={16} strokeWidth={3}/></button>
+                                                <button onClick={() => handleDeleteAddress(addr.address_id)} className="p-2 text-red-600 hover:scale-110"><Trash2 size={16} strokeWidth={3}/></button>
                                             </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="py-20 bg-white rounded-[2.5rem] border border-dashed border-slate-100 text-center">
-                                        <p className="text-[#2D241E]/20 font-black uppercase tracking-widest text-[20px] italic">คุณยังไม่ได้เพิ่มที่อยู่จัดส่ง</p>
-                                    </div>
-                                )}
+                                            <p className="font-black text-[#2D241E] text-lg uppercase tracking-tighter italic mb-2">{addr.recipient_name}</p>
+                                            <p className="text-sm font-bold text-[#2D241E] italic leading-relaxed mb-6">"{addr.address_detail}"</p>
+                                            <div className="flex items-center gap-2 text-xs font-black text-[#2D241E] uppercase tracking-widest"><Phone size={14} strokeWidth={3}/> {addr.phone_number}</div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
-                        {/* รายการที่ชอบ */}
-                        <div id="fav-section" className="bg-white rounded-[3rem] md:rounded-[4rem] p-10 md:p-16 border border-slate-100 shadow-sm relative overflow-hidden group">
-                            <Heart className="absolute -top-10 -right-10 text-[#2D241E] opacity-[0.02]" size={200} />
-                            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-12 italic">เมนู <span className="  font-light">ที่ชอบที่สุด</span></h2>
+                        {/* --- Wishlist Archive --- */}
+                        <div id="fav-section" className="bg-white rounded-[3.5rem] p-10 md:p-14 border-2 border-slate-100 shadow-xl relative overflow-hidden group">
+                            <Heart className="absolute -top-10 -right-10 text-[#2D241E] opacity-[0.03]" size={200} strokeWidth={3} />
+                            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter mb-12 italic text-[#2D241E]">Wishlist <span className="font-light not-italic opacity-40">Archive</span></h2>
                             
                             {favorites.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 relative z-10">
+                                <div className="space-y-4 relative z-10">
                                     {favorites.map((fav) => {
                                         const prod = fav.product || fav; 
                                         const mainImg = prod.images?.[0]?.image_url || '/placeholder.png';
                                         return (
-                                            <div key={fav.wishlist_id || prod.product_id} className="group/card flex flex-col gap-5 p-5 bg-white rounded-[3rem] border border-slate-100 hover:shadow-lg transition-all duration-700">
-                                                <div className="relative aspect-square rounded-[2.5rem] overflow-hidden bg-slate-50 border border-slate-50">
-                                                    <img src={mainImg} className="w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-[2s]" alt={prod.product_name} />
-                                                    <button 
-                                                        onClick={() => handleRemoveFavorite(prod.product_id)} 
-                                                        className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm text-red-400 p-3 rounded-2xl shadow-sm hover:bg-red-500 hover:text-white transition-all"
-                                                    >
-                                                        <Heart size={16} fill="currentColor"/>
-                                                    </button>
+                                            <div key={fav.wishlist_id || prod.product_id} className="group/card flex flex-col md:flex-row items-center gap-6 p-4 bg-white rounded-[2.5rem] border-2 border-slate-200 hover:border-[#2D241E] transition-all duration-500 hover:shadow-lg text-left">
+                                                <div className="relative w-24 h-24 shrink-0 rounded-2xl overflow-hidden bg-slate-50 border-2 border-slate-200 shadow-inner">
+                                                    <img src={mainImg} className="w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-[1.5s]" alt={prod.product_name} />
                                                 </div>
-                                                <div className="flex flex-col px-2 space-y-1">
-                                                    <h4 className="font-black text-[#2D241E] text-xl tracking-tighter uppercase italic">{prod.product_name}</h4>
-                                                    <p className="text-[#2D241E] font-black text-2xl tracking-tighter mb-4  ">฿{prod.unit_price?.toLocaleString()}</p>
-                                                    <button onClick={() => navigate(`/products`)} className="w-full py-4 bg-white border border-[#2D241E] text-[#2D241E] rounded-full text-[20px] font-black uppercase tracking-widest hover:bg-[#2D241E] hover:text-white transition-all">
-                                                        สั่งซื้อเมนูนี้
-                                                    </button>
+                                                <div className="flex-1">
+                                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#2D241E] rounded-lg text-[9px] font-black text-white uppercase tracking-widest mb-1 shadow-md">
+                                                        <Sparkles size={10} strokeWidth={3} /> Best Flavor
+                                                    </div>
+                                                    <h4 className="font-black text-[#2D241E] text-lg uppercase italic leading-tight">{prod.product_name}</h4>
+                                                    <p className="text-xs font-bold text-[#2D241E]/60 italic">Handcrafted with premium ingredients</p>
+                                                </div>
+                                                <div className="w-full md:w-auto flex flex-row md:flex-col items-center md:items-end gap-4 min-w-[150px] pt-4 md:pt-0 border-t-2 md:border-t-0 md:border-l-2 border-slate-100 md:pl-6">
+                                                    <div className="text-left md:text-right flex-1 md:flex-none">
+                                                        <p className="text-[9px] font-black text-[#2D241E] uppercase tracking-widest mb-1 leading-none">Price</p>
+                                                        <p className="text-2xl font-black text-[#2D241E] italic leading-none">฿{prod.unit_price?.toLocaleString()}</p>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => handleRemoveFavorite(prod.product_id)} className="p-3 bg-slate-100 text-red-600 rounded-2xl border-2 border-transparent hover:border-red-600 transition-all shadow-sm"><Trash2 size={18} strokeWidth={3} /></button>
+                                                        <button onClick={() => navigate(`/products`)} className="px-6 py-3 bg-[#2D241E] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-black transition-all active:scale-95 flex items-center gap-2 italic"><ShoppingBag size={14} strokeWidth={3} /> Order</button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
                             ) : (
-                                <div className="py-24 text-center bg-white rounded-[3rem] border border-dashed border-slate-100">
-                                    <p className="text-[#2D241E]/20 font-black uppercase tracking-widest text-[20px] italic mb-6">ยังไม่มีเมนูที่ถูกใจในขณะนี้</p>
-                                    <button onClick={() => navigate('/products')} className="px-10 py-4 bg-white border border-[#2D241E] text-[#2D241E] rounded-full text-[20px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">ไปเลือกชมขนม</button>
+                                <div className="py-20 text-center bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-300 flex flex-col items-center gap-6">
+                                    <ShoppingBag size={48} strokeWidth={1} className="text-[#2D241E] opacity-20" />
+                                    <p className="text-[#2D241E] font-black uppercase tracking-widest text-sm italic">Wishlist is currently empty</p>
+                                    <button onClick={() => navigate('/products')} className="px-8 py-3 bg-[#2D241E] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95">Explore Bakery</button>
                                 </div>
                             )}
                         </div>
@@ -387,28 +332,25 @@ const Profile = ({ userData }) => {
                 </div>
             </section>
 
-            {/* --- ส่วนจัดการ Modal --- */}
-            {activeModal === 'profile' && <Modal title="โปรไฟล์" onClose={closeModal}><ProfileEditForm initialData={{ first_name: profile.first_name, last_name: profile.last_name, phone: profile.phone || '' }} onSubmit={handleUpdateProfile} isSubmitting={isSubmitting} /></Modal>}
-            {activeModal === 'address' && <Modal title={editingAddress ? "ข้อมูลที่อยู่" : "ที่อยู่จัดส่งใหม่"} onClose={closeModal}><AddressFormSub initialData={editingAddress} onSubmit={handleSaveAddress} isSubmitting={isSubmitting} isEdit={!!editingAddress} /></Modal>}
-            {activeModal === 'password' && <Modal title="ความปลอดภัย" onClose={closeModal}><ChangePasswordForm onSubmit={handleChangePassword} isSubmitting={isSubmitting} /></Modal>}
-
             <Footer userData={userData} />
+            
+            {/* Modal Components */}
+            {activeModal === 'profile' && <Modal title="Profile Details" onClose={closeModal}><ProfileEditForm initialData={{ first_name: profile.first_name, last_name: profile.last_name, phone: profile.phone || '' }} onSubmit={handleUpdateProfile} isSubmitting={isSubmitting} /></Modal>}
+            {activeModal === 'address' && <Modal title={editingAddress ? "Location Info" : "New Registry"} onClose={closeModal}><AddressFormSub initialData={editingAddress} onSubmit={handleSaveAddress} isSubmitting={isSubmitting} isEdit={!!editingAddress} /></Modal>}
+            {activeModal === 'password' && <Modal title="Security Access" onClose={closeModal}><ChangePasswordForm onSubmit={handleChangePassword} isSubmitting={isSubmitting} /></Modal>}
 
             <style dangerouslySetInnerHTML={{ __html: `
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E10; border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E; border-radius: 10px; }
             `}} />
         </div>
     );
 };
 
-// คอมโพเนนต์แสดงข้อมูลแบบใช้ซ้ำ (Pearl White Style)
-const InfoItem = ({ label, value, icon, isGold = false }) => (
-    <div className="space-y-3 group/item">
-        <label className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] flex items-center gap-2 ml-1">{icon} {label}</label>
-        <div className={`text-2xl md:text-3xl font-black border-b border-slate-50 pb-5 leading-none tracking-tighter transition-all group-hover/item:border-[#2D241E] ${isGold ? 'text-[#2D241E] italic' : 'text-[#2D241E]'}`}>
-            {value || '—'}
-        </div>
+const InfoItem = ({ label, value, icon, isHigh = false }) => (
+    <div className="space-y-1 text-left border-b-2 border-slate-100 pb-4 group/item">
+        <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest flex items-center gap-2 mb-2 leading-none">{icon} {label}</label>
+        <p className={`text-xl font-black tracking-tighter uppercase ${isHigh ? 'text-[#D4A373] italic' : 'text-[#2D241E]'}`}>{value || '—'}</p>
     </div>
 );
 

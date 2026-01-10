@@ -4,7 +4,7 @@ import {
   Star, ImageIcon, Heart, Plus, MessageCircle,
   Quote, MoveRight, Trash2, ChevronLeft,
   ChevronRight, Sparkles, Leaf, Cookie, Utensils, Smile,
-  MapPin, Phone, Instagram, Send, Navigation, Compass, Undo2
+  MapPin, Phone, Instagram, Send, Navigation, Compass, Undo2, ShoppingBag, ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
@@ -64,9 +64,7 @@ const Home = ({ userData }) => {
           setHeroImages(Array.isArray(parsed) ? parsed : []);
         } catch (e) { setHeroImages([]); }
       }
-
       if (prodRes.status === 'fulfilled' && prodRes.value.success) setProducts((prodRes.value.data || []).slice(0, 4));
-
       if (publicRes.status === 'fulfilled' && publicRes.value.success) {
         const d = publicRes.value.data;
         setHomeData(prev => ({
@@ -76,19 +74,10 @@ const Home = ({ userData }) => {
           line_url: d.line_url
         }));
       }
-
-      if (reviewRes.status === 'fulfilled' && reviewRes.value.success) {
-        setReviews((reviewRes.value.data || []).slice(0, 3));
-      }
-
-      if (wishRes.status === 'fulfilled' && wishRes.value.success) {
-        setWishlistedIds((wishRes.value.data || []).map(w => w.product_id));
-      }
-    } catch (err) {
-      console.error("Initialization failed", err);
-    } finally {
-      setLoading(false);
-    }
+      if (reviewRes.status === 'fulfilled' && reviewRes.value.success) setReviews((reviewRes.value.data || []).slice(0, 3));
+      if (wishRes.status === 'fulfilled' && wishRes.value.success) setWishlistedIds((wishRes.value.data || []).map(w => w.product_id));
+    } catch (err) { console.error("Initialization failed", err); }
+    finally { setLoading(false); }
   }, [userData]);
 
   useEffect(() => { initPage(); }, [initPage]);
@@ -99,16 +88,11 @@ const Home = ({ userData }) => {
     setCurrentSlide((prev) => (prev + 1) % heroImages.length);
   }, [heroImages.length]);
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + heroImages.length) % heroImages.length);
-  };
-
   useEffect(() => {
     const timer = setInterval(nextSlide, 6000);
     return () => clearInterval(timer);
   }, [nextSlide]);
 
-  // --- ✍️ Handlers ---
   const handleUpdateContent = async (e) => {
     e.preventDefault();
     setIsUpdating(true);
@@ -123,269 +107,151 @@ const Home = ({ userData }) => {
       const res = await axiosInstance.put(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/home`, formData);
       if (res.success) {
         toast.success('อัปเดตข้อมูลเรียบร้อยแล้ว ✨');
-
-        // ✅ ล้างค่า State ต่างๆ หลังบันทึกสำเร็จ
         setImagesToDelete([]);
         setNewHeroFiles([]);
         setNewPreviews([]);
-
         setIsEditModalOpen(false);
-        initPage(); // โหลดข้อมูลใหม่จาก Server
+        initPage();
       }
-    } catch (err) {
-      toast.error("บันทึกข้อมูลไม่สำเร็จ: " + (err.response?.data?.message || err.message));
-    } finally {
-      setIsUpdating(false);
-    }
+    } catch (err) { toast.error("บันทึกไม่สำเร็จ"); }
+    finally { setIsUpdating(false); }
   };
 
-  const addToCart = (p) => {
-    if (p.stock_quantity <= 0) return toast.error("สินค้าหมดชั่วคราว");
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    cart.push({ ...p, quantity: 1 });
-    localStorage.setItem('cart', JSON.stringify(cart));
-    window.dispatchEvent(new Event('storage'));
-    toast.success(`เพิ่ม ${p.product_name} ลงตะกร้าแล้ว! 🍪`);
-  };
-
-  const toggleWishlist = async (productId) => {
-    if (!userData) {
-      return toast.error("กรุณาเข้าสู่ระบบเพื่อบันทึกสินค้าที่ถูกใจ", {
-        icon: '🔒',
-      });
-    }
-
-    try {
-      const res = await axiosInstance.post('/api/wishlist/toggle', { product_id: productId });
-      if (res.success) {
-        setWishlistedIds(prev =>
-          prev.includes(productId)
-            ? prev.filter(id => id !== productId)
-            : [...prev, productId]
-        );
-        toast.success(res.message, {
-          icon: wishlistedIds.includes(productId) ? '💔' : '💖',
-        });
-      }
-    } catch (err) {
-      toast.error("ไม่สามารถดำเนินการได้ในขณะนี้");
-    }
-  };
-
-  if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={40} /></div>;
+  if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={48} /></div>;
 
   return (
     <div className="min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden selection:bg-[#F3E9DC] relative">
 
-      {/* ☁️ Global Cozy Patterns (Background Icons) */}
+      {/* ☁️ Global Background Patterns */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <Leaf className="absolute top-[10%] left-[-5%] text-[#2D241E] opacity-[0.02] rotate-12" size={300} />
         <Cookie className="absolute top-[60%] right-[-5%] text-[#2D241E] opacity-[0.03] -rotate-12" size={250} />
-        <Smile className="absolute bottom-[5%] left-[10%] text-[#2D241E] opacity-[0.02]" size={200} />
       </div>
 
       <Toaster position="bottom-right" />
       <HeaderHome userData={userData} />
 
-      {/* --- 🛠️ Admin Tool --- */}
+      {/* --- 🛠️ Admin Tool Bar --- */}
       {isStaff && (
-        <div className="bg-white/80 py-4 flex justify-center backdrop-blur-md sticky top-[72px] z-[90] border-b border-slate-100">
-          <button onClick={() => setIsEditModalOpen(true)} className="flex items-center gap-2 text-[20px] font-bold uppercase tracking-widest text-[#2D241E] bg-white px-8 py-2.5 rounded-full shadow-sm border border-slate-100 active:scale-95 transition-all">
-            <Settings size={14} className={isUpdating ? "animate-spin" : ""} />
-            {isUpdating ? "กำลังบันทึก..." : "โหมดปรับแต่งหน้าเว็บ"}
+        <div className="bg-white/95 py-4 flex justify-center backdrop-blur-md sticky top-[72px] z-[90] border-b-2 border-slate-100 shadow-sm">
+          <button onClick={() => setIsEditModalOpen(true)} className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-[#2D241E] bg-white px-8 py-3 rounded-full shadow-lg border-2 border-[#2D241E] hover:bg-[#2D241E] hover:text-white transition-all">
+            <Settings size={14} strokeWidth={3} className={isUpdating ? "animate-spin" : ""} />
+            {isUpdating ? "UPDATING..." : "Customize Home"}
           </button>
         </div>
       )}
 
-      {/* --- 🥧 Hero Section --- */}
-      <section className="relative min-h-screen flex items-center overflow-hidden bg-[#FAFAFA]">
-
-        {/* 1. Background Image Slider Layer (ชั้นล่างสุด - เน้นขวา) */}
+      {/* --- 🥧 Hero Section (Balanced) --- */}
+      <section className="relative min-h-[85vh] lg:min-h-screen flex items-center overflow-hidden bg-[#FAFAFA]">
         <div className="absolute inset-0 z-0">
           {heroImages.length > 0 ? heroImages.map((url, idx) => (
             <img
               key={url}
               src={url}
-              alt="Hero Background"
-              // ✅ จุดที่แก้ 1: เปลี่ยน object-center เป็น object-[75%_center]
-              // เพื่อให้จุดโฟกัสของภาพอยู่ค่อนไปทางขวา (ประมาณ 75% ของความกว้างภาพ) ไม่โดนยืดตรงกลาง
-              className={`absolute inset-0 w-full h-full object-cover object-[75%_center] transition-all duration-[2500ms] ease-in-out ${idx === currentSlide ? 'opacity-100 scale-105' : 'opacity-0 scale-100'}`}
+              alt=""
+              className={`absolute inset-0 w-full h-full object-cover object-[75%_center] transition-all duration-[2000ms] ease-in-out ${idx === currentSlide ? 'opacity-100 scale-105' : 'opacity-0 scale-100'}`}
             />
-          )) : (
-            <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-              <ImageIcon size={60} className="text-slate-300" />
-            </div>
-          )}
+          )) : <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300"><ImageIcon size={60} /></div>}
         </div>
 
-        {/* 2. The Gradient Overlay Layer (ชั้นกลาง - ปรับให้ขาวทึบทางซ้ายมากขึ้น) */}
-        {/* ✅ จุดที่แก้ 2: ปรับ gradient ให้สีขาวกินพื้นที่มาถึงประมาณ 60% ของจอ แล้วค่อยจางออก */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#FAFAFA] via-[#FAFAFA]/95 via-50% lg:via-60% to-transparent pointer-events-none"></div>
+        {/* Overlay for Contrast */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-white via-white/95 to-transparent pointer-events-none"></div>
 
-        {/* Optional: Texture กระดาษจางๆ (ถ้าไม่ชอบลบออกได้) */}
-        <div className="absolute inset-0 z-10 opacity-[0.03] pointer-events-none mix-blend-multiply" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
-
-
-        {/* 3. Content Layer (ชั้นบนสุด - เนื้อหา) */}
-        <div className="container mx-auto px-6 lg:px-24 relative z-20 h-full flex items-center py-20 lg:py-0">
-          {/* ✅ จุดที่แก้ 3: ปรับความกว้างคอนเทนต์เป็น lg:w-1/2 เพื่อให้ข้อความกระชับอยู่ฝั่งซ้าย ไม่ล้นไปทับรูปฝั่งขวา */}
-          <div className="w-full lg:w-1/2 space-y-10 text-center lg:text-left mt-20 lg:mt-0">
-
+        <div className="container mx-auto px-6 lg:px-20 relative z-20 h-full flex items-center py-20 lg:py-0">
+          <div className="w-full lg:w-3/5 space-y-8 text-center lg:text-left">
+            
             {/* Subtitle Badge */}
-            <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-white/80 backdrop-blur-xl rounded-full shadow-sm border border-[#F3E9DC] text-[#2D241E] animate-fade-in-up font-medium">
-              <Sparkles size={16} className="text-[#D4A373]" />
-              <span className="text-[15px] md:text-[16px] tracking-[0.15em] uppercase">{homeData.hero_subtitle}</span>
+            <div className="inline-flex items-center gap-3 px-5 py-1.5 bg-[#2D241E] rounded-full shadow-lg text-white animate-fade-in-up">
+              <Sparkles size={14} strokeWidth={3} />
+              <span className="text-xs font-black tracking-widest uppercase">{homeData.hero_subtitle}</span>
             </div>
 
-            {/* Main Title */}
-            <div className="space-y-8 animate-fade-in-up delay-100">
-              <h1 className="text-6xl md:text-8xl lg:text-[100px] font-black leading-[0.95] text-[#2D241E] tracking-tighter drop-shadow-sm">
-                {homeData.hero_title.split(' ').map((word, i) => (
-                  <span key={i} className={i === 1 ? "text-[#2D241E] italic font-light block lg:inline" : ""}>
-                    {word}{' '}
-                  </span>
-                ))}
+            <div className="space-y-6 animate-fade-in-up delay-100">
+              {/* ปรับลดขนาดจาก 110px เป็น 8xl (96px) */}
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[0.95] text-[#2D241E] tracking-tighter italic">
+                {homeData.hero_title}
               </h1>
-
-              {/* Description */}
-              <div className="relative pl-6 mx-auto lg:mx-0 max-w-xl border-l-4 border-[#D4A373]/30">
-                <p className="text-[#2D241E]/80 text-xl lg:text-2xl leading-relaxed font-light">
+              <div className="relative pl-6 lg:pl-8 max-w-xl border-l-4 lg:border-l-8 border-[#2D241E]">
+                <p className="text-lg lg:text-xl leading-relaxed font-bold italic text-[#2D241E]/90">
                   {homeData.hero_description}
                 </p>
               </div>
             </div>
 
-            {/* Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-8 animate-fade-in-up delay-200">
-              <button
-                onClick={() => navigate('/products')}
-                className="group w-full sm:w-auto bg-[#2D241E] text-white pl-10 pr-8 py-5 rounded-full font-bold text-lg shadow-[0_20px_40px_-15px_rgba(45,36,30,0.3)] hover:bg-black hover:-translate-y-1 transition-all duration-300 uppercase tracking-widest flex items-center justify-center gap-4"
-              >
-                เริ่มสั่งซื้อขนม <ChevronRight className="group-hover:translate-x-1 transition-transform" size={20} />
-              </button>
-              <button className="group flex items-center gap-3 font-bold text-lg text-[#2D241E] uppercase tracking-[0.15em] hover:opacity-70 transition-all py-4 px-6 rounded-full hover:bg-white/50">
-                เรื่องราวของเรา
-                <MoveRight size={20} className="group-hover:translate-x-2 transition-transform text-[#D4A373]" />
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4 animate-fade-in-up delay-200">
+              <button onClick={() => navigate('/products')} className="group w-full sm:w-auto bg-[#2D241E] text-white px-10 py-5 rounded-full font-black text-lg shadow-xl hover:bg-black hover:scale-105 transition-all flex items-center justify-center gap-3 uppercase tracking-widest italic">
+                BROWSE MENU <ChevronRight strokeWidth={4} size={20} className="group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
-
           </div>
         </div>
-
-        {/* 4. Slider Controls (มุมขวาล่าง) */}
-        {heroImages.length > 1 && (
-          <div className="absolute bottom-12 right-12 flex items-center gap-6 z-30 hidden lg:flex">
-            <div className="flex gap-2 mr-4 bg-white/20 backdrop-blur-md p-2 rounded-full border border-white/30">
-              {heroImages.map((_, i) => (
-                <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${currentSlide === i ? 'w-8 bg-[#2D241E]' : 'w-2 bg-[#2D241E]/40'}`} />
-              ))}
-            </div>
-            <div className="flex gap-3">
-              <button onClick={prevSlide} className="w-14 h-14 bg-white/30 backdrop-blur-md rounded-full text-[#2D241E] flex items-center justify-center hover:bg-[#2D241E] hover:text-white transition-all active:scale-90 border border-white/40 shadow-sm"><ChevronLeft size={20} /></button>
-              <button onClick={nextSlide} className="w-14 h-14 bg-white/30 backdrop-blur-md rounded-full text-[#2D241E] flex items-center justify-center hover:bg-[#2D241E] hover:text-white transition-all active:scale-90 border border-white/40 shadow-sm"><ChevronRight size={20} /></button>
-            </div>
-          </div>
-        )}
       </section>
 
-      {/* --- 🥖 Signature Menu --- */}
-      <section className="py-24 lg:py-44 relative bg-white z-10 overflow-hidden">
-        <Cookie className="absolute top-[10%] left-[-2%] text-[#2D241E] opacity-[0.02]" size={150} />
-
+      {/* --- 🥖 Signature Menu (Matched Size) --- */}
+      <section className="py-20 lg:py-32 relative bg-white z-10 overflow-hidden">
         <div className="container mx-auto px-6 text-center">
-          <div className="mb-24 space-y-4">
-            <h2 className="text-4xl lg:text-6xl font-black text-[#2D241E] uppercase tracking-tighter">
-              เมนู <span className="font-light text-[#2D241E] italic">ยอดนิยม</span>
+          <div className="mb-16 space-y-3">
+            {/* ปรับหัวข้อลงให้สมดุล */}
+            <h2 className="text-4xl lg:text-6xl font-black text-[#2D241E] uppercase tracking-tighter italic">
+              Menu <span className="font-light not-italic opacity-40">Highlight</span>
             </h2>
-            <div className="h-1.5 w-20 bg-[#F3E9DC] mx-auto rounded-full"></div>
+            <div className="h-1.5 w-20 bg-[#2D241E] mx-auto rounded-full"></div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {products.map((p) => {
               const isLiked = wishlistedIds.includes(p.product_id);
-
               return (
-                <div key={p.product_id} className="group relative flex flex-col bg-white rounded-[3rem] transition-all duration-500 hover:-translate-y-2">
-                  {/* Image Container */}
-                  <div className="relative aspect-square w-full rounded-[2.5rem] overflow-hidden bg-slate-50 shadow-sm border border-slate-100/50">
-                    <img
-                      src={p.images?.[0]?.image_url || '/placeholder.png'}
-                      className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110"
-                      alt={p.product_name}
-                    />
-
-                    {/* Overlay Actions */}
-                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                    {/* Top Right Actions (Wishlist) */}
-                    <div className="absolute top-5 right-5 z-20">
-                      <button
-                        onClick={() => toggleWishlist(p.product_id)}
-                        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg border border-white/50 backdrop-blur-md ${isLiked ? 'bg-white text-red-500' : 'bg-white/80 text-[#2D241E] hover:bg-white hover:text-red-500'
-                          }`}
-                      >
-                        <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
-                      </button>
+                <div key={p.product_id} className="group flex flex-col bg-white rounded-[2.5rem] transition-all duration-500 hover:-translate-y-2">
+                  <div className="relative aspect-square w-full rounded-[2rem] overflow-hidden bg-slate-50 border-2 border-slate-100 shadow-sm">
+                    <img src={p.images?.[0]?.image_url || '/placeholder.png'} className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110" alt="" />
+                    <div className="absolute top-4 right-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 border-white shadow-xl ${isLiked ? 'bg-red-500 text-white' : 'bg-white/90 text-[#2D241E]'}`}>
+                        <Heart size={18} strokeWidth={3} fill={isLiked ? "currentColor" : "none"} />
+                      </div>
                     </div>
-
-                    {/* Bottom Actions (Add to Cart) */}
-                    <div className="absolute inset-x-0 bottom-6 px-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                      <button
-                        onClick={() => addToCart(p)}
-                        className="w-full py-4 bg-[#2D241E] text-white rounded-2xl font-bold text-sm uppercase tracking-widest shadow-xl hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2"
-                      >
-                        <Plus size={18} /> เพิ่มลงตะกร้า
+                    <div className="absolute inset-x-0 bottom-4 px-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+                      <button onClick={() => navigate('/products')} className="w-full py-3.5 bg-[#2D241E] text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-black italic">
+                        View More Info
                       </button>
                     </div>
                   </div>
-
-                  {/* Product Info */}
-                  <div className="mt-6 px-4 text-center space-y-1">
-                    <h3 className="text-xl font-bold text-[#2D241E] line-clamp-1">{p.product_name}</h3>
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-sm text-slate-400 font-light uppercase tracking-wider">Homemade</span>
-                      <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                      <p className="text-2xl font-black text-[#2D241E] italic">
-                        ฿{Number(p.unit_price).toLocaleString()}
-                      </p>
-                    </div>
+                  <div className="mt-5 text-center space-y-1">
+                    <h3 className="text-lg font-black text-[#2D241E] uppercase truncate italic px-2">{p.product_name}</h3>
+                    <p className="text-2xl font-black text-[#2D241E] italic">฿{Number(p.unit_price).toLocaleString()}</p>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <button
-            onClick={() => navigate('/products')}
-            className="mt-20 group inline-flex items-center gap-3 text-[#2D241E] font-bold uppercase tracking-[0.2em] hover:gap-5 transition-all"
-          >
-            ดูเมนูทั้งหมด <MoveRight size={20} />
+          <button onClick={() => navigate('/products')} className="mt-16 group inline-flex items-center gap-3 text-[#2D241E] font-black text-lg uppercase tracking-widest hover:gap-6 transition-all border-b-4 border-[#2D241E] pb-1 italic">
+            VIEW ALL COLLECTIONS <MoveRight size={22} strokeWidth={3} />
           </button>
         </div>
       </section>
 
-      {/* --- 🍯 Customer Reviews --- */}
-      <section className="py-32 bg-white relative z-10 border-y border-slate-50 overflow-hidden">
-        <Smile className="absolute top-[20%] right-[-2%] text-[#2D241E] opacity-[0.02]" size={180} />
+      {/* --- 🍯 Customer Reviews (High Contrast) --- */}
+      <section className="py-24 bg-slate-50 relative z-10 border-y-2 border-slate-100">
         <div className="container mx-auto px-6 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center justify-between mb-24 gap-10">
-            <div className="space-y-4 text-center lg:text-left">
-              <h2 className="text-4xl lg:text-6xl font-black text-[#2D241E] uppercase tracking-tighter italic">รีวิวจาก <span className="font-light text-[#2D241E]">คุณลูกค้า</span></h2>
-              <p className="text-[#2D241E] text-[20px] tracking-[0.1em] font-medium uppercase">เรื่องราวความประทับใจจากถาดขนมของเรา</p>
+          <div className="flex flex-col lg:flex-row items-center justify-between mb-16 gap-6 text-left">
+            <div className="space-y-1">
+              <h2 className="text-4xl lg:text-6xl font-black text-[#2D241E] uppercase tracking-tighter italic leading-none">Customer <span className="font-light not-italic opacity-40">Voices</span></h2>
+              <p className="text-[#2D241E] text-lg font-black uppercase tracking-widest italic opacity-80">ความประทับใจจากลูกค้าของเรา</p>
             </div>
-            <Quote size={100} className="text-slate-100 hidden lg:block" />
+            <Quote size={64} strokeWidth={3} className="text-[#2D241E] opacity-10 hidden lg:block" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {reviews.map((rev, idx) => (
-              <div key={idx} className="bg-white p-12 rounded-[4.5rem] shadow-sm border border-slate-50 hover:shadow-xl transition-all duration-700">
-                <div className="flex text-amber-400 gap-1.5 mb-10">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={15} fill={i < rev.rating_score ? "currentColor" : "none"} />)}
+              <div key={idx} className="bg-white p-10 rounded-[3rem] shadow-xl border-2 border-white hover:border-[#2D241E]/10 transition-all duration-500 text-left">
+                <div className="flex text-[#2D241E] gap-1 mb-6">
+                  {[...Array(5)].map((_, i) => <Star key={i} size={14} strokeWidth={3} fill={i < rev.rating_score ? "currentColor" : "none"} />)}
                 </div>
-                <p className="text-xl text-[#2D241E] italic leading-[1.8] mb-12 font-light">"{rev.comment}"</p>
-                <div className="flex items-center gap-1 pt-1 border-t border-slate-50">
-                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center font-black text-[#2D241E] border border-white shadow-sm">{rev.user?.first_name?.[0]}</div>
-                  <span className="font-bold text-[#2D241E] text-[20px] uppercase tracking-widest">{rev.user?.first_name}</span>
+                <p className="text-lg text-[#2D241E] font-bold italic leading-relaxed mb-10">"{rev.comment}"</p>
+                <div className="flex items-center gap-4 pt-6 border-t-2 border-slate-50">
+                  <div className="w-10 h-10 bg-[#2D241E] rounded-xl flex items-center justify-center font-black text-white text-sm shadow-md uppercase">{rev.user?.first_name?.[0]}</div>
+                  <span className="font-black text-[#2D241E] text-base uppercase tracking-widest italic">{rev.user?.first_name}</span>
                 </div>
               </div>
             ))}
@@ -393,31 +259,30 @@ const Home = ({ userData }) => {
         </div>
       </section>
 
-      {/* --- 📍 Map Section --- */}
+      {/* --- 📍 Contact Section (Darkened Labels) --- */}
       <section className="relative w-full h-[650px] bg-white z-10">
         <iframe
           title="Map"
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3875.2818610738!2d100.536294!3d13.7516!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTPCsDQ1JzA1LjgiTiAxMDDCsDMyJzEwLjciRQ!5e0!3m2!1sth!2sth!4v1625000000000!5m2!1sth!2sth"
-          className="w-full h-full border-none grayscale-[0.8] opacity-50"
+          src="http://maps.google.com/maps?q=13.7563,100.5018&z=15&output=embed"
+          className="w-full h-full border-none grayscale-[0.6] opacity-50"
           allowFullScreen=""
-          loading="lazy"
         ></iframe>
-        <div className="absolute inset-x-0 bottom-16 px-6 z-20">
-          <div className="max-w-4xl mx-auto bg-white/95 backdrop-blur-xl p-10 md:p-14 rounded-[5rem] shadow-2xl border border-white flex flex-col md:flex-row items-center gap-14">
-            <div className="flex-1 space-y-6 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 text-emerald-600 text-[20px] font-bold uppercase tracking-[0.1em] bg-emerald-50 px-5 py-2 rounded-full border border-emerald-100/40">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div> เปิดให้บริการปกติ
+        <div className="absolute inset-x-0 bottom-12 px-4 z-20">
+          <div className="max-w-4xl mx-auto bg-white p-10 md:p-12 rounded-[3.5rem] shadow-2xl border-2 border-slate-100 flex flex-col md:flex-row items-center gap-10 md:gap-16 text-[#2D241E]">
+            <div className="flex-1 space-y-5 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 text-[#05CD99] text-xs font-black uppercase tracking-widest bg-emerald-50 px-5 py-1.5 rounded-full border border-emerald-100">
+                <div className="w-2 h-2 bg-[#05CD99] rounded-full animate-pulse"></div> SHOP IS OPEN
               </div>
-              <h4 className="text-3xl lg:text-5xl font-black text-[#2D241E] tracking-tight italic uppercase">แวะมาหาเราได้ที่ร้าน</h4>
-              <p className="text-[20px] text-[#2D241E]/90 leading-relaxed font-light italic">{homeData.shop_address}</p>
+              <h4 className="text-3xl lg:text-4xl font-black tracking-tighter italic uppercase">แวะมาหาเราได้ที่ร้าน</h4>
+              <p className="text-base lg:text-lg font-bold italic opacity-90 leading-relaxed">{homeData.shop_address}</p>
             </div>
-            <div className="w-full md:w-auto flex flex-col gap-5">
-              <a href={homeData.line_url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 bg-white text-[#2D241E] px-12 py-5 rounded-full border border-slate-100 hover:shadow-xl transition-all  text-xl font-bold tracking-widest shadow-md">
-                <Send size={18} className="text-[#2D241E]" /> ติดต่อผ่าน LINE
+            <div className="w-full md:w-auto flex flex-col gap-3">
+              <a href={homeData.line_url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 bg-[#2D241E] text-white px-10 py-4 rounded-full font-black text-base tracking-widest shadow-xl hover:bg-black transition-all uppercase italic">
+                <Send size={18} strokeWidth={3} /> Line Us
               </a>
-              <div className="text-center">
-                <p className="text-[20px] font-bold text-[#2D241E] uppercase tracking-[0.1em] mb-1">โทรศัพท์ติดต่อ</p>
-                <p className="text-xl font-black text-[#2D241E]">{homeData.shop_phone}</p>
+              <div className="text-center md:text-right pt-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#2D241E] opacity-40 mb-1">Direct Call</p>
+                <p className="text-2xl font-black italic tracking-tighter text-[#2D241E]">{homeData.shop_phone}</p>
               </div>
             </div>
           </div>
@@ -426,109 +291,69 @@ const Home = ({ userData }) => {
 
       <Footer userData={userData} />
 
-      {/* --- 📝 Admin Modal --- */}
-      {
-        isEditModalOpen && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/20 backdrop-blur-xl p-6 animate-in fade-in zoom-in duration-300">
-            <div className="bg-white rounded-[5rem] w-full max-w-3xl p-12 lg:p-20 shadow-2xl border border-white relative max-h-[92vh] overflow-y-auto no-scrollbar">
-              <button onClick={() => setIsEditModalOpen(false)} className="absolute top-12 right-12 p-4 text-slate-300 hover:text-red-500 transition-colors bg-white rounded-full border border-slate-50 shadow-sm"><X size={20} /></button>
-              <div className="mb-16 text-center">
-                <p className="text-[#2D241E] font-bold text-[20px] uppercase tracking-[0.6em] mb-4">Branding Studio</p>
-                <h2 className="text-4xl font-black text-[#2D241E] tracking-tight uppercase italic leading-none">ปรับปรุงเนื้อหา <span className="font-light">หน้าหลัก</span></h2>
-              </div>
-              <form onSubmit={handleUpdateContent} className="space-y-12 text-left">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <div className="space-y-4">
-                    <label className="text-[20px] font-bold text-[#2D241E] uppercase ml-6 tracking-widest">หัวข้อหลัก (Title)</label>
-                    <input name="hero_title" type="text" value={homeData.hero_title} onChange={(e) => setHomeData({ ...homeData, hero_title: e.target.value })} className="w-full px-8 py-5 bg-slate-50 border border-transparent rounded-full focus:bg-white focus:border-[#F3E9DC] outline-none font-bold text-[#2D241E] transition-all shadow-inner" />
-                  </div>
-                  <div className="space-y-4">
-                    <label className="text-[20px] font-bold text-[#2D241E] uppercase ml-6 tracking-widest">หัวข้อย่อย (Subtitle)</label>
-                    <input name="hero_subtitle" type="text" value={homeData.hero_subtitle} onChange={(e) => setHomeData({ ...homeData, hero_subtitle: e.target.value })} className="w-full px-8 py-5 bg-slate-50 border border-transparent rounded-full focus:bg-white focus:border-[#F3E9DC] outline-none font-bold text-[#2D241E] transition-all shadow-inner" />
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[20px] font-bold text-[#2D241E] uppercase ml-6 tracking-widest">คำอธิบาย</label>
-                  <textarea name="hero_description" value={homeData.hero_description} onChange={(e) => setHomeData({ ...homeData, hero_description: e.target.value })} className="w-full px-10 py-8 bg-slate-50 border border-transparent rounded-[3rem] focus:bg-white focus:border-[#F3E9DC] outline-none h-40 resize-none font-light shadow-inner transition-all" />
-                </div>
+      {/* --- 📝 Admin Edit Modal (High Contrast) --- */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#2D241E]/50 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] w-full max-w-2xl p-10 lg:p-12 shadow-2xl border-4 border-[#2D241E] relative max-h-[90vh] overflow-y-auto text-left">
+            <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 p-2 bg-slate-50 text-[#2D241E] hover:text-red-500 rounded-full border-2 border-[#2D241E] transition-all"><X size={20} strokeWidth={3} /></button>
 
-                <div className="space-y-6">
-                  <label className="text-[20px] font-bold text-[#2D241E] uppercase ml-6 tracking-widest">รูปภาพแบนเนอร์</label>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-5">
-
-                    {/* 1. แสดงรูปเดิมที่มีอยู่ใน Server */}
-                    {heroImages.map((url) => (
-                      <div key={url} className={`relative aspect-square rounded-[2rem] overflow-hidden border-4 transition-all duration-300 ${imagesToDelete.includes(url) ? 'opacity-30 border-red-200 scale-90' : 'border-white shadow-md'}`}>
-                        <img src={url} className="w-full h-full object-cover" alt="" />
-                        <button
-                          type="button"
-                          onClick={() => setImagesToDelete(prev => prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url])}
-                          className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-all"
-                        >
-                          {imagesToDelete.includes(url) ? (
-                            <div className="bg-white p-2 rounded-full text-red-500 shadow-lg"><Undo2 size={20} /></div>
-                          ) : (
-                            <div className="bg-red-500 p-2 rounded-full text-white shadow-lg"><Trash2 size={20} /></div>
-                          )}
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* 2. แสดงรูปใหม่ที่กำลังจะอัปโหลด (Preview) */}
-                    {newPreviews.map((url, index) => (
-                      <div key={index} className="relative aspect-square rounded-[2rem] overflow-hidden border-4 border-[#F3E9DC] shadow-md animate-in zoom-in">
-                        <img src={url} className="w-full h-full object-cover" alt="preview" />
-                        <div className="absolute top-2 left-2 bg-[#F3E9DC] text-[#2D241E] text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">New</div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            // ลบทั้งไฟล์และรูปพรีวิวออก
-                            setNewHeroFiles(prev => prev.filter((_, i) => i !== index));
-                            setNewPreviews(prev => prev.filter((_, i) => i !== index));
-                          }}
-                          className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-all"
-                        >
-                          <div className="bg-white p-2 rounded-full text-red-500 shadow-lg"><X size={20} /></div>
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* 3. ปุ่มกดเพิ่มรูป */}
-                    <label className="aspect-square flex flex-col items-center justify-center bg-slate-50 border-4 border-dashed border-slate-100 rounded-[2rem] cursor-pointer hover:border-[#F3E9DC] transition-all group">
-                      <Plus className="text-slate-300 group-hover:text-[#2D241E] transition-colors" size={32} />
-                      <span className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">เพิ่มรูปภาพ</span>
-                      <input
-                        type="file"
-                        multiple
-                        className="hidden"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files);
-                          if (files.length > 0) {
-                            setNewHeroFiles(prev => [...prev, ...files]);
-                            // สร้าง URL สำหรับพรีวิว
-                            const urls = files.map(f => URL.createObjectURL(f));
-                            setNewPreviews(prev => [...prev, ...urls]);
-                          }
-                        }}
-                        accept="image/*"
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                <button type="submit" disabled={isUpdating} className="w-full bg-[#2D241E] text-white py-6 rounded-full font-black uppercase tracking-widest  text-xl shadow-xl hover:bg-black transition-all active:scale-95 disabled:bg-slate-200">
-                  {isUpdating ? <Loader2 className="animate-spin mx-auto" size={24} /> : "บันทึกการเปลี่ยนแปลง"}
-                </button>
-              </form>
+            <div className="mb-10 pb-6 border-b-2 border-slate-100">
+              <h2 className="text-3xl font-black text-[#2D241E] uppercase italic tracking-tighter">Edit <span className="font-light opacity-30 not-italic">Homepage</span></h2>
             </div>
+
+            <form onSubmit={handleUpdateContent} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase text-[#2D241E] ml-2 tracking-widest">Headline Title</label>
+                <input type="text" value={homeData.hero_title} onChange={(e) => setHomeData({ ...homeData, hero_title: e.target.value })} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#2D241E] outline-none font-bold text-[#2D241E]" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase text-[#2D241E] ml-2 tracking-widest">Subtitle Badge</label>
+                <input type="text" value={homeData.hero_subtitle} onChange={(e) => setHomeData({ ...homeData, hero_subtitle: e.target.value })} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#2D241E] outline-none font-bold text-[#2D241E]" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase text-[#2D241E] ml-2 tracking-widest">Story Description</label>
+                <textarea value={homeData.hero_description} onChange={(e) => setHomeData({ ...homeData, hero_description: e.target.value })} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#2D241E] outline-none font-bold text-[#2D241E] h-32 resize-none leading-relaxed" />
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-xs font-black uppercase text-[#2D241E] ml-2 tracking-widest">Slide Banners</label>
+                <div className="grid grid-cols-4 gap-3">
+                  {heroImages.map((url) => (
+                    <div key={url} className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${imagesToDelete.includes(url) ? 'opacity-20 border-red-500 scale-90' : 'border-slate-100'}`}>
+                      <img src={url} className="w-full h-full object-cover" alt="" />
+                      <button type="button" onClick={() => setImagesToDelete(prev => prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url])} className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-all text-white"><Trash2 size={20} strokeWidth={3} /></button>
+                    </div>
+                  ))}
+                  <label className="aspect-square flex items-center justify-center bg-slate-50 border-2 border-dashed border-[#2D241E]/20 rounded-xl cursor-pointer hover:border-[#2D241E] transition-all">
+                    <Plus className="text-slate-300" size={24} strokeWidth={3} />
+                    <input type="file" multiple className="hidden" onChange={(e) => {
+                      const files = Array.from(e.target.files);
+                      setNewHeroFiles(prev => [...prev, ...files]);
+                      setNewPreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
+                    }} accept="image/*" />
+                  </label>
+                </div>
+              </div>
+
+              <button type="submit" disabled={isUpdating} className="w-full bg-[#2D241E] text-white py-5 rounded-full font-black uppercase tracking-widest text-lg shadow-xl hover:bg-black transition-all active:scale-95 disabled:opacity-50">
+                {isUpdating ? "SAVING CHANGES..." : "SAVE HOMEPAGE"}
+              </button>
+            </form>
           </div>
-        )
-      }
+        </div>
+      )}
 
       <style dangerouslySetInnerHTML={{
         __html: `
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E; border-radius: 10px; }
+        @keyframes fade-in-up {
+          from { opacity: 0; transform: translateY(15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up { animation: fade-in-up 0.8s ease-out forwards; }
+        .delay-100 { animation-delay: 0.15s; }
+        .delay-200 { animation-delay: 0.3s; }
       `}} />
     </div >
   );

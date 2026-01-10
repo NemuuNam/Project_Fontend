@@ -14,14 +14,13 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 const InventoryLog = () => {
+    // --- 🏗️ States (Logic เดิมครบถ้วน) ---
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-    // --- ✨ Pagination State ---
     const [currentPage, setCurrentPage] = useState(1);
     const logsPerPage = 10;
 
@@ -36,17 +35,14 @@ const InventoryLog = () => {
 
     const canClearLogs = userRole === 1;
 
-    // --- 📦 Logic (คงเดิม 100%) ---
-    const fetchLogs = useCallback(async () => {
+    // --- 📦 Logic Functions ---
+    const fetchLogs = useCallback(async (isSilent = false) => {
         try {
-            setLoading(true);
+            if (!isSilent) setLoading(true);
             const res = await axiosInstance.get(API_ENDPOINTS.ADMIN.INVENTORY_LOG);
             if (res.success) setLogs(res.data || []);
-        } catch (err) {
-            toast.error("ดึงข้อมูลประวัติไม่สำเร็จ");
-        } finally {
-            setLoading(false);
-        }
+        } catch (err) { toast.error("ดึงข้อมูลประวัติไม่สำเร็จ"); } 
+        finally { setLoading(false); }
     }, []);
 
     useEffect(() => { fetchLogs(); }, [fetchLogs]);
@@ -54,303 +50,179 @@ const InventoryLog = () => {
     const handleClearAll = async () => {
         const result = await Swal.fire({
             title: 'ล้างประวัติทั้งหมด?',
-            text: "ข้อมูลกิจกรรมสต็อกทั้งหมดจะถูกลบถาวรเพื่อเพิ่มพื้นที่ฐานข้อมูล!",
+            text: "ข้อมูลกิจกรรมสต็อกจะถูกลบถาวร!",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#2D241E',
             confirmButtonText: 'ยืนยัน ลบทั้งหมด',
-            cancelButtonText: 'ยกเลิก',
-            background: '#ffffff',
-            color: '#2D241E',
-            customClass: { popup: 'rounded-[3rem] border border-slate-100 font-["Kanit"]' }
+            customClass: { popup: 'rounded-[2rem] font-["Kanit"] border-4 border-[#2D241E]' }
         });
-
         if (!result.isConfirmed) return;
-
         try {
             const res = await axiosInstance.delete(`${API_ENDPOINTS.ADMIN.INVENTORY_LOG}/clear`);
-            if (res.success) {
-                toast.success("ล้างประวัติคลังสินค้าเรียบร้อยแล้ว");
-                fetchLogs();
-            }
+            if (res.success) { toast.success("ล้างประวัติเรียบร้อยแล้ว"); fetchLogs(true); }
         } catch (err) { toast.error("ลบข้อมูลไม่สำเร็จ"); }
     };
 
-    // --- 🔍 Filtering Logic ---
+    // --- 🔍 Filtering & Pagination ---
     const filteredLogs = useMemo(() => {
         return logs.filter(log => {
             const fullName = `${log.user?.first_name || ''} ${log.user?.last_name || ''}`.toLowerCase();
-            const matchesSearch =
-                log.product?.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                log.reason?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                fullName.includes(searchTerm.toLowerCase());
-
-            const matchesType =
-                filterType === 'all' ||
-                (filterType === 'increase' && log.change_qty > 0) ||
-                (filterType === 'decrease' && log.change_qty < 0);
-
+            const matchesSearch = log.product?.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                log.reason?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                fullName.includes(searchTerm.toLowerCase());
+            const matchesType = filterType === 'all' || 
+                               (filterType === 'increase' && log.change_qty > 0) || 
+                               (filterType === 'decrease' && log.change_qty < 0);
             return matchesSearch && matchesType;
         });
     }, [logs, searchTerm, filterType]);
 
-    // --- 📑 Pagination Logic ---
     const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
-    const currentLogs = useMemo(() => {
-        const start = (currentPage - 1) * logsPerPage;
-        return filteredLogs.slice(start, start + logsPerPage);
-    }, [filteredLogs, currentPage]);
+    const currentLogs = filteredLogs.slice((currentPage - 1) * logsPerPage, currentPage * logsPerPage);
 
-    // รีเซ็ตหน้ากลับไปหน้า 1 เมื่อมีการค้นหาหรือกรอง
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, filterType]);
+    useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType]);
 
-    if (loading && logs.length === 0) return (
-        <div className="flex h-screen items-center justify-center bg-white">
-            <Loader2 className="animate-spin text-[#2D241E]" size={40} />
-        </div>
-    );
+    if (loading && logs.length === 0) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={40} /></div>;
 
     return (
-        <div className="flex min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden relative selection:bg-[#F3E9DC]">
-
-            {/* ☁️ Global Cozy Patterns (Opacity 0.02) */}
-            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-                <Leaf className="absolute top-[10%] left-[5%] rotate-12 opacity-[0.02] text-[#2D241E]" size={200} />
-                <Cookie className="absolute bottom-[15%] right-[10%] -rotate-12 opacity-[0.02] text-[#2D241E]" size={180} />
-                <Smile className="absolute top-[40%] right-[30%] opacity-[0.015] text-[#2D241E]" size={350} />
-                <Sparkles className="absolute top-[15%] left-[45%] text-[#2D241E] opacity-[0.02]" size={100} />
-            </div>
-
+        <div className="flex min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden relative max-w-[1920px] mx-auto shadow-2xl">
             <Toaster position="top-right" />
             <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} isMobileOpen={isSidebarOpen} setIsMobileOpen={setIsSidebarOpen} activePage="invlog" />
 
-            <main className={`flex-1 transition-all duration-500 ${isCollapsed ? 'lg:ml-[110px]' : 'lg:ml-[300px]'} p-4 md:p-10 lg:p-14 w-full relative z-10`}>
-
-                {/* Header Section ปรับให้กดง่ายขึ้นใน Mobile */}
-                <div className="mb-8 md:mb-1 flex items-center gap-4">
-                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white rounded-2xl text-[#2D241E] shadow-sm border border-slate-100 active:scale-95 transition-all"><Menu size={24} /></button>
+            {/* 🚀 Main: Scale มาตรฐาน (เท่าหน้า Product) */}
+            <main className={`flex-1 transition-all duration-500 ease-in-out ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[280px]'} p-4 md:p-8 lg:p-10 w-full relative z-10`}>
+                
+                <div className="mb-6 flex items-center gap-4">
+                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white rounded-xl text-[#2D241E] shadow-sm border-2 border-[#2D241E] active:scale-90 transition-all"><Menu size={24} /></button>
                     <Header title="ตรวจสอบคลังสินค้า" />
                 </div>
 
-                {/* 🏷️ Page Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16 px-2">
-                    <div className="flex-1 space-y-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white rounded-full shadow-sm border border-slate-100 mb-2 animate-bounce-slow">
-                            <Sparkles size={14} className="text-[#2D241E]" />
-                            <span className="text-[20px] font-black uppercase tracking-[0.1em] text-[#2D241E]/60">
-                                ประวัติการเคลื่อนไหวสต็อก</span>
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-10 px-2 text-left">
+                    <div className="flex-1 space-y-3">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#2D241E] rounded-full shadow-md animate-bounce-slow">
+                            <Sparkles size={14} className="text-white" />
+                            <span className="text-xs font-black uppercase tracking-widest text-white">Inventory Movement</span>
                         </div>
-                        <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter text-[#2D241E] leading-none italic">
-                            Stock<span className="opacity-10">Logs</span>
-                        </h1>
+                        <h1 className="text-5xl md:text-6xl 2xl:text-7xl font-black uppercase tracking-tighter text-[#2D241E] leading-none italic">StockLogs</h1>
                     </div>
-                    <div className="flex items-center gap-4 w-full md:w-auto">
-                        <div className="hidden md:flex flex-col items-end px-6 border-r border-slate-100">
-                            <span className=" text-[20px] font-black text-[#2D241E] uppercase tracking-widest">ประวัติทั้งหมด</span>
-                            <span className="text-[20px] font-bold text-[#2D241E]">{filteredLogs.length} รายการ</span>
-                        </div>
-                        <button onClick={fetchLogs} className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-90 group">
-                            <RefreshCw size={24} className={`text-[#2D241E]/40 ${loading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} />
+                    <div className="flex gap-3 w-full lg:w-auto">
+                        {canClearLogs && (
+                            <button onClick={handleClearAll} className="flex-1 lg:flex-none border-2 border-red-600 text-red-600 px-6 py-3 rounded-full font-black text-sm uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2">
+                                <Trash2 size={16} strokeWidth={3} /> ล้างประวัติ
+                            </button>
+                        )}
+                        <button onClick={() => fetchLogs()} className="p-3.5 rounded-2xl bg-white border-2 border-[#2D241E] shadow-lg hover:rotate-180 transition-all active:scale-90 group">
+                            <RefreshCw size={24} className={`text-[#2D241E] ${loading ? 'animate-spin' : ''}`} strokeWidth={3} />
                         </button>
                     </div>
                 </div>
 
-                {/* 📊 Main Content Area */}
-                <div className="bg-white p-6 md:p-12 rounded-[3rem] md:rounded-[4.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-                    <Smile className="absolute -bottom-10 -right-10 opacity-[0.01] text-[#2D241E]" size={250} />
+                {/* 📊 Stat Cards (เข้มจัด + Scale matched) */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10 px-2">
+                    <StatCardSmall title="รายการวันนี้" value={logs.filter(l => new Date(l.created_at).toDateString() === new Date().toDateString()).length} icon={<Activity />} />
+                    <StatCardSmall title="นำเข้าสต็อก" value={logs.filter(l => l.change_qty > 0).length} icon={<ArrowUpCircle />} />
+                    <StatCardSmall title="เบิกออกสต็อก" value={logs.filter(l => l.change_qty < 0).length} icon={<ArrowDownCircle />} />
+                    <StatCardSmall title="รวมทั้งหมด" value={logs.length} icon={<ClipboardList />} />
+                </div>
 
-                    {/* Toolbar */}
-                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-10 mb-14 relative z-10">
-                        <div className="flex flex-wrap gap-2 p-1 bg-slate-50/50 rounded-full border border-slate-100 w-fit">
+                {/* Table Section - High Contrast */}
+                <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xl overflow-hidden">
+                    <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
+                        <div className="flex gap-2 p-1 bg-slate-50 rounded-full border-2 border-slate-100">
                             {[
                                 { id: 'all', label: 'ทั้งหมด' },
                                 { id: 'increase', label: 'นำเข้า' },
                                 { id: 'decrease', label: 'เบิกออก' }
-                            ].map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setFilterType(tab.id)}
-                                    className={`px-8 py-2.5 rounded-full text-[13px] font-black uppercase tracking-widest transition-all duration-300 ${filterType === tab.id ? 'bg-[#2D241E] text-white shadow-md scale-105' : 'text-[#2D241E] hover:text-[#2D241E]'}`}
-                                >
-                                    {tab.label}
-                                </button>
+                            ].map(tab => (
+                                <button key={tab.id} onClick={() => setFilterType(tab.id)} className={`px-5 py-1.5 rounded-full text-xs font-black uppercase transition-all ${filterType === tab.id ? 'bg-[#2D241E] text-white shadow-md' : 'text-[#2D241E] hover:bg-white transition-colors'}`}>{tab.label}</button>
                             ))}
                         </div>
-
-                        <div className="flex flex-col md:flex-row gap-4 w-full xl:max-w-2xl">
-                            <div className="relative flex-1 group">
-                                <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-[#2D241E]/20 transition-colors" />
-                                <input
-                                    className="w-full pl-14 pr-8 py-4 rounded-full bg-slate-50/50 border border-transparent focus:bg-white focus:border-slate-200 outline-none font-bold text-xl transition-all shadow-inner placeholder:text-[#2D241E]/20"
-                                    placeholder="ค้นหาสินค้า, ผู้ดำเนินการ หรือ เหตุผล..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                            {canClearLogs && (
-                                <button onClick={handleClearAll} className="px-8 py-4 bg-white text-red-400 border border-red-50 rounded-full font-black flex items-center justify-center gap-2 hover:bg-red-500 hover:text-white transition-all uppercase  text-[20px] tracking-widest shadow-sm active:scale-95">
-                                    <Trash2 size={18} /> ล้างข้อมูล
-                                </button>
-                            )}
+                        <div className="relative w-full lg:max-w-md">
+                            <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#2D241E]" strokeWidth={3} />
+                            <input className="w-full pl-12 pr-6 py-3 rounded-full bg-slate-50 border-2 border-slate-100 outline-none font-black text-sm text-[#2D241E] focus:border-[#2D241E] transition-all shadow-inner placeholder:text-[#2D241E]" placeholder="ค้นหาสินค้า หรือ ผู้ดูแล..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
                     </div>
 
-                    {/* Table */}
-                    <div className="overflow-x-auto relative z-10 custom-scrollbar">
-                        <table className="w-full text-left border-separate border-spacing-y-3 min-w-[1000px]">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-separate border-spacing-y-2">
                             <thead>
-                                <tr className="text-[#2D241E] uppercase text-[20px] font-black tracking-[0.1em] px-8">
-                                    <th className="px-10 pb-2">วันและเวลา</th>
-                                    <th className="px-10 pb-2">ข้อมูลสินค้า</th>
-                                    <th className="px-10 pb-2 text-center">การเคลื่อนไหว</th>
-                                    <th className="px-10 pb-2">ผู้ดำเนินการ</th>
-                                    <th className="px-10 pb-2">เหตุผล / หมายเหตุ</th>
+                                <tr className="text-[#2D241E] uppercase text-xs font-black tracking-widest px-6">
+                                    <th className="px-6 pb-2">วันและเวลา</th>
+                                    <th className="px-6 pb-2">ข้อมูลสินค้า</th>
+                                    <th className="px-6 pb-2 text-center">จำนวน</th>
+                                    <th className="px-6 pb-2 text-center">ผู้ดำเนินการ</th>
+                                    <th className="px-6 pb-2">เหตุผล</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y-0">
-                                {currentLogs.length > 0 ? currentLogs.map((log) => (
-                                    <tr key={log.inv_log_id} className="group/row hover:translate-x-1 transition-all">
-
-                                        <td className="px-10 py-7 rounded-l-[2.5rem] md:rounded-l-[3rem] bg-white border-y border-l border-slate-50 group-hover/row:bg-slate-50/50 whitespace-nowrap">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-3 bg-white text-[#2D241E]/20 rounded-2xl shadow-sm border border-slate-100 group-hover/row:text-[#2D241E] transition-colors">
-                                                    <Calendar size={18} />
-                                                </div>
-                                                <div className="flex flex-col leading-tight">
-                                                    <span className="text-[20px] font-black text-[#2D241E]">
-                                                        {new Date(log.created_at).toLocaleDateString('th-TH', {
-                                                            day: '2-digit', month: 'short', year: 'numeric'
-                                                        })}
-                                                    </span>
-                                                    <span className=" text-[20px] font-bold text-[#8B7E66] uppercase tracking-widest flex items-center gap-1 opacity-60">
-                                                        <Clock size={10} />
-                                                        {new Date(log.created_at).toLocaleTimeString('th-TH', {
-                                                            hour: '2-digit', minute: '2-digit'
-                                                        })} น.
-                                                    </span>
-                                                </div>
+                            <tbody>
+                                {currentLogs.map(log => (
+                                    <tr key={log.inv_log_id} className="group hover:translate-x-1 transition-all">
+                                        <td className="py-4 px-6 rounded-l-2xl bg-white border-y border-l border-slate-100">
+                                            <div className="flex flex-col leading-tight text-left">
+                                                <span className="font-black text-sm text-[#2D241E]">{new Date(log.created_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                                <span className="text-[10px] font-black text-[#2D241E] italic">{new Date(log.created_at).toLocaleTimeString('th-TH')} น.</span>
                                             </div>
                                         </td>
-
-                                        <td className="px-10 py-7 bg-white border-y border-slate-50 group-hover/row:bg-slate-50/50">
-                                            <div className="flex items-center gap-4 text-left">
-                                                <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-[#2D241E]/20 group-hover/row:text-[#2D241E] group-hover/row:border-[#2D241E]/20 transition-all shadow-sm shrink-0">
-                                                    <Package size={22} />
-                                                </div>
-                                                <span className="font-black text-xl text-[#2D241E] truncate max-w-[220px] uppercase tracking-tighter italic leading-none">
-                                                    {log.product?.product_name || 'ไม่พบข้อมูลสินค้า'}
-                                                </span>
-                                            </div>
-                                        </td>
-
-                                        <td className="px-10 py-7 bg-white border-y border-slate-50 group-hover/row:bg-slate-50/50 text-center">
-                                            <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full text-[20px] font-black border tracking-tighter shadow-sm transition-transform group-hover/row:scale-110 ${log.change_qty > 0
-                                                    ? 'bg-white text-emerald-600 border-emerald-100'
-                                                    : 'bg-white text-red-600 border-red-100'
-                                                }`}>
-                                                {log.change_qty > 0 ? <ArrowUpCircle size={18} strokeWidth={3} /> : <ArrowDownCircle size={18} strokeWidth={3} />}
-                                                {log.change_qty > 0 ? `+${log.change_qty}` : log.change_qty}
-                                            </div>
-                                        </td>
-
-                                        <td className="px-10 py-7 bg-white border-y border-slate-50 group-hover/row:bg-slate-50/50 whitespace-nowrap">
+                                        <td className="py-4 px-6 bg-white border-y border-slate-100 text-left">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-white text-[#2D241E] flex items-center justify-center font-black  text-[20px] border-4 border-white shadow-sm overflow-hidden group-hover/row:scale-110 transition-transform">
-                                                    {log.user?.first_name?.charAt(0) || <User size={14} />}
-                                                </div>
-                                                <div className="flex flex-col text-left">
-                                                    <span className="font-black text-[#2D241E] text-[20px] uppercase tracking-tighter leading-none">
-                                                        {log.user ? `${log.user.first_name} ${log.user.last_name || ''}` : 'ระบบอัตโนมัติ'}
-                                                    </span>
-                                                    <span className=" text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] opacity-70 italic">Authorized Audit</span>
-                                                </div>
+                                                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-[#2D241E] border-2 border-[#2D241E]/10 group-hover:scale-110 transition-transform"><Package size={18} strokeWidth={3} /></div>
+                                                <span className="font-black text-sm uppercase truncate max-w-[200px] text-[#2D241E] italic">{log.product?.product_name || 'ไม่พบสินค้า'}</span>
                                             </div>
                                         </td>
-
-                                        <td className="px-10 py-7 rounded-r-[2.5rem] md:rounded-r-[3rem] bg-white border-y border-r border-slate-50 group-hover/row:bg-slate-50/50 text-left">
-                                            <div className="flex items-center justify-between gap-4">
-                                                <span className="font-bold text-[#2D241E]/60 text-[20px] italic group-hover/row:text-[#2D241E] transition-colors line-clamp-1">
-                                                    {log.reason || 'ปรับปรุงสต็อกด้วยตนเอง'}
-                                                </span>
-                                                <div className="opacity-0 group-hover/row:opacity-100 transition-all pr-4">
-                                                    <ChevronRight size={18} className="text-[#2D241E]/20" strokeWidth={3} />
-                                                </div>
+                                        <td className="py-4 px-6 bg-white border-y border-slate-100 text-center">
+                                            <span className={`inline-flex items-center gap-1 px-4 py-1 rounded-full text-xs font-black border-2 shadow-sm ${log.change_qty > 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-600' : 'bg-red-50 text-red-600 border-red-600'}`}>
+                                                {log.change_qty > 0 ? <ArrowUpCircle size={12} strokeWidth={3} /> : <ArrowDownCircle size={12} strokeWidth={3} />}
+                                                {log.change_qty > 0 ? `+${log.change_qty}` : log.change_qty}
+                                            </span>
+                                        </td>
+                                        <td className="py-4 px-6 bg-white border-y border-slate-100 text-center">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <div className="w-8 h-8 bg-[#2D241E] text-white rounded-lg flex items-center justify-center font-black text-[10px] uppercase shadow-md">{log.user?.first_name?.charAt(0)}</div>
+                                                <span className="font-black text-xs uppercase truncate max-w-[150px] text-[#2D241E]">{log.user?.first_name || 'System'}</span>
                                             </div>
+                                        </td>
+                                        <td className="py-4 px-6 rounded-r-2xl bg-white border-y border-r border-slate-100 text-left">
+                                            <span className="text-xs font-black text-[#2D241E] italic line-clamp-1">"{log.reason || 'ปรับปรุงคลังสินค้า'}"</span>
                                         </td>
                                     </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan="5" className="text-center py-40 bg-white">
-                                            <div className="flex flex-col items-center gap-6">
-                                                <div className="w-24 h-24 rounded-[3rem] bg-slate-50 flex items-center justify-center border border-slate-100 shadow-inner">
-                                                    <ClipboardList size={48} className="text-[#2D241E]/10" strokeWidth={1} />
-                                                </div>
-                                                <div className="space-y-1 text-center">
-                                                    <p className="text-2xl font-black uppercase tracking-tighter text-[#2D241E]/20">ไม่พบประวัติสต็อก</p>
-                                                    <p className="text-[20px] font-light italic text-[#2D241E]">ยังไม่มีการเคลื่อนไหวของสินค้าในระบบ</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
+                                ))}
                             </tbody>
                         </table>
                     </div>
 
-                    {/* --- ✨ Pagination System (Only White) --- */}
+                    {/* Pagination */}
                     {totalPages > 1 && (
-                        <div className="mt-12 flex justify-center items-center gap-4 relative z-10 pb-4">
-                            <button
-                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                disabled={currentPage === 1}
-                                className="p-3 bg-white border border-slate-100 rounded-2xl text-[#2D241E] disabled:opacity-20 hover:shadow-lg transition-all active:scale-90 shadow-sm"
-                            >
-                                <ChevronLeft size={20} />
-                            </button>
-
-                            <div className="flex items-center gap-2 bg-slate-50/50 p-2 rounded-[2rem] border border-slate-100 shadow-inner">
-                                {[...Array(totalPages)].map((_, i) => {
-                                    const pageNum = i + 1;
-                                    // แสดงเฉพาะเลขใกล้เคียงปัจจุบันถ้าหน้าเยอะเกินไป
-                                    if (totalPages > 5 && Math.abs(pageNum - currentPage) > 2) return null;
-                                    return (
-                                        <button
-                                            key={pageNum}
-                                            onClick={() => setCurrentPage(pageNum)}
-                                            className={`w-10 h-10 rounded-xl font-black  text-xl transition-all ${currentPage === pageNum ? 'bg-[#2D241E] text-white shadow-xl scale-110' : 'text-[#2D241E] hover:text-[#2D241E]'}`}
-                                        >
-                                            {pageNum}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            <button
-                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                disabled={currentPage === totalPages}
-                                className="p-3 bg-white border border-slate-100 rounded-2xl text-[#2D241E] disabled:opacity-20 hover:shadow-lg transition-all active:scale-90 shadow-sm"
-                            >
-                                <ChevronRight size={20} />
-                            </button>
+                        <div className="mt-8 flex justify-center items-center gap-4">
+                            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 border-2 border-[#2D241E] rounded-xl text-[#2D241E] disabled:opacity-30 active:scale-90 transition-all shadow-md"><ChevronLeft size={20} strokeWidth={3}/></button>
+                            <span className="text-xs font-black text-[#2D241E] italic">Page {currentPage} of {totalPages}</span>
+                            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 border-2 border-[#2D241E] rounded-xl text-[#2D241E] disabled:opacity-30 active:scale-90 transition-all shadow-md"><ChevronRight size={20} strokeWidth={3}/></button>
                         </div>
                     )}
                 </div>
             </main>
 
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                @keyframes bounce-slow {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-5px); }
-                }
-                .animate-bounce-slow { animation: bounce-slow 4s ease-in-out infinite; }
-                .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E10; border-radius: 10px; }
+            <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+                .animate-bounce-slow { animation: bounce-slow 4s infinite; }
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E; border-radius: 10px; }
             `}} />
         </div>
     );
 };
+
+// 💎 StatCard: เข้มจัด High Contrast (มาตรฐาน Product)
+const StatCardSmall = ({ title, value, icon }) => (
+    <div className="bg-white p-5 rounded-2xl border-2 border-[#2D241E] shadow-lg flex items-center justify-between hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
+        <div className="flex-1 text-left min-w-0">
+            <p className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest mb-1 leading-none">{title}</p>
+            <h2 className="text-[#2D241E] text-2xl font-black italic leading-none">{value || 0}</h2>
+        </div>
+        <div className="w-10 h-10 rounded-xl bg-[#2D241E] flex items-center justify-center text-white border-2 border-white shadow-md transition-all">
+            {React.cloneElement(icon, { size: 18, strokeWidth: 3 })}
+        </div>
+    </div>
+);
 
 export default InventoryLog;
