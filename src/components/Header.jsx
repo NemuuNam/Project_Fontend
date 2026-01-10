@@ -142,7 +142,7 @@ const Header = ({ title = "แผงควบคุม" }) => {
               </p>
             </div>
 
-            <div className="py-4 text-[#2D241E]/90 text-[20px] font-bold uppercase tracking-widest text-center border-b border-slate-50 relative z-10">
+            <div className="py-4 text-[#2D241E]/90 text-[15px] font-bold uppercase tracking-widest text-center border-b border-slate-50 relative z-10">
                {userData.email}
             </div>
 
