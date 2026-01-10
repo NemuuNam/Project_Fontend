@@ -51,33 +51,44 @@ const OrderManagement = () => {
 
 
     const fetchShippingProviders = useCallback(async () => {
-        try {
-            const res = await axiosInstance.get(API_ENDPOINTS.ADMIN.SHIPPING_PROVIDERS);
+    try {
+        const response = await axiosInstance.get(API_ENDPOINTS.ADMIN.SHIPPING_PROVIDERS);
 
-            // 🚩 เพิ่ม Log เพื่อดูว่าบน Vercel ตัว 'res' มีค่าเป็นอะไร
-            console.log("Response from Vercel API:", res);
+        console.log("Response from API:", response);
 
-            let providers = res.success ? res.data : (Array.isArray(res) ? res : []);
+        let providers = [];
 
-            // 🚩 ตรวจสอบว่าถ้าดึงมาแล้วได้ Array ว่าง ให้แจ้งเตือน
-            if (providers.length === 0) {
-                console.warn("API สำเร็จแต่ไม่มีข้อมูล Shipping Providers กลับมา");
-            }
-
-            if (providers.length > 0) {
-                setShippingProviders(providers);
-                setSelectedProviderId(providers[0].provider_id);
-            }
-        } catch (err) {
-            console.error("API Error on Vercel:", err);
-            const mockData = [
-                { provider_id: 1, provider_name: 'Nim Express' },
-                { provider_id: 2, provider_name: 'Flash' }
-            ];
-            setShippingProviders(mockData);
-            setSelectedProviderId(mockData[0].provider_id);
+        if (Array.isArray(response.data)) {
+            // กรณี API ส่ง Array ตรง
+            providers = response.data;
+        } 
+        else if (response.data?.success && Array.isArray(response.data.data)) {
+            // กรณี API ส่ง { success, data }
+            providers = response.data.data;
         }
-    }, []);
+
+        if (providers.length === 0) {
+            console.warn("Shipping Providers empty");
+        }
+
+        setShippingProviders(providers);
+        if (providers.length > 0) {
+            setSelectedProviderId(providers[0].provider_id);
+        }
+
+    } catch (err) {
+        console.error("API Error on Vercel:", err);
+
+        // fallback (mock)
+        const mockData = [
+            { provider_id: 1, provider_name: 'Nim Express' },
+            { provider_id: 2, provider_name: 'Flash Express' }
+        ];
+        setShippingProviders(mockData);
+        setSelectedProviderId(mockData[0].provider_id);
+    }
+}, []);
+
 
     const fetchOrders = useCallback(async () => {
         try {
@@ -148,33 +159,27 @@ const OrderManagement = () => {
         }
     };
 
-const handleUpdateTracking = async (id) => {
-    if (!trackingNumber) return toast.error("กรุณาระบุเลขพัสดุ");
+    const handleUpdateTracking = async (id) => {
+        if (!trackingNumber) return toast.error("กรุณาระบุเลขพัสดุ");
 
-    const load = toast.loading("บันทึกข้อมูลการจัดส่ง...");
-    try {
-        // ค้นหาชื่อบริษัทขนส่งจาก ID ที่เลือก เพื่อส่งไปให้ Backend บันทึก Log
-        const selectedProvider = shippingProviders.find(p => p.provider_id === selectedProviderId);
-        const providerName = selectedProvider ? selectedProvider.provider_name : 'ไม่ระบุขนส่ง';
+        const load = toast.loading("บันทึกข้อมูลการจัดส่ง...");
+        try {
+            const res = await axiosInstance.patch(`${API_ENDPOINTS.ADMIN.ORDERS}/${id}/tracking`, {
+                tracking_number: trackingNumber,
+                provider_id: selectedProviderId, // ✅ ส่ง ID ที่เป็นตัวเลขไป (Backend จะหาขนส่งเจอแน่นอน)
+                status: 'กำลังจัดส่ง'
+            });
 
-        const res = await axiosInstance.patch(`${API_ENDPOINTS.ADMIN.ORDERS}/${id}/tracking`, {
-            tracking_number: trackingNumber,
-            provider_id: selectedProviderId,
-            provider_name: providerName, // ✅ เพิ่มการส่งชื่อไปเพื่อให้ Backend ใช้ใน createLog
-            status: 'กำลังจัดส่ง'
-        });
-
-        if (res.success) {
-            toast.success("บันทึกสำเร็จ", { id: load });
-            setSelectedOrder(null);
-            setTrackingNumber('');
-            fetchOrders();
+            if (res.success) {
+                toast.success("บันทึกสำเร็จ", { id: load });
+                setSelectedOrder(null);
+                setTrackingNumber('');
+                fetchOrders();
+            }
+        } catch (err) {
+            toast.error("ล้มเหลวในการบันทึก", { id: load });
         }
-    } catch (err) {
-        console.error("Tracking Update Error:", err);
-        toast.error("ล้มเหลวในการบันทึก", { id: load });
-    }
-};
+    };
 
     // --- 🔍 Filtering & Pagination Logic ---
     const filteredOrders = useMemo(() => {

@@ -1,5 +1,3 @@
-// 🚩 ลบ import Profile ออก เพราะไฟล์ config ไม่ควรนำเข้า Page component ครับ
-
 // 1. กำหนด BASE_URL (รองรับทั้ง Local และ Production บน Vercel)
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
