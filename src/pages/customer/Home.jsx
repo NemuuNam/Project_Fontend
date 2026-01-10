@@ -263,7 +263,7 @@ const Home = ({ userData }) => {
       <section className="relative w-full h-[650px] bg-white z-10">
         <iframe
           title="Map"
-          src="http://maps.google.com/maps?q=13.7563,100.5018&z=15&output=embed"
+          src="https://maps.google.com/maps?q=13.7563,100.5018&z=15&output=embed"
           className="w-full h-full border-none grayscale-[0.6] opacity-50"
           allowFullScreen=""
         ></iframe>
