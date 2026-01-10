@@ -81,8 +81,7 @@ const OrderManagement = () => {
 
         // fallback (mock)
         const mockData = [
-            { provider_id: 1, provider_name: 'Nim Express' },
-            { provider_id: 2, provider_name: 'Flash Express' }
+            { provider_id: 1, provider_name: 'Flash' },
         ];
         setShippingProviders(mockData);
         setSelectedProviderId(mockData[0].provider_id);
