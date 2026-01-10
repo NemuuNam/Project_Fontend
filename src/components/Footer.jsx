@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Mail, Phone, MapPin, Facebook, Instagram, MessageCircle,
-  ShieldCheck, Sparkles, Leaf, Cookie, Smile, ChevronRight
+  ShieldCheck, Sparkles, Leaf, Cookie, Smile, ChevronRight, Heart
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
@@ -10,7 +10,6 @@ import { API_ENDPOINTS } from '../api/config';
 const Footer = ({ userData }) => {
   const currentYear = 2026;
 
-  // --- 📦 Logic (คงเดิม 100% ตามคำสั่ง) ---
   const [shopInfo, setShopInfo] = useState({
     shop_name: 'COOKIE STORE',
     address: 'กำลังโหลดข้อมูล...',
@@ -47,51 +46,52 @@ const Footer = ({ userData }) => {
   }, []);
 
   return (
-    <footer className="relative bg-[#ffffff] border-t border-slate-100 font-['Kanit'] text-[#2D241E] overflow-hidden">
-
-      {/* ☁️ Cozy Patterns (Gimmick ลายเส้นจางๆ Opacity 0.02 - 0.03) */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <Leaf className="absolute top-[20%] left-[5%] rotate-12 opacity-[0.03]" size={150} />
-        <Cookie className="absolute bottom-[20%] right-[5%] -rotate-12 opacity-[0.03]" size={120} />
-        <Smile className="absolute top-[40%] right-[15%] opacity-[0.02]" size={180} />
-        <Sparkles className="absolute top-[10%] left-[40%] opacity-[0.02]" size={80} />
+    <footer className="relative bg-white border-t border-slate-50 font-['Kanit'] text-[#2D241E] overflow-hidden">
+      
+      {/* ☁️ Cozy Patterns */}
+      <div className="absolute inset-0 pointer-events-none z-0 opacity-[0.03]">
+        <Leaf className="absolute top-5 left-[5%] rotate-12" size={120} />
+        <Cookie className="absolute bottom-5 right-[2%] -rotate-12" size={150} />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 lg:py-24 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-16">
+      {/* ✅ ปรับจาก py-20 เป็น py-12 เพื่อลดระยะบน-ล่าง */}
+      <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-16">
 
-          {/* ส่วนที่ 1: แบรนด์และตัวตนร้าน */}
-          <div className="lg:col-span-4 space-y-8 text-left">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#2D241E] shadow-sm border border-slate-50">
+          {/* ส่วนที่ 1: Brand Identity */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#2D241E] shadow-sm border border-slate-100 rotate-3">
                 <Cookie size={28} strokeWidth={1.5} />
               </div>
-              <h2 className="text-3xl font-black tracking-tighter uppercase italic">
+              <h2 className="text-2xl font-black tracking-tighter uppercase italic text-[#2D241E]">
                 {shopInfo.shop_name}
               </h2>
             </div>
-            <p className="text-[#2D241E] font-medium leading-relaxed opacity-60 max-w-md text-xl">
-              {shopInfo.hero_description}
+            <p className="text-[#2D241E]/90 font-light leading-relaxed max-w-sm text-[18px] italic">
+              "{shopInfo.hero_description}"
             </p>
             <div className="flex space-x-3">
-              <a href={shopInfo.facebook_url} target="_blank" rel="noreferrer" className="p-4 bg-white border border-slate-100 rounded-2xl text-[#2D241E] hover:shadow-md hover:-translate-y-1 transition-all active:scale-95">
-                <Facebook size={20} />
-              </a>
-              <a href={shopInfo.instagram_url} target="_blank" rel="noreferrer" className="p-4 bg-white border border-slate-100 rounded-2xl text-[#2D241E] hover:shadow-md hover:-translate-y-1 transition-all active:scale-95">
-                <Instagram size={20} />
-              </a>
-              <a href={shopInfo.line_url} target="_blank" rel="noreferrer" className="p-4 bg-white border border-slate-100 rounded-2xl text-[#2D241E] hover:shadow-md hover:-translate-y-1 transition-all active:scale-95">
-                <MessageCircle size={20} />
-              </a>
+              {[
+                { Icon: Facebook, url: shopInfo.facebook_url },
+                { Icon: Instagram, url: shopInfo.instagram_url },
+                { Icon: MessageCircle, url: shopInfo.line_url }
+              ].map((social, i) => (
+                <a key={i} href={social.url} target="_blank" rel="noreferrer" 
+                   className="w-12 h-12 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-[#2D241E] hover:shadow-md hover:-translate-y-1 transition-all shadow-sm">
+                  <social.Icon size={20} />
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* ส่วนที่ 2: ลิงก์เมนูหลัก */}
-          <div className="lg:col-span-3 text-left">
-            <h3 className="text-xl font-black text-[#2D241E] mb-8 tracking-[0.1em] uppercase flex items-center gap-1 leading-none">
-              การสำรวจเว็ปไซต์
+          {/* ส่วนที่ 2: Navigation */}
+          <div className="lg:col-span-3">
+            {/* ✅ ลด mb-8 เป็น mb-5 */}
+            <h3 className="text-[20px] font-black text-[#2D241E] mb-5 tracking-[0.1em] uppercase border-l-4 border-[#F3E9DC] pl-4 leading-none">
+              การสำรวจเว็บไซต์
             </h3>
-            <ul className="space-y-5 text-[#2D241E] font-medium relative z-12">
+            <ul className="space-y-3">
               {[
                 { name: 'หน้าแรก', path: '/' },
                 { name: 'รายการสินค้า', path: '/products' },
@@ -99,73 +99,69 @@ const Footer = ({ userData }) => {
                 { name: 'ประวัติสั่งซื้อ', path: '/my-orders' }
               ].map((item) => (
                 <li key={item.name}>
-                  <Link to={item.path} className="hover:opacity-60 transition-all flex items-center group text-xl">
-                    <ChevronRight size={14} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all mr-2" />
+                  <Link to={item.path} className="text-[#2D241E]/90 hover:text-[#2D241E] transition-all flex items-center group text-[17px] font-medium">
+                    <ChevronRight size={14} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all mr-2 text-[#D4A373]" />
                     {item.name}
                   </Link>
                 </li>
               ))}
-
-              {isStaff && (
-                <li className="pt-6">
-                  <Link to="/admin/dashboard" className="inline-flex items-center gap-1 px-8 py-2.5 bg-white border border-slate-100 rounded-full text-[#2D241E] text-sm font-black italic uppercase tracking-widest shadow-sm hover:shadow-md transition-all">
-                    <ShieldCheck size={24} />
-                    ระบบจัดการหลังบ้าน
-                  </Link>
-                </li>
-              )}
             </ul>
           </div>
 
-          {/* ส่วนที่ 3: ข้อมูลการติดต่อ */}
-          <div className="lg:col-span-4 text-left">
-              <Smile className="absolute -right-4 -bottom-4 opacity-[0.02] rotate-12 transition-transform group-hover:scale-110" size={100} />
-              <h3 className="text-[20px] font-black text-[#2D241E] mb-8 tracking-[0.1em] uppercase leading-none">ติดต่อเรา</h3>
-              <ul className="space-y-4 text-[#2D241E] relative z-12">
-                <li className="flex items-start space-x-5 group/item">
-                  <div className="p-3 bg-slate-50/50 rounded-2xl transition-transform group-hover/item:scale-110">
-                    <MapPin size={20} className="shrink-0 opacity-40" />
-                  </div>
-                  <span className="text-[20px] font-medium leading-relaxed">
-                    {shopInfo.address}
-                  </span>
-                </li>
-                <li className="flex items-center space-x-5 group/item">
-                  <div className="p-3 bg-slate-50/50 rounded-2xl transition-transform group-hover/item:scale-110">
-                    <Phone size={20} className="shrink-0 opacity-40" />
-                  </div>
-                  <span className="text-[20px] font-black font-medium tracking-wider">{shopInfo.phone}</span>
-                </li>
-                <li className="flex items-center space-x-5 group/item">
-                  <div className="p-3 bg-slate-50/50 rounded-2xl transition-transform group-hover/item:scale-110">
-                    <Mail size={20} className="shrink-0 opacity-40" />
-                  </div>
-                  <span className="text-[20px] font-black font-medium break-all">{shopInfo.email}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
+          {/* ส่วนที่ 3: Contact Info */}
+          <div className="lg:col-span-4 relative group">
+            {/* ✅ ลด mb-8 เป็น mb-5 */}
+            <h3 className="text-[20px] font-black text-[#2D241E] mb-5 tracking-[0.1em] uppercase border-l-4 border-[#F3E9DC] pl-4 leading-none">
+              ติดต่อเรา
+            </h3>
+            <ul className="space-y-4">
+              <li className="flex items-start gap-3">
+                <div className="mt-1 p-2 bg-slate-50 rounded-lg text-[#D4A373]">
+                  <MapPin size={16} />
+                </div>
+                <span className="text-[19px] font-medium text-[#2D241E] leading-snug">
+                  {shopInfo.address}
+                </span>
+              </li>
+              <li className="flex items-center gap-3">
+                <div className="p-2 bg-slate-50 rounded-lg text-[#D4A373]">
+                  <Phone size={16} />
+                </div>
+                <span className="text-[19px] font-medium tracking-wider text-[#2D241E]">{shopInfo.phone}</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <div className="p-2 bg-slate-50 rounded-lg text-[#D4A373]">
+                  <Mail size={16} />
+                </div>
+                <span className="text-[19px] font-medium break-all text-[#2D241E]">{shopInfo.email}</span>
+              </li>
+            </ul>
 
-      {/* --- ส่วนล่างสุดของ Footer --- */}
-      <div className="border-t border-slate-50 py-2 bg-white relative z-10">
-        <div className="container mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            <p className="text-[20px] font-black text-[#2D241E] tracking-[0.1em] uppercase mb-1">
-              © {currentYear} {shopInfo.shop_name}
-            </p>
+            {isStaff && (
+              <div className="mt-8">
+                <Link to="/admin/dashboard" className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-[#2D241E] rounded-xl text-[13px] font-black uppercase tracking-[0.1em] shadow-sm hover:shadow-lg transition-all group">
+                  <ShieldCheck size={18} className="text-[#D4A373]" />
+                  จัดการหลังบ้าน
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        @keyframes bounce-slow {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
-        }
-        .animate-bounce-slow { animation: bounce-slow 4s ease-in-out infinite; }
-      `}} />
+      {/* --- Copyright Bar --- */}
+      {/* ✅ ปรับจาก py-10 เป็น py-6 */}
+      <div className="bg-[#FAFAFA] py-6 border-t border-slate-50">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-[13px] font-bold text-[#2D241E]/60 tracking-widest uppercase">
+            © {currentYear} {shopInfo.shop_name}. All rights reserved.
+          </p>
+          <div className="flex gap-6 text-[11px] font-black uppercase tracking-[0.2em] text-[#2D241E]/50">
+             <span className="flex items-center gap-2"><Heart size={12} className="fill-red-400 text-red-400"/> Handcrafted with Love</span>
+             <span>Premium Bakery Quality</span>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 };

@@ -25,7 +25,8 @@ const OrderManagement = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [trackingNumber, setTrackingNumber] = useState('');
     const [shippingProviders, setShippingProviders] = useState([]);
-    const [selectedProvider, setSelectedProvider] = useState('');
+    const [selectedProviderId, setSelectedProviderId] = useState('');
+
 
     // --- ✨ Pagination State ---
     const [currentPage, setCurrentPage] = useState(1);
@@ -47,16 +48,27 @@ const OrderManagement = () => {
     };
 
     // --- 📦 Logic ---
+
+
     const fetchShippingProviders = useCallback(async () => {
         try {
             const res = await axiosInstance.get(API_ENDPOINTS.ADMIN.SHIPPING_PROVIDERS);
+            // ตรวจสอบโครงสร้างข้อมูลที่ส่งกลับมาจาก API
             let providers = res.success ? res.data : (Array.isArray(res) ? res : []);
+
             if (providers.length > 0) {
                 setShippingProviders(providers);
-                setSelectedProvider(providers[0].provider_name);
+                // ✅ เก็บ provider_id ของรายการแรกเป็นค่าเริ่มต้น
+                setSelectedProviderId(providers[0].provider_id);
             }
         } catch (err) {
-            setShippingProviders([{ provider_id: 1, provider_name: 'Nim Express' }, { provider_id: 2, provider_name: 'Flash' }]);
+            // กรณี Error ให้ใส่ข้อมูลจำลองที่มีทั้ง ID และ Name
+            const mockData = [
+                { provider_id: 1, provider_name: 'Nim Express' },
+                { provider_id: 2, provider_name: 'Flash' }
+            ];
+            setShippingProviders(mockData);
+            setSelectedProviderId(mockData[0].provider_id);
         }
     }, []);
 
@@ -131,20 +143,24 @@ const OrderManagement = () => {
 
     const handleUpdateTracking = async (id) => {
         if (!trackingNumber) return toast.error("กรุณาระบุเลขพัสดุ");
+
         const load = toast.loading("บันทึกข้อมูลการจัดส่ง...");
         try {
             const res = await axiosInstance.patch(`${API_ENDPOINTS.ADMIN.ORDERS}/${id}/tracking`, {
                 tracking_number: trackingNumber,
-                shipping_provider: selectedProvider,
+                provider_id: selectedProviderId, // ✅ ส่ง ID ที่เป็นตัวเลขไป (Backend จะหาขนส่งเจอแน่นอน)
                 status: 'กำลังจัดส่ง'
             });
+
             if (res.success) {
-                toast.success("บันทึกเลขพัสดุเรียบร้อย", { id: load });
+                toast.success("บันทึกสำเร็จ", { id: load });
                 setSelectedOrder(null);
                 setTrackingNumber('');
                 fetchOrders();
             }
-        } catch (err) { toast.error("ล้มเหลว", { id: load }); }
+        } catch (err) {
+            toast.error("ล้มเหลวในการบันทึก", { id: load });
+        }
     };
 
     // --- 🔍 Filtering & Pagination Logic ---
@@ -372,7 +388,7 @@ const OrderManagement = () => {
                                                             <div className="space-y-8 animate-in fade-in">
                                                                 <div className="grid grid-cols-2 gap-3">
                                                                     {shippingProviders.map(p => (
-                                                                        <button key={p.provider_id} onClick={() => setSelectedProvider(p.provider_name)} className={`py-4 rounded-2xl text-[20px] font-black transition-all border ${selectedProvider === p.provider_name ? 'bg-[#2D241E] text-white border-[#2D241E] shadow-md' : 'bg-white text-[#2D241E] border-slate-100'}`}>{p.provider_name}</button>
+                                                                        <button key={p.provider_id} onClick={() => setSelectedProviderId(p.provider_id)} className={`py-4 rounded-2xl text-[20px] font-black transition-all border ${selectedProviderId === p.provider_id ? 'bg-[#2D241E] text-white border-[#2D241E] shadow-md' : 'bg-white text-[#2D241E] border-slate-100'}`}>{p.provider_name}</button>
                                                                     ))}
                                                                 </div>
                                                                 <div className="space-y-3">
@@ -444,9 +460,9 @@ const OrderManagement = () => {
 const StatCardSmall = ({ title, value, icon, color }) => (
     <div className="bg-white p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition-all hover:-translate-y-1.5 duration-500 group relative overflow-hidden">
 
-         <div className="absolute -right-4 -bottom-4 text-[#2D241E] opacity-[0.015] group-hover:scale-110 transition-transform duration-700">
+        <div className="absolute -right-4 -bottom-4 text-[#2D241E] opacity-[0.015] group-hover:scale-110 transition-transform duration-700">
         </div>
-        
+
         <div className="flex-1 text-left min-w-0 relative z-10">
             <p className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] mb-3 md:mb-4 flex items-center gap-2 leading-none">
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }}></span>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-    Edit3, Save, History, Target, 
+import {
+    Edit3, Save, History, Target,
     Loader2, Heart, Sparkles, Leaf, Cookie, Smile, X, Undo2
 } from 'lucide-react';
 import HeaderHome from '../../components/HeaderHome';
@@ -15,7 +15,7 @@ const About = ({ userData }) => {
         about_history: '',
         about_mission: ''
     });
-    
+
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -26,11 +26,24 @@ const About = ({ userData }) => {
         try {
             setLoading(true);
             const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
+
             if (res.success) {
-                const data = res.data;
+                const rawData = res.data;
+                console.log("Response Data from API:", rawData);
+                // 1. แปลงข้อมูลจาก Array เป็น Object เพื่อให้เรียกใช้ง่ายๆ
+                const settings = {};
+                if (Array.isArray(rawData)) {
+                    rawData.forEach(item => {
+                        settings[item.config_key] = item.config_value;
+                    });
+                } else {
+                    Object.assign(settings, rawData);
+                }
+
+                // 2. Map ค่าเข้าสู่ State
                 setAboutContent({
-                    about_history: data.about_history || 'ยังไม่มีข้อมูลประวัติร้าน',
-                    about_mission: data.about_mission || 'ยังไม่มีข้อมูลพันธกิจ'
+                    about_history: settings.about_history || 'ยังไม่มีข้อมูลประวัติร้าน',
+                    about_mission: settings.about_mission || 'ยังไม่มีข้อมูลพันธกิจ'
                 });
             }
         } catch (err) {
@@ -45,20 +58,25 @@ const About = ({ userData }) => {
 
     const handleSave = async () => {
         if (!isStaff) return;
-        
+
         setIsSaving(true);
         try {
-            const payload = {
-                about_history: aboutContent.about_history,
-                about_mission: aboutContent.about_mission
-            };
-            
+            // แปลง Object ให้เป็นรูปแบบที่ตาราง Shop_Settings (Key-Value) ต้องการ
+            const payload = Object.keys(aboutContent).map(key => ({
+                config_key: key,
+                config_value: aboutContent[key]
+            }));
+
             const res = await axiosInstance.put(API_ENDPOINTS.ADMIN.SHOP_SETTINGS, payload);
+
             if (res.success) {
                 toast.success("บันทึกข้อมูลเรียบร้อยแล้ว");
                 setIsEditing(false);
+                // โหลดข้อมูลใหม่เพื่อให้มั่นใจว่าหน้าจอแสดงผลตาม Database ล่าสุด
+                fetchAboutData();
             }
         } catch (err) {
+            console.error("Save Error:", err);
             toast.error("บันทึกไม่สำเร็จ: " + (err.response?.data?.message || err.message));
         } finally {
             setIsSaving(false);
@@ -77,7 +95,7 @@ const About = ({ userData }) => {
             <HeaderHome userData={userData} />
 
             {/* --- ☁️ ส่วนหัวข้อหลัก (Hero Section) --- */}
-            <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden border-b border-slate-50 bg-white text-left">
+            <section className="relative pt-5 pb-5 lg:pt-12 lg:pb-12 overflow-hidden border-b border-slate-50 bg-white text-left">
                 {/* ลวดลาย Gimmick จางๆ */}
                 <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
                     <Leaf className="absolute top-10 left-[10%] rotate-12 text-[#2D241E]" size={120} />
@@ -108,10 +126,10 @@ const About = ({ userData }) => {
 
                 <div className="container mx-auto px-6 lg:px-12 relative z-10">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
-                        
+
                         {/* 🍞 ส่วนแสดงเนื้อหาหลัก */}
                         <div className={`${isStaff ? 'lg:col-span-8' : 'lg:col-span-12'} space-y-20 lg:space-y-32 text-left`}>
-                            
+
                             {/* 1. ประวัติความเป็นมา */}
                             <div className="group relative">
                                 <div className="flex items-center gap-5 mb-10">
@@ -122,13 +140,13 @@ const About = ({ userData }) => {
                                         เส้นทางความอร่อย <span className="text-[#2D241E] font-light">/ ประวัติร้าน</span>
                                     </h2>
                                 </div>
-                                
+
                                 <div className="bg-white p-8 lg:p-14 rounded-[3.5rem] shadow-sm border border-slate-100 transition-all duration-500 hover:shadow-md">
                                     {isEditing ? (
-                                        <textarea 
+                                        <textarea
                                             className="w-full p-8 bg-slate-50/50 rounded-[2.5rem] border-2 border-transparent outline-none text-xl lg:text-xl font-light leading-relaxed min-h-[400px] transition-all focus:bg-white focus:border-[#F3E9DC] text-[#2D241E] shadow-inner"
                                             value={aboutContent.about_history}
-                                            onChange={(e) => setAboutContent({...aboutContent, about_history: e.target.value})}
+                                            onChange={(e) => setAboutContent({ ...aboutContent, about_history: e.target.value })}
                                             placeholder="บอกเล่าจุดเริ่มต้นและความภูมิใจของคุณที่นี่..."
                                         />
                                     ) : (
@@ -149,13 +167,13 @@ const About = ({ userData }) => {
                                         ความตั้งใจของเรา <span className="text-[#2D241E] font-light">/ พันธกิจ</span>
                                     </h2>
                                 </div>
-                                
+
                                 <div className="bg-white p-8 lg:p-14 rounded-[3.5rem] shadow-sm border border-slate-100 transition-all duration-500 hover:shadow-md">
                                     {isEditing ? (
-                                        <textarea 
+                                        <textarea
                                             className="w-full p-8 bg-slate-50/50 rounded-[2.5rem] border-2 border-transparent outline-none text-xl lg:text-xl font-light leading-relaxed min-h-[300px] transition-all focus:bg-white focus:border-[#F3E9DC] text-[#2D241E] shadow-inner"
                                             value={aboutContent.about_mission}
-                                            onChange={(e) => setAboutContent({...aboutContent, about_mission: e.target.value})}
+                                            onChange={(e) => setAboutContent({ ...aboutContent, about_mission: e.target.value })}
                                             placeholder="เป้าหมายและสิ่งที่เรายึดมั่นในการทำขนม..."
                                         />
                                     ) : (
@@ -175,7 +193,7 @@ const About = ({ userData }) => {
                                         <div className="w-2 h-2 bg-[#2D241E] rounded-full animate-pulse" />
                                         <h3 className="text-[20px] font-black uppercase tracking-[0.1em] text-[#2D241E]">แผงจัดการข้อมูล</h3>
                                     </div>
-                                    
+
                                     <h4 className="text-2xl font-black uppercase tracking-tighter mb-4">ปรับแต่งเนื้อหา</h4>
                                     <p className="text-[#2D241E] text-[20px] mb-10 leading-relaxed font-light">
                                         คุณสามารถแก้ไขประวัติร้านและพันธกิจเพื่อให้ลูกค้าได้รับรู้ถึงเรื่องราวและตัวตนของแบรนด์ได้ที่นี่
@@ -183,26 +201,26 @@ const About = ({ userData }) => {
 
                                     <div className="space-y-4">
                                         {!isEditing ? (
-                                            <button 
+                                            <button
                                                 onClick={() => setIsEditing(true)}
                                                 className="w-full py-5 bg-white text-[#2D241E] rounded-full font-black uppercase tracking-widest text-[20px] flex items-center justify-center gap-3 shadow-md border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all active:scale-95"
                                             >
-                                                <Edit3 size={18}/> แก้ไขข้อมูลร้าน
+                                                <Edit3 size={18} /> แก้ไขข้อมูลร้าน
                                             </button>
                                         ) : (
                                             <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                                <button 
+                                                <button
                                                     onClick={handleSave}
                                                     disabled={isSaving}
                                                     className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest text-[20px] flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-95 disabled:opacity-50"
                                                 >
-                                                    {isSaving ? <Loader2 className="animate-spin" size={18}/> : <><Save size={18}/> บันทึกการเปลี่ยนแปลง</>}
+                                                    {isSaving ? <Loader2 className="animate-spin" size={18} /> : <><Save size={18} /> บันทึกการเปลี่ยนแปลง</>}
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={() => { setIsEditing(false); fetchAboutData(); }}
                                                     className="w-full py-5 bg-white text-[#2D241E] rounded-full font-bold uppercase tracking-widest text-[20px] flex items-center justify-center gap-2 border border-slate-100 hover:text-red-500 transition-all"
                                                 >
-                                                    <Undo2 size={14}/> ยกเลิกการแก้ไข
+                                                    <Undo2 size={14} /> ยกเลิกการแก้ไข
                                                 </button>
                                             </div>
                                         )}
@@ -217,7 +235,8 @@ const About = ({ userData }) => {
             <Footer userData={userData} />
 
             {/* --- ✨ Custom Animations --- */}
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .serif { font-family: 'Georgia', serif; }
                 @keyframes bounce-slow {
                     0%, 100% { transform: translateY(0); }

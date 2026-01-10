@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-    Package, ChevronRight, ChevronLeft, Loader2, MapPin, Calendar, CreditCard, 
-    Truck, X, ClipboardList, Clock, CheckCircle, Info, ArrowLeft, 
+import {
+    Package, ChevronRight, ChevronLeft, Loader2, MapPin, Calendar, CreditCard,
+    Truck, X, ClipboardList, Clock, CheckCircle, Info, ArrowLeft,
     ShoppingBag, Phone, Star, MessageSquare, Sparkles, Leaf, Cookie, Smile,
     RotateCcw, Upload, Heart, Eye, AlertCircle, FileWarning, User, ExternalLink,
     Copy, Landmark
@@ -18,7 +18,7 @@ const ResubmitSlipModal = ({ order, paymentMethods, onClose, onRefresh }) => {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [uploading, setUploading] = useState(false);
-    
+
     const selectedMethod = useMemo(() => {
         return paymentMethods.find(m => m.method_id === order.payment_method_id) || paymentMethods[0];
     }, [paymentMethods, order.payment_method_id]);
@@ -26,7 +26,7 @@ const ResubmitSlipModal = ({ order, paymentMethods, onClose, onRefresh }) => {
     const formatBankNumber = (num) => {
         if (!num) return '';
         const cleaned = num.toString().replace(/\D/g, '');
-        return cleaned.length === 10 
+        return cleaned.length === 10
             ? `${cleaned.slice(0, 3)}-${cleaned.slice(3, 4)}-${cleaned.slice(4, 9)}-${cleaned.slice(9)}`
             : cleaned.replace(/(.{4})/g, '$1 ').trim();
     };
@@ -66,12 +66,12 @@ const ResubmitSlipModal = ({ order, paymentMethods, onClose, onRefresh }) => {
                         <h3 className="text-2xl font-black text-[#2D241E]">แก้ไขหลักฐานการโอน</h3>
                         <p className="text-[20px] font-bold text-[#2D241E] uppercase tracking-widest mt-1">รายการสั่งซื้อ: #{order.order_id}</p>
                     </div>
-                    <button onClick={onClose} className="p-3 text-[#2D241E] hover:bg-slate-50 rounded-full transition-all border border-slate-100 shadow-sm"><X size={20}/></button>
+                    <button onClick={onClose} className="p-3 text-[#2D241E] hover:bg-slate-50 rounded-full transition-all border border-slate-100 shadow-sm"><X size={20} /></button>
                 </div>
                 <div className="p-8 md:p-12 overflow-y-auto custom-scrollbar space-y-10 text-left bg-[#fff] relative">
                     {/* Cozy Pattern */}
                     <Landmark className="absolute top-10 right-10 opacity-[0.03] text-[#2D241E]" size={120} />
-                    
+
                     {order.rejection_reason && (
                         <div className="p-6 bg-[#fff] rounded-[2rem] border border-red-100 flex items-center gap-5">
                             <div className="p-4 bg-red-50 text-red-500 rounded-2xl shrink-0"><FileWarning size={24} /></div>
@@ -92,20 +92,20 @@ const ResubmitSlipModal = ({ order, paymentMethods, onClose, onRefresh }) => {
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <p className="text-2xl md:text-3xl font-black tracking-widest text-[#2D241E]">{formatBankNumber(selectedMethod?.account_number)}</p>
-                                    <button onClick={() => copyToClipboard(selectedMethod?.account_number)} className="p-3 bg-[#fff] border border-slate-100 hover:bg-slate-50 rounded-xl transition-all text-[#2D241E]"><Copy size={18}/></button>
+                                    <button onClick={() => copyToClipboard(selectedMethod?.account_number)} className="p-3 bg-[#fff] border border-slate-100 hover:bg-slate-50 rounded-xl transition-all text-[#2D241E]"><Copy size={18} /></button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="space-y-4">
                         <label className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">อัปโหลดสลิปใหม่</label>
                         <div className={`relative border-2 border-dashed rounded-[3rem] p-10 flex flex-col items-center justify-center transition-all duration-500 group ${preview ? 'border-green-200 bg-white' : 'border-slate-100 bg-[#fff] hover:border-[#2D241E]/20'}`}>
-                            <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" onChange={(e) => { const f = e.target.files[0]; if(f){ setFile(f); setPreview(URL.createObjectURL(f)); }}} />
+                            <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" onChange={(e) => { const f = e.target.files[0]; if (f) { setFile(f); setPreview(URL.createObjectURL(f)); } }} />
                             {preview ? (
                                 <div className="relative z-30 text-center">
                                     <img src={preview} className="w-52 h-72 object-cover rounded-[2rem] shadow-lg border-4 border-white mx-auto" alt="สลิปใหม่" />
-                                    <button onClick={(e) => {e.stopPropagation(); setFile(null); setPreview(null);}} className="absolute -top-4 -right-4 bg-white text-red-500 rounded-full p-4 shadow-md border border-slate-50 hover:scale-110 transition-all"><X size={18}/></button>
+                                    <button onClick={(e) => { e.stopPropagation(); setFile(null); setPreview(null); }} className="absolute -top-4 -right-4 bg-white text-red-500 rounded-full p-4 shadow-md border border-slate-50 hover:scale-110 transition-all"><X size={18} /></button>
                                 </div>
                             ) : (
                                 <div className="text-center pointer-events-none py-10">
@@ -137,7 +137,7 @@ const ReviewModal = ({ order, onClose, onSubmit, isSubmitting }) => {
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[#2D241E]/10 backdrop-blur-sm animate-in fade-in">
             <div className="bg-[#fff] rounded-[2.5rem] w-full max-w-2xl p-10 md:p-14 shadow-xl relative animate-in zoom-in-95 border border-slate-50 overflow-hidden" onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className="absolute top-10 right-10 p-3 bg-[#fff] text-[#2D241E] hover:text-[#2D241E] rounded-full transition-all border border-slate-100 shadow-sm"><X size={20} /></button>
-                
+
                 {/* Cozy Pattern */}
                 <Smile className="absolute -bottom-10 -right-10 opacity-[0.03] text-[#2D241E]" size={200} />
 
@@ -148,7 +148,7 @@ const ReviewModal = ({ order, onClose, onSubmit, isSubmitting }) => {
                 <div className="space-y-8 text-left relative z-10">
                     <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
                         {order.items?.map((item) => (
-                            <button key={item.product_id} onClick={() => setSelectedProduct(item)} 
+                            <button key={item.product_id} onClick={() => setSelectedProduct(item)}
                                 className={`flex-shrink-0 p-3 rounded-2xl border transition-all flex items-center gap-3 ${selectedProduct?.product_id === item.product_id ? 'border-[#2D241E] bg-slate-50' : 'border-slate-100 bg-white'}`}
                             >
                                 <img src={item.product?.images?.[0]?.image_url || '/placeholder.png'} className="w-10 h-10 rounded-xl object-cover border border-white shadow-sm" alt="" />
@@ -261,7 +261,7 @@ const MyOrders = ({ userData }) => {
                 <Sparkles className="absolute top-[15%] right-[20%]" size={80} />
                 <Heart className="absolute bottom-[10%] left-[15%] rotate-[30deg]" size={100} />
             </div>
-            
+
             <main className="max-w-[1400px] mx-auto pt-32 md:pt-44 pb-24 px-6 relative z-10">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
                     {/* Sidebar */}
@@ -300,12 +300,12 @@ const MyOrders = ({ userData }) => {
                             {currentOrders.map(order => (
                                 <div key={order.order_id} className="bg-[#fff] p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all duration-500 group relative overflow-hidden">
                                     <div className="absolute top-0 left-0 w-1.5 h-full bg-[#2D241E]/5 group-hover:bg-[#2D241E] transition-colors duration-500"></div>
-                                    <div className="flex flex-col xl:flex-row justify-between gap-10 relative z-10">
+                                    <div className="flex flex-col xl:flex-row justify-between gap-10 relative z-10 items-stretch">
                                         <div className="flex-1 space-y-8 text-left">
                                             <div className="flex flex-wrap items-center gap-5">
                                                 <span className="font-black text-2xl uppercase tracking-tighter text-[#2D241E] italic">#{order.order_id}</span>
                                                 <div className={`px-6 py-2 rounded-full font-black text-[20px] uppercase tracking-[0.1em] border ${getStatusStyle(order.status)}`}>{order.status}</div>
-                                                <span className="text-[#2D241E] font-black text-[20px] uppercase tracking-widest flex items-center gap-2"><Calendar size={14}/> {new Date(order.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                <span className="text-[#2D241E] font-black text-[20px] uppercase tracking-widest flex items-center gap-2"><Calendar size={14} /> {new Date(order.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                             </div>
 
                                             {order.status === 'รอแก้ไขสลิป' && order.rejection_reason && (
@@ -326,7 +326,7 @@ const MyOrders = ({ userData }) => {
                                                 ))}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col sm:flex-row xl:flex-col items-center justify-between gap-8 xl:min-w-[240px] border-t sm:border-t-0 xl:border-l border-slate-50 pt-8 sm:pt-0 xl:pl-12">
+                                        <div className="flex flex-col sm:flex-row xl:flex-col items-center justify-between gap-8 xl:w-[300px] xl:shrink-0border-t sm:border-t-0 xl:border-l border-slate-50 pt-8 sm:pt-0 xl:pl-12">
                                             <div className="text-center xl:text-right w-full">
                                                 <p className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] mb-2">ยอดชำระสุทธิ</p>
                                                 <p className="text-4xl md:text-5xl font-black text-[#2D241E] italic tracking-tighter leading-none">฿{Number(order.total_amount).toLocaleString()}</p>
@@ -379,11 +379,11 @@ const MyOrders = ({ userData }) => {
                     <div className="bg-[#fff] rounded-[3rem] md:rounded-[4rem] w-full max-w-6xl shadow-2xl relative flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 border border-slate-100 max-h-[90vh] text-left" onClick={e => e.stopPropagation()}>
                         {/* Cozy Pattern */}
                         <Cookie className="absolute -left-10 -bottom-10 opacity-[0.03] text-[#2D241E]" size={300} />
-                        
+
                         <div className="flex-1 p-8 lg:p-16 overflow-y-auto border-r border-slate-50 custom-scrollbar relative z-10">
                             <div className="flex justify-between items-start mb-12">
                                 <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-[#2D241E] italic">รายละเอียดออเดอร์</h2>
-                                <button onClick={() => setSelectedOrder(null)} className="p-4 bg-white text-[#2D241E] hover:text-[#2D241E] rounded-full transition-all border border-slate-100"><X size={24}/></button>
+                                <button onClick={() => setSelectedOrder(null)} className="p-4 bg-white text-[#2D241E] hover:text-[#2D241E] rounded-full transition-all border border-slate-100"><X size={24} /></button>
                             </div>
                             <div className="bg-slate-50/50 rounded-[3rem] p-10 mb-12 border border-white">
                                 <p className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] mb-4">สถานะการจัดส่ง / เลขพัสดุ</p>
@@ -407,34 +407,52 @@ const MyOrders = ({ userData }) => {
                                 ))}
                             </div>
                         </div>
-                        <div className="w-full md:w-[420px] bg-white p-8 lg:p-16 flex flex-col justify-between border-l border-slate-50 relative z-10">
-                            <div className="space-y-12">
-                                <div className="space-y-6">
-                                    <p className="text-[20px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">ที่อยู่จัดส่ง</p>
-                                    <div className="bg-[#fff] p-8 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-                                        <MapPin className="absolute -right-4 -bottom-4 opacity-[0.03] text-[#2D241E] rotate-12 transition-transform group-hover:scale-110" size={100}/>
-                                        <p className="font-black text-[#2D241E] text-xl mb-3 italic leading-none">{selectedOrder.address?.recipient_name}</p>
-                                        <p className="text-[#2D241E] leading-relaxed font-light text-[20px] mb-8 italic">"{selectedOrder.address?.address_detail}"</p>
-                                        <div className="flex items-center gap-3 text-[#2D241E] font-black text-[20px] bg-slate-50/50 px-5 py-3 rounded-2xl w-fit border border-white"><Phone size={14}/> {selectedOrder.address?.phone_number}</div>
+
+                        <div className="w-full md:w-[450px] bg-white flex flex-col border-l border-slate-50 relative z-10 overflow-hidden h-full min-h-0">
+
+                            {/* 🟢 ส่วนเนื้อหาที่ Scroll ได้ (ลด p-8 lg:p-12 เป็น p-6 lg:p-10 และ space-y-12 เป็น space-y-8) */}
+                            <div className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar space-y-8 min-h-0">
+                                <div className="space-y-4"> {/* ลดระยะห่างหัวข้อกับ Address Box */}
+                                    <p className="text-[18px] font-black text-[#2D241E] uppercase tracking-[0.1em] ml-2">ที่อยู่จัดส่ง</p>
+                                    <div className="bg-[#FAFAFA] p-6 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+                                        <MapPin className="absolute -right-4 -bottom-4 opacity-[0.05] text-[#2D241E] rotate-12" size={100} />
+                                        <p className="font-black text-xl mb-2 italic text-[#2D241E] leading-none">{selectedOrder.address?.recipient_name}</p>
+                                        <p className="text-[#2D241E] leading-relaxed font-light text-[17px] mb-6 italic">"{selectedOrder.address?.address_detail}"</p>
+                                        <div className="flex items-center gap-3 text-[#2D241E] font-black text-[17px] bg-white px-4 py-2 rounded-xl w-fit border border-slate-100 shadow-sm">
+                                            <Phone size={14} /> {selectedOrder.address?.phone_number}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="pt-8 border-t border-slate-50 space-y-4">
-                                    <div className="flex justify-between font-black text-[#2D241E] text-[20px] uppercase tracking-widest"><span>ยอดรวมสินค้า</span><span className="text-[#2D241E] text-[20px]">฿{(Number(selectedOrder.total_amount) - Number(selectedOrder.shipping_cost)).toLocaleString()}</span></div>
+
+                                {/* ส่วนสรุปยอดเงิน (ลด pt-8 เป็น pt-6) */}
+                                <div className="pt-6 border-t border-slate-100 space-y-3">
+                                    <div className="flex justify-between font-black text-[#2D241E] text-[20px] uppercase tracking-widest">
+                                        <span>ยอดรวมสินค้า</span>
+                                        <span>฿{(Number(selectedOrder.total_amount) - Number(selectedOrder.shipping_cost)).toLocaleString()}</span>
+                                    </div>
                                     <div className="flex justify-between font-black text-[#2D241E] text-[20px] uppercase tracking-widest">
                                         <span>ค่าจัดส่ง</span>
-                                        {Number(selectedOrder.shipping_cost) > 0 ? (
-                                            <span className="text-[#2D241E] text-[20px]">฿{Number(selectedOrder.shipping_cost).toLocaleString()}</span>
-                                        ) : (
-                                            <span className="text-green-500 italic">ฟรี</span>
-                                        )}
+                                        {Number(selectedOrder.shipping_cost) > 0
+                                            ? <span>฿{Number(selectedOrder.shipping_cost).toLocaleString()}</span>
+                                            : <span className="text-green-500  italic">ฟรี</span>
+                                        }
                                     </div>
-                                    <div className="flex justify-between items-end pt-8">
-                                        <span className="text-4xl font-black text-[#2D241E] tracking-tighter italic leading-none">สุทธิ</span>
-                                        <span className="text-4xl font-black text-[#2D241E] tracking-tighter">฿{Number(selectedOrder.total_amount).toLocaleString()}</span>
+                                    <div className="flex justify-between items-end pt-5 border-t border-slate-50 mt-4">
+                                        <span className="text-3xl font-black text-[#2D241E] tracking-tighter italic leading-none">สุทธิ</span>
+                                        <span className="text-3xl font-black text-[#2D241E] tracking-tighter leading-none">฿{Number(selectedOrder.total_amount).toLocaleString()}</span>
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={() => setSelectedOrder(null)} className="w-full py-6 bg-[#fff] border border-[#2D241E] text-[#2D241E] rounded-full font-black uppercase tracking-widest text-[20px] shadow-sm hover:bg-[#2D241E] hover:text-[#fff] transition-all mt-10">กลับไปหน้ารวม</button>
+
+                            {/* 🔴 ส่วนปุ่มกด (ลด padding p-8 lg:p-12 เป็น p-6 lg:p-8) */}
+                            <div className="p-6 lg:p-8 bg-white border-t border-slate-50 flex-shrink-0">
+                                <button
+                                    onClick={() => setSelectedOrder(null)}
+                                    className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest text-[17px] shadow-lg hover:bg-black transition-all active:scale-95"
+                                >
+                                    กลับไปหน้ารวม
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -442,10 +460,11 @@ const MyOrders = ({ userData }) => {
 
             {isReviewOpen && selectedOrderForAction && <ReviewModal order={selectedOrderForAction} onClose={() => setIsReviewOpen(false)} onSubmit={handleSubmitReview} isSubmitting={reviewSubmitting} />}
             {isResubmitOpen && selectedOrderForAction && <ResubmitSlipModal order={selectedOrderForAction} paymentMethods={paymentMethods} onClose={() => setIsResubmitOpen(false)} onRefresh={fetchData} />}
-            
+
             <Footer userData={userData} />
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E10; border-radius: 10px; }
                 @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
