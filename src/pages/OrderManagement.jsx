@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     ShoppingBag, Search, Eye, X, MapPin, Loader2, PackageCheck, Clock, Truck,
-    RefreshCw, CheckCircle2, ImageIcon, Menu, ExternalLink, Activity, ChevronLeft, 
-    ChevronRight, ArrowRight, Star, Leaf, Cookie, Smile, Sparkles, ClipboardList, Package, 
+    RefreshCw, CheckCircle2, ImageIcon, Menu, ExternalLink, Activity, ChevronLeft,
+    ChevronRight, ArrowRight, Star, Leaf, Cookie, Smile, Sparkles, ClipboardList, Package,
     Trash2, FileWarning, RotateCcw, Filter, ListChecks, TrendingUp
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
@@ -33,20 +33,22 @@ const OrderManagement = () => {
     const fetchShippingProviders = useCallback(async () => {
         try {
             const response = await axiosInstance.get(API_ENDPOINTS.ADMIN.SHIPPING_PROVIDERS);
-            let providers = Array.isArray(response.data) ? response.data : (response.data?.data || []);
-            setShippingProviders(providers);
-            if (providers.length > 0) setSelectedProviderId(providers[0].provider_id);
-        } catch (err) {
-            setShippingProviders([{ provider_id: 1, provider_name: 'Flash' }]);
-        }
-    }, []);
 
-    const fetchOrders = useCallback(async (isSilent = false) => {
-        try {
-            if (!isSilent) setLoading(true);
-            const res = await axiosInstance.get(API_ENDPOINTS.ADMIN.ORDERS);
-            if (res.success) setOrders(Array.isArray(res.data) ? res.data : []);
-        } catch (err) { toast.error("ดึงข้อมูลล้มเหลว"); } finally { setLoading(false); }
+            // Backend ส่ง { success: true, data: [...] }
+            const providers = response.data?.data;
+
+            if (Array.isArray(providers) && providers.length > 0) {
+                setShippingProviders(providers);
+                setSelectedProviderId(providers[0].provider_id);
+            } else {
+                setShippingProviders([]);
+            }
+        } catch (err) {
+            console.error("Failed to fetch providers:", err);
+            // ไม่แนะนำให้ hardcode ID ถ้าไม่มั่นใจว่าตรงกับ DB
+            setShippingProviders([]);
+            // อาจจะเพิ่ม setErrorMessage("ไม่สามารถโหลดข้อมูลขนส่งได้");
+        }
     }, []);
 
     useEffect(() => { fetchOrders(); fetchShippingProviders(); }, [fetchOrders, fetchShippingProviders]);
@@ -54,7 +56,7 @@ const OrderManagement = () => {
     const handleUpdateStatus = async (orderId, newStatus) => {
         if (newStatus === 'ยกเลิก') {
             const confirm = await Swal.fire({
-                title: 'ยืนยันยกเลิกออเดอร์?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#2D241E', 
+                title: 'ยืนยันยกเลิกออเดอร์?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#2D241E',
                 confirmButtonText: 'ยืนยัน', cancelButtonText: 'ปิด',
                 customClass: { popup: 'rounded-[2.5rem] font-["Kanit"] border-4 border-[#2D241E]' }
             });
@@ -108,7 +110,7 @@ const OrderManagement = () => {
     };
 
     const filteredOrders = useMemo(() => {
-        return orders.filter(o => 
+        return orders.filter(o =>
             (o.order_id?.toLowerCase().includes(searchTerm.toLowerCase()) || o.address?.recipient_name?.toLowerCase().includes(searchTerm.toLowerCase())) &&
             (filterStatus === 'ทั้งหมด' || o.status === filterStatus)
         );
@@ -188,7 +190,7 @@ const OrderManagement = () => {
                                             <span className="px-4 py-1 rounded-full text-[10px] font-black uppercase text-[#2D241E] bg-slate-50 border-2 border-[#2D241E]/10">{order?.status}</span>
                                         </td>
                                         <td className="py-4 px-6 rounded-r-2xl bg-white border-y border-r border-slate-100 text-right">
-                                            <div className="p-2 bg-slate-50 rounded-lg inline-flex hover:bg-[#2D241E] hover:text-white transition-all text-[#2D241E]"><Eye size={16} strokeWidth={3}/></div>
+                                            <div className="p-2 bg-slate-50 rounded-lg inline-flex hover:bg-[#2D241E] hover:text-white transition-all text-[#2D241E]"><Eye size={16} strokeWidth={3} /></div>
                                         </td>
                                     </tr>
                                 ))}
@@ -199,9 +201,9 @@ const OrderManagement = () => {
                     {/* Pagination */}
                     {totalPages > 1 && (
                         <div className="mt-8 flex justify-center items-center gap-4">
-                            <button onClick={(e) => { e.stopPropagation(); setCurrentPage(p => Math.max(1, p - 1)); }} disabled={currentPage === 1} className="p-2 border-2 border-[#2D241E] rounded-xl text-[#2D241E] disabled:opacity-30 active:scale-90 transition-all"><ChevronLeft size={20} strokeWidth={3}/></button>
+                            <button onClick={(e) => { e.stopPropagation(); setCurrentPage(p => Math.max(1, p - 1)); }} disabled={currentPage === 1} className="p-2 border-2 border-[#2D241E] rounded-xl text-[#2D241E] disabled:opacity-30 active:scale-90 transition-all"><ChevronLeft size={20} strokeWidth={3} /></button>
                             <span className="text-xs font-black text-[#2D241E] italic">Page {currentPage} of {totalPages}</span>
-                            <button onClick={(e) => { e.stopPropagation(); setCurrentPage(p => Math.min(totalPages, p + 1)); }} disabled={currentPage === totalPages} className="p-2 border-2 border-[#2D241E] rounded-xl text-[#2D241E] disabled:opacity-30 active:scale-90 transition-all"><ChevronRight size={20} strokeWidth={3}/></button>
+                            <button onClick={(e) => { e.stopPropagation(); setCurrentPage(p => Math.min(totalPages, p + 1)); }} disabled={currentPage === totalPages} className="p-2 border-2 border-[#2D241E] rounded-xl text-[#2D241E] disabled:opacity-30 active:scale-90 transition-all"><ChevronRight size={20} strokeWidth={3} /></button>
                         </div>
                     )}
                 </div>
@@ -216,7 +218,7 @@ const OrderManagement = () => {
                                 <div className="bg-[#2D241E] p-3 rounded-xl text-white shadow-lg"><PackageCheck size={24} strokeWidth={3} /></div>
                                 <h2 className="text-xl font-black uppercase italic text-[#2D241E]">Order #{selectedOrder.order_id?.substring(0, 8)}</h2>
                             </div>
-                            <button onClick={() => setSelectedOrder(null)} className="p-2 bg-slate-50 text-[#2D241E] rounded-full hover:text-red-500 transition-all"><X size={20} strokeWidth={3}/></button>
+                            <button onClick={() => setSelectedOrder(null)} className="p-2 bg-slate-50 text-[#2D241E] rounded-full hover:text-red-500 transition-all"><X size={20} strokeWidth={3} /></button>
                         </div>
 
                         <div className="overflow-y-auto p-8 custom-scrollbar text-left grid grid-cols-1 md:grid-cols-2 gap-8 bg-white">
