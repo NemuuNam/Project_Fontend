@@ -34,20 +34,52 @@ const OrderManagement = () => {
         try {
             const response = await axiosInstance.get(API_ENDPOINTS.ADMIN.SHIPPING_PROVIDERS);
 
-            // Backend ส่ง { success: true, data: [...] }
-            const providers = response.data?.data;
+            // เพิ่ม Log เพื่อดูว่าข้อมูลขนส่งที่ส่งมาหน้าตาเป็นอย่างไร
+            console.log("🚚 ข้อมูลขนส่งที่ได้รับ:", response.data);
 
-            if (Array.isArray(providers) && providers.length > 0) {
+            let providers = [];
+
+            // เช็คว่าข้อมูลเป็น Array ตรงๆ หรืออยู่ใน property data
+            if (Array.isArray(response.data)) {
+                providers = response.data;
+            } else if (response.data?.success && Array.isArray(response.data.data)) {
+                providers = response.data.data;
+            }
+
+            if (providers.length > 0) {
                 setShippingProviders(providers);
+                // ตั้งค่าเริ่มต้นให้เป็น ID ของตัวแรกในลิสต์
                 setSelectedProviderId(providers[0].provider_id);
-            } else {
-                setShippingProviders([]);
             }
         } catch (err) {
             console.error("Failed to fetch providers:", err);
-            // ไม่แนะนำให้ hardcode ID ถ้าไม่มั่นใจว่าตรงกับ DB
             setShippingProviders([]);
-            // อาจจะเพิ่ม setErrorMessage("ไม่สามารถโหลดข้อมูลขนส่งได้");
+        }
+    }, []);
+
+    const fetchOrders = useCallback(async (isSilent = false) => {
+        console.log("🔍 เริ่มดึงข้อมูลออเดอร์...");
+        if (!isSilent) setLoading(true);
+        try {
+            const response = await axiosInstance.get(API_ENDPOINTS.ADMIN.ORDERS);
+
+            // ตรวจสอบจาก Console ของคุณ: response.data คือ Array 12 ตัวนั้นเลย
+            console.log("✅ ข้อมูลที่ได้รับ:", response.data);
+
+            // ปรับการเช็คให้ยืดหยุ่นขึ้น
+            if (Array.isArray(response.data)) {
+                // กรณี Backend ส่งมาเป็น Array ตรงๆ
+                setOrders(response.data);
+            } else if (response.data?.success && Array.isArray(response.data.data)) {
+                // กรณี Backend ส่งมาเป็น { success: true, data: [...] }
+                setOrders(response.data.data);
+            }
+
+        } catch (err) {
+            console.error("❌ Fetch Error:", err);
+            toast.error("ไม่สามารถดึงข้อมูลได้");
+        } finally {
+            setLoading(false);
         }
     }, []);
 
