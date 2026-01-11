@@ -63,9 +63,6 @@ const OrderManagement = () => {
         try {
             const response = await axiosInstance.get(API_ENDPOINTS.ADMIN.ORDERS);
 
-            // ตรวจสอบจาก Console ของคุณ: response.data คือ Array 12 ตัวนั้นเลย
-            console.log("✅ ข้อมูลที่ได้รับ:", response.data);
-
             // ปรับการเช็คให้ยืดหยุ่นขึ้น
             if (Array.isArray(response.data)) {
                 // กรณี Backend ส่งมาเป็น Array ตรงๆ
