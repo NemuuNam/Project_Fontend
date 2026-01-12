@@ -35,17 +35,26 @@ axiosInstance.interceptors.request.use(
 // --- Response Interceptor ---
 axiosInstance.interceptors.response.use(
     (response) => {
-        // คืนค่าเฉพาะ data (เช่น { success: true, data: [...] })
         return response.data;
     },
     (error) => {
-        // หากเจอ Error 401 (Unauthorized)
         if (error.response && error.response.status === 401) {
+            // 1. ล้างข้อมูลที่หมดอายุ
             localStorage.removeItem('token');
-            localStorage.removeItem('user'); // ล้างข้อมูล User ไปด้วย (ถ้ามี)
+            localStorage.removeItem('user');
             
-            // ✅ ใช้ replace เพื่อไม่ให้ผู้ใช้กด "Back" กลับมาหน้าเดิมที่ติด Error ได้
-            window.location.replace('/login'); 
+            // 2. เช็คว่า "หน้าปัจจุบัน" เป็นหน้าหวงห้ามหรือไม่
+            // รายชื่อหน้าที่ "อนุญาต" ให้ดูได้แม้ไม่มีสิทธิ์ (Public Pages)
+            const publicPages = ['/', '/home', '/products', '/about', '/contact', '/login', '/register'];
+            const isPublicPage = publicPages.includes(window.location.pathname);
+
+            // 3. ถ้าไม่ใช่หน้า Public (เช่น อยู่หน้า Checkout หรือ Admin) ถึงค่อยส่งไป Login
+            if (!isPublicPage) {
+                window.location.replace('/login'); 
+            } else {
+                // ถ้าเป็นหน้า Public แค่แจ้งเตือนเบาๆ หรือไม่ต้องทำอะไรเลย
+                console.warn("Unauthorized on public page - staying here.");
+            }
         }
         
         return Promise.reject(error);
