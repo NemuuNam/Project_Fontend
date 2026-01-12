@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
     ShoppingCart, User, LogOut, ChevronDown, Store, 
@@ -16,7 +16,12 @@ const HeaderHome = () => {
     const [showDropdown, setShowDropdown] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userData, setUserData] = useState(null);
-    const [shopName, setShopName] = useState('SOOO GUICHAI');
+    
+    // 1. ปรับชื่อร้านเริ่มต้นให้เป็นเรื่องคุกกี้ตามโครงงานใหม่
+    const [shopName, setShopName] = useState('COOKIE SHOP');
+    
+    // 2. เพิ่ม State สำหรับเก็บจำนวนสินค้าในตะกร้า
+    const [cartCount, setCartCount] = useState(0);
 
     const navItems = [
         { label: 'HOME', path: '/', icon: <Home size={18} strokeWidth={3} /> },
@@ -25,6 +30,13 @@ const HeaderHome = () => {
         { label: 'CONTACT', path: '/contact', icon: <PhoneCall size={18} strokeWidth={3} /> },
     ];
 
+    // 3. ฟังก์ชันสำหรับคำนวณจำนวนสินค้าทั้งหมดใน LocalStorage
+    const updateCartBadge = useCallback(() => {
+        const localCart = JSON.parse(localStorage.getItem('cart')) || [];
+        const total = localCart.reduce((acc, item) => acc + (item.quantity || 0), 0);
+        setCartCount(total);
+    }, []);
+
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
@@ -32,18 +44,31 @@ const HeaderHome = () => {
             fetchUserProfile();
         }
         fetchShopInfo();
+
+        // 4. เรียกใช้ครั้งแรกเพื่อดึงค่าจำนวนสินค้า
+        updateCartBadge();
+
+        // 5. ติดตั้ง Listener เพื่อดักฟัง "สัญญาณ" จากหน้า Cart.js (Zustand)
+        // เมื่อมีการ setCartItems ในหน้า Cart มันจะส่ง Event มาที่นี่
+        window.addEventListener('storage', updateCartBadge);
+
         const handleClickOutside = (e) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowDropdown(false);
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+
+        return () => {
+            window.removeEventListener('storage', updateCartBadge);
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [updateCartBadge]);
 
     const fetchShopInfo = async () => {
         try {
             const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
             if (res.success && res.data?.shop_name) {
-                setShopName(res.data.shop_name !== "EMPTY" ? res.data.shop_name : 'SOOO GUICHAI');
+                // หากใน DB ยังเป็นชื่อเก่า ให้ใช้ชื่อที่สื่อถึงคุกกี้แทน
+                setShopName(res.data.shop_name !== "EMPTY" ? res.data.shop_name : 'COOKIE SHOP');
             }
         } catch (err) { console.error(err); }
     };
@@ -62,7 +87,7 @@ const HeaderHome = () => {
     };
 
     return (
-        <header className="sticky top-0 w-full bg-white/90 backdrop-blur-md z-[1000] font-['Kanit'] py-4 px-6 shadow-sm border-b border-slate-200">
+        <header className="sticky top-0 w-full bg-white/90 backdrop-blur-md z-[1000] font-['Kanit'] py-4 px-6 shadow-sm border-b border-slate-200 text-left">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
                 
                 {/* --- Logo Area --- */}
@@ -70,7 +95,6 @@ const HeaderHome = () => {
                     <div className="w-11 h-11 bg-[#2D241E] text-white rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-all">
                         <Sparkles size={22} strokeWidth={2.5} />
                     </div>
-                    {/* ปรับสีตัวอักษรโลโก้ให้เข้มชัดเจน */}
                     <span className="text-xl md:text-2xl font-black text-[#2D241E] uppercase tracking-tighter italic leading-none">
                         {shopName}
                     </span>
@@ -96,7 +120,13 @@ const HeaderHome = () => {
                 <div className="flex items-center gap-3 relative" ref={dropdownRef}>
                     <Link to="/cart" className="p-3 bg-white rounded-xl text-[#2D241E] border-2 border-[#2D241E] hover:shadow-md transition-all active:scale-90 relative">
                         <ShoppingCart size={20} strokeWidth={3} />
-                        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">0</span>
+                        
+                        {/* 6. แสดงตัวเลขจำนวนสินค้าจริงจาก State */}
+                        {cartCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white animate-in zoom-in duration-300">
+                                {cartCount}
+                            </span>
+                        )}
                     </Link>
 
                     {isLoggedIn ? (
@@ -108,11 +138,10 @@ const HeaderHome = () => {
                                 <div className="w-9 h-9 bg-[#2D241E] text-white rounded-lg flex items-center justify-center font-black text-sm uppercase">
                                     {userData?.first_name?.charAt(0) || <Loader2 size={14} className="animate-spin" />}
                                 </div>
-                                {/* ปรับสีตัวอักษรชื่อ User ให้เข้ม */}
                                 <span className="hidden sm:block text-xs font-black text-[#2D241E] uppercase italic">
                                     {userData?.first_name || 'USER'}
                                 </span>
-                                <ChevronDown size={14} strokeWidth={3} className="text-[#2D241E] transition-transform" />
+                                <ChevronDown size={14} strokeWidth={3} className={`text-[#2D241E] transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
                             </button>
 
                             {showDropdown && (
@@ -121,13 +150,11 @@ const HeaderHome = () => {
                                         <div className="w-14 h-14 bg-[#2D241E] text-white rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-3 shadow-md uppercase italic">
                                             {userData?.first_name?.charAt(0)}
                                         </div>
-                                        {/* สีตัวอักษรใน Dropdown เข้มพิเศษ */}
                                         <h3 className="text-base font-black text-[#2D241E] uppercase italic leading-none">{userData?.first_name} {userData?.last_name}</h3>
                                         <p className="text-[10px] font-black text-[#2D241E] opacity-70 tracking-widest mt-2 uppercase">{userData?.email}</p>
                                     </div>
 
                                     <div className="flex flex-col gap-2">
-                                        {/* เพิ่มปุ่มหน้าแรก */}
                                         <Link to="/" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 p-3 text-[12px] font-black text-[#2D241E] uppercase tracking-widest hover:bg-slate-50 rounded-xl transition-all">
                                             <Home size={18} strokeWidth={3} /> หน้าแรก
                                         </Link>
@@ -140,14 +167,13 @@ const HeaderHome = () => {
                                             <History size={18} strokeWidth={3} /> My Orders
                                         </Link>
 
-                                        {/* เพิ่มปุ่มไปหน้าแอดมิน (ตรวจสอบ Role Level) */}
                                         {userData?.role_level <= 3 && (
                                             <Link to="/admin/dashboard" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 p-3 text-[12px] font-black text-[#2D241E] bg-[#F3E9DC] uppercase tracking-widest hover:bg-[#EBDCC9] rounded-xl transition-all border border-[#2D241E]/10">
                                                 <LayoutDashboard size={18} strokeWidth={3} /> แผงควบคุมแอดมิน
                                             </Link>
                                         )}
 
-                                        <button onClick={handleLogout} className="flex items-center gap-3 p-3 text-[12px] font-black text-red-600 uppercase tracking-widest hover:bg-red-50 rounded-xl transition-all mt-2 italic border-2 border-red-100">
+                                        <button onClick={handleLogout} className="flex items-center gap-3 p-3 text-[12px] font-black text-red-600 uppercase tracking-widest hover:bg-red-50 rounded-xl transition-all mt-2 italic border-2 border-red-100 text-left">
                                             <LogOut size={18} strokeWidth={3} /> Sign Out
                                         </button>
                                     </div>

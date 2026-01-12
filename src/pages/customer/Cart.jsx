@@ -1,26 +1,75 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-    Trash2, Plus, Minus, ShoppingBag, ArrowLeft, 
-    CreditCard, Loader2, AlertCircle, 
-    Leaf, Cookie, Smile, Sparkles, ShoppingCart, Heart, Navigation
+    Trash2, Plus, Minus, ArrowLeft, 
+    Loader2, ShoppingCart, Sparkles, Navigation, 
+    Leaf, Cookie, ShoppingBag
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast, { Toaster } from 'react-hot-toast';
+
+// --- ⚡ นำเข้า Zustand ---
+import { create } from 'zustand';
 
 import axiosInstance from '../../api/axiosInstance';
 import { API_ENDPOINTS } from '../../api/config';
 import HeaderHome from '../../components/HeaderHome';
 import Footer from '../../components/Footer';
 
+// --- 📦 ZUSTAND STORE (Internal) ---
+// จัดการสถานะตะกร้าสินค้า โดยยังคงเชื่อมต่อกับ LocalStorage ชื่อ 'cart' เดิม
+const useCartStore = create((set, get) => ({
+    cartItems: [],
+    
+    // ฟังก์ชันสำหรับตั้งค่าข้อมูลสินค้าในตะกร้าและซิงค์กับ LocalStorage
+    setCartItems: (items) => {
+        // บันทึกลง LocalStorage เฉพาะ id และจำนวน เพื่อให้เข้ากับระบบเดิมของหน้าอื่นๆ
+        const simplifiedCart = items.map(i => ({ 
+            product_id: i.product_id, 
+            quantity: i.quantity 
+        }));
+        localStorage.setItem('cart', JSON.stringify(simplifiedCart));
+        
+        // อัปเดต State ในหน้าปัจจุบัน
+        set({ cartItems: items });
+        
+        // แจ้งเตือนหน้า Header/Navbar ให้เปลี่ยนตัวเลขตาม (ใช้ Event เดิม)
+        window.dispatchEvent(new Event('storage'));
+    },
+
+    // ฟังก์ชันเพิ่ม/ลดจำนวนสินค้า
+    updateQty: (id, delta) => {
+        const { cartItems, setCartItems } = get();
+        const updated = cartItems.map(item => {
+            if (item.product_id === id) {
+                const newQty = Math.max(1, Math.min(item.quantity + delta, item.stock_quantity || 99));
+                return { ...item, quantity: newQty };
+            }
+            return item;
+        });
+        setCartItems(updated);
+    },
+
+    // ฟังก์ชันลบสินค้า
+    removeProduct: (id) => {
+        const { cartItems, setCartItems } = get();
+        const updated = cartItems.filter(item => item.product_id !== id);
+        setCartItems(updated);
+    }
+}));
+
 const Cart = ({ userData }) => {
     const navigate = useNavigate();
-    const [cartItems, setCartItems] = useState([]);
+    
+    // ดึงสถานะจาก Store
+    const { cartItems, setCartItems, updateQty, removeProduct } = useCartStore();
+    
     const [loading, setLoading] = useState(true);
     const [shopSettings, setShopSettings] = useState({ delivery_fee: 0, min_free_shipping: 0 });
 
     const isStaff = userData && [1, 2, 3].includes(Number(userData.role_level));
 
+    // --- 🌐 API: ดึงค่าตั้งค่าร้านค้า (ค่าขนส่ง) ---
     const fetchSettings = useCallback(async () => {
         try {
             const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
@@ -35,13 +84,18 @@ const Cart = ({ userData }) => {
                 });
             }
         } catch (err) { 
+            // กรณี Error ให้ใช้ค่า Default
             setShopSettings({ delivery_fee: 35, min_free_shipping: 5 }); 
         }
     }, []);
 
+    // --- 🔄 API: ซิงค์ข้อมูลสินค้ากับฐานข้อมูล (ราคา/สต็อก/รูปภาพ) ---
     const syncCartWithDatabase = useCallback(async () => {
         const localCart = JSON.parse(localStorage.getItem('cart')) || [];
-        if (localCart.length === 0) { setCartItems([]); return; }
+        if (localCart.length === 0) { 
+            setCartItems([]); 
+            return; 
+        }
         
         try {
             const productIds = localCart.map(item => item.product_id);
@@ -51,6 +105,7 @@ const Cart = ({ userData }) => {
                 const mergedCart = localCart.map(localItem => {
                     const latestInfo = res.data.find(p => p.product_id === localItem.product_id);
                     if (!latestInfo) return null;
+                    
                     const finalQty = Math.min(localItem.quantity, latestInfo.stock_quantity);
 
                     return {
@@ -61,11 +116,11 @@ const Cart = ({ userData }) => {
                 }).filter(Boolean);
 
                 setCartItems(mergedCart);
-                localStorage.setItem('cart', JSON.stringify(mergedCart.map(i => ({ product_id: i.product_id, quantity: i.quantity }))));
-                window.dispatchEvent(new Event('storage'));
             }
-        } catch (err) { console.error("Sync Error:", err); }
-    }, []);
+        } catch (err) { 
+            console.error("Sync Error:", err); 
+        }
+    }, [setCartItems]);
 
     useEffect(() => {
         const init = async () => {
@@ -76,27 +131,14 @@ const Cart = ({ userData }) => {
         init();
     }, [syncCartWithDatabase, fetchSettings]);
 
-    // --- 🧮 การคำนวณยอดรวม (แก้ไขชื่อตัวแปรที่นี่) ---
+    // --- 🧮 การคำนวณยอดรวม ---
     const subtotal = cartItems.reduce((acc, item) => acc + (Number(item.unit_price) * item.quantity), 0);
     const totalItemsCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
     const isFreeShipping = shopSettings.min_free_shipping > 0 && totalItemsCount >= shopSettings.min_free_shipping;
-    const shippingCost = isFreeShipping ? 0 : shopSettings.delivery_fee; // เปลี่ยนชื่อจาก currentShipping เป็น shippingCost
+    const shippingCost = isFreeShipping ? 0 : shopSettings.delivery_fee;
     const finalTotal = subtotal + shippingCost;
 
-    const updateQuantity = (id, delta) => {
-        const updated = cartItems.map(item => {
-            if (item.product_id === id) {
-                const newQty = Math.max(1, Math.min(item.quantity + delta, item.stock_quantity));
-                return { ...item, quantity: newQty };
-            }
-            return item;
-        });
-        setCartItems(updated);
-        localStorage.setItem('cart', JSON.stringify(updated.map(i => ({ product_id: i.product_id, quantity: i.quantity }))));
-        window.dispatchEvent(new Event('storage'));
-    };
-
-    const removeItem = (id) => {
+    const handleRemove = (id) => {
         Swal.fire({
             title: 'นำออกจากตะกร้า?',
             text: "คุณต้องการนำสินค้าชิ้นนี้ออกจากถาดขนมใช่หรือไม่",
@@ -112,10 +154,7 @@ const Cart = ({ userData }) => {
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                const updated = cartItems.filter(item => item.product_id !== id);
-                setCartItems(updated);
-                localStorage.setItem('cart', JSON.stringify(updated.map(i => ({ product_id: i.product_id, quantity: i.quantity }))));
-                window.dispatchEvent(new Event('storage'));
+                removeProduct(id);
                 toast.success("นำสินค้าออกเรียบร้อย");
             }
         });
@@ -124,11 +163,11 @@ const Cart = ({ userData }) => {
     if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={40} /></div>;
 
     return (
-        <div className="min-h-screen bg-white font-['Kanit'] text-[#2D241E] selection:bg-[#F3E9DC] relative overflow-x-hidden">
+        <div className="min-h-screen bg-white font-['Kanit'] text-[#2D241E] relative overflow-x-hidden">
             <Toaster position="bottom-right" />
             <HeaderHome userData={userData} />
 
-            {/* --- ☁️ Background Elements --- */}
+            {/* --- ☁️ Background Decoration --- */}
             <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-0">
                 <Leaf className="absolute top-[10%] left-[5%] rotate-12 text-[#2D241E]" size={250} />
                 <Cookie className="absolute bottom-[10%] right-[10%] -rotate-12 text-[#2D241E]" size={150} />
@@ -164,25 +203,25 @@ const Cart = ({ userData }) => {
                     <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
                         
                         {/* 🛒 Cart Items List */}
-                        <div className="w-full lg:w-[62%] space-y-4">
+                        <div className="w-full lg:w-[62%] space-y-4 text-left">
                             {cartItems.map((item) => (
                                 <div key={item.product_id} className="bg-white p-4 md:p-6 rounded-[2.5rem] flex flex-col sm:flex-row items-center gap-6 shadow-lg border-2 border-slate-50 hover:border-[#2D241E]/10 transition-all duration-500 group relative">
                                     <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 overflow-hidden rounded-[2rem] bg-slate-50 border-2 border-white shadow-md">
                                         <img src={item.image_url || '/placeholder.png'} alt={item.product_name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                     </div>
 
-                                    <div className="flex-1 text-left space-y-2">
+                                    <div className="flex-1 space-y-2">
                                         <span className="text-[11px] font-black text-[#2D241E] uppercase tracking-widest italic">{item.category?.category_name || "Bakery"}</span>
                                         <h3 className="text-xl md:text-2xl font-black text-[#2D241E] tracking-tight uppercase leading-tight italic">{item.product_name}</h3>
                                         <p className="text-2xl font-black text-[#2D241E] tracking-tighter">฿{Number(item.unit_price).toLocaleString()}</p>
 
                                         <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                                             <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-full border border-slate-200 shadow-inner">
-                                                <button onClick={() => updateQuantity(item.product_id, -1)} className="w-9 h-9 flex items-center justify-center bg-white rounded-full text-[#2D241E] hover:bg-[#2D241E] hover:text-white shadow-sm transition-all active:scale-90"><Minus size={14} strokeWidth={3} /></button>
+                                                <button onClick={() => updateQty(item.product_id, -1)} className="w-9 h-9 flex items-center justify-center bg-white rounded-full text-[#2D241E] hover:bg-[#2D241E] hover:text-white shadow-sm transition-all active:scale-90"><Minus size={14} strokeWidth={3} /></button>
                                                 <span className="text-lg font-black w-8 text-center tabular-nums text-[#2D241E]">{item.quantity}</span>
-                                                <button onClick={() => updateQuantity(item.product_id, 1)} className="w-9 h-9 flex items-center justify-center bg-white rounded-full text-[#2D241E] hover:bg-[#2D241E] hover:text-white shadow-sm transition-all active:scale-90"><Plus size={14} strokeWidth={3} /></button>
+                                                <button onClick={() => updateQty(item.product_id, 1)} className="w-9 h-9 flex items-center justify-center bg-white rounded-full text-[#2D241E] hover:bg-[#2D241E] hover:text-white shadow-sm transition-all active:scale-90"><Plus size={14} strokeWidth={3} /></button>
                                             </div>
-                                            <button onClick={() => removeItem(item.product_id)} className="text-[#2D241E] hover:text-red-500 transition-all p-2 group/del">
+                                            <button onClick={() => handleRemove(item.product_id)} className="text-[#2D241E] hover:text-red-500 transition-all p-2 group/del">
                                                 <Trash2 size={20} className="group-hover/del:scale-110 transition-transform" />
                                             </button>
                                         </div>
@@ -191,22 +230,22 @@ const Cart = ({ userData }) => {
                             ))}
                         </div>
 
-                        {/* 📊 Order Summary (Matched with Checkout Hierarchy) */}
-                        <div className="w-full lg:w-[38%] lg:sticky lg:top-28">
-                            <div className="bg-white text-[#2D241E] p-8 md:p-10 rounded-[3rem] shadow-2xl border-2 border-slate-100 relative overflow-hidden text-left animate-in slide-in-from-right-4 duration-700">
+                        {/* 📊 Order Summary */}
+                        <div className="w-full lg:w-[38%] lg:sticky lg:top-28 text-left">
+                            <div className="bg-white text-[#2D241E] p-8 md:p-10 rounded-[3rem] shadow-2xl border-2 border-slate-100 relative overflow-hidden animate-in slide-in-from-right-4 duration-700">
                                 <Sparkles className="absolute -top-10 -right-10 opacity-[0.05] text-[#2D241E] rotate-12" size={180} />
                                 
-                                <h2 className="text-xl md:text-2xl font-black mb-8 uppercase tracking-tighter italic border-b-4 border-slate-50 pb-6 text-[#2D241E]">
+                                <h2 className="text-xl md:text-2xl font-black mb-8 uppercase tracking-tighter italic border-b-4 border-slate-50 pb-6">
                                     Summary <span className="font-light not-italic text-[#2D241E]/40">Order</span>
                                 </h2>
 
                                 <div className="space-y-6 mb-10 relative z-10">
-                                    <div className="flex justify-between items-center text-[#2D241E]">
+                                    <div className="flex justify-between items-center">
                                         <span className="text-base font-black uppercase tracking-[0.1em] opacity-80">Subtotal</span>
                                         <span className="font-black text-xl italic">฿{subtotal.toLocaleString()}</span>
                                     </div>
                                     
-                                    <div className="flex justify-between items-center text-[#2D241E]">
+                                    <div className="flex justify-between items-center">
                                         <span className="text-base font-black uppercase tracking-[0.1em] opacity-80">Delivery Fee</span>
                                         {isFreeShipping ? (
                                             <span className="text-green-700 font-black text-xl uppercase tracking-widest italic">FREE</span>
@@ -224,14 +263,13 @@ const Cart = ({ userData }) => {
                                     )}
                                 </div>
 
-                                <div className="pt-8 border-t-4 border-[#2D241E] mb-10 relative z-10 text-left">
+                                <div className="pt-8 border-t-4 border-[#2D241E] mb-10 relative z-10">
                                     <div className="flex justify-between items-end">
-                                        <div className="flex flex-col text-left">
-                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-50 mb-1 text-[#2D241E]">Grand Total</span>
-                                            <span className="text-xl md:text-2xl font-black uppercase italic leading-none text-[#2D241E]">ยอดสุทธิ</span>
+                                        <div className="flex flex-col">
+                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-50 mb-1">Grand Total</span>
+                                            <span className="text-xl md:text-2xl font-black uppercase italic leading-none">ยอดสุทธิ</span>
                                         </div>
-                                        {/* NET AMOUNT: ปรับลดขนาดลงให้สมดุล (4xl ถึง 5xl) */}
-                                        <span className="text-4xl md:text-5xl font-black tracking-tighter tabular-nums leading-none text-[#2D241E]">
+                                        <span className="text-4xl md:text-5xl font-black tracking-tighter tabular-nums leading-none">
                                             ฿{finalTotal.toLocaleString()}
                                         </span>
                                     </div>
