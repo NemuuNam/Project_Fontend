@@ -114,36 +114,98 @@ const Checkout = ({ userData }) => {
     };
 
     const handleSubmitOrder = async () => {
-        if (!slipFile) return toast.error("กรุณาแนบสลิปโอนเงิน");
+        // 1. ตรวจสอบเบื้องต้นว่ามีการแนบสลิปหรือไม่
+        if (!slipFile) {
+            return toast.error("กรุณาแนบสลิปโอนเงินเพื่อยืนยันการชำระเงิน", {
+                style: { borderRadius: '15px', background: '#2D241E', color: '#fff' }
+            });
+        }
+
         try {
-            Swal.fire({ title: 'กำลังประมวลผล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            // แสดง Loading Loading ระหว่างประมวลผล
+            Swal.fire({
+                title: 'กำลังประมวลผล...',
+                text: 'กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูลออเดอร์คุกกี้ของคุณ',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
             let finalAddressId = selectedAddressId;
+
+            // 2. Logic สำหรับการบันทึกที่อยู่ใหม่ (ถ้าผู้ใช้เลือกเพิ่มใหม่)
+            if (isAddingNew) {
+                // ตรวจสอบความครบถ้วนของข้อมูลในฟอร์มที่อยู่
+                if (!addressForm.recipient_name || !addressForm.phone_number || !addressForm.address_detail) {
+                    Swal.close();
+                    return toast.error("กรุณากรอกข้อมูลที่อยู่จัดส่งให้ครบถ้วน");
+                }
+
+                // ส่งข้อมูลไปบันทึกที่ตาราง Addresses
+                const addrRes = await axiosInstance.post(API_ENDPOINTS.ADDRESSES, addressForm);
+
+                if (addrRes.success) {
+                    // นำ address_id ที่ได้จาก Database มาใช้ในการสร้าง Order ต่อไป
+                    finalAddressId = addrRes.data.address_id;
+                } else {
+                    throw new Error(addrRes.message || "เกิดข้อผิดพลาดในการบันทึกที่อยู่");
+                }
+            }
+
+            // ตรวจสอบว่ามี ID ที่อยู่ที่จะใช้ส่งของหรือไม่
+            if (!finalAddressId) {
+                Swal.close();
+                return toast.error("กรุณาเลือกที่อยู่จัดส่ง");
+            }
+
+            // 3. เตรียมข้อมูลสำหรับสร้าง Order (Multipart/form-data)
             const formData = new FormData();
-            formData.append('slip', slipFile);
+            formData.append('slip', slipFile); // แนบไฟล์สลิป
             formData.append('order_data', JSON.stringify({
                 address_id: finalAddressId,
                 total_amount: totalAmount,
                 shipping_cost: shippingCost,
-                items: cartItems.map(i => ({ product_id: i.product_id, quantity: i.quantity, price: i.unit_price }))
+                // ส่งรายการสินค้าในตะกร้าไปบันทึกใน OrderItems
+                items: cartItems.map(i => ({
+                    product_id: i.product_id,
+                    quantity: i.quantity,
+                    price: i.unit_price
+                }))
             }));
 
+            // 4. ส่งข้อมูลไปยัง Backend เพื่อบันทึก Order และหักสต็อกสินค้า
             const res = await axiosInstance.post(API_ENDPOINTS.ORDERS, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
             if (res.success) {
+                // ล้างตะกร้าสินค้าหลังสั่งซื้อสำเร็จ
                 localStorage.removeItem('cart');
                 window.dispatchEvent(new Event('storage'));
+
                 Swal.fire({
                     icon: 'success',
-                    title: 'สั่งซื้อสำเร็จ!',
-                    text: 'เราได้รับออเดอร์ของคุณเรียบร้อยแล้ว',
+                    title: 'สั่งซื้อคุกกี้สำเร็จ!',
+                    text: 'เราได้รับออเดอร์และหลักฐานการชำระเงินเรียบร้อยแล้ว',
                     confirmButtonColor: '#2D241E',
-                    customClass: { popup: 'rounded-[3rem] border-4 border-[#2D241E] font-["Kanit"]' }
-                }).then(() => navigate('/my-orders'));
+                    customClass: {
+                        popup: 'rounded-[3rem] border-4 border-[#2D241E] font-["Kanit"]'
+                    }
+                }).then(() => {
+                    // นำทางไปยังหน้า "คำสั่งซื้อของฉัน" เพื่อดูสถานะ
+                    navigate('/my-orders');
+                });
             }
+
         } catch (err) {
-            Swal.fire({ icon: 'error', title: 'ขออภัย!', text: err.response?.data?.message || 'เกิดข้อผิดพลาด', confirmButtonColor: '#2D241E', customClass: { popup: 'rounded-[3rem] font-["Kanit"]' } });
+            console.error("Submit Order Error:", err);
+            // ปิด Loading และแสดง Error
+            Swal.fire({
+                icon: 'error',
+                title: 'ขออภัย!',
+                text: err.response?.data?.message || 'ไม่สามารถดำเนินการสั่งซื้อได้ในขณะนี้',
+                confirmButtonColor: '#2D241E',
+                customClass: { popup: 'rounded-[3rem] font-["Kanit"]' }
+            });
         }
     };
 
