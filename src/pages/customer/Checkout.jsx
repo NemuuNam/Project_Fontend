@@ -4,9 +4,9 @@ import Swal from 'sweetalert2';
 import toast, { Toaster } from 'react-hot-toast';
 import {
     ArrowLeft, MapPin, CreditCard, Upload,
-    Loader2, ChevronRight, CheckCircle2, 
+    Loader2, ChevronRight, CheckCircle2,
     Landmark, Smile, Leaf, Cookie, Sparkles, Receipt,
-    User, Home, Plus, X, ShoppingBag, Copy, Heart, Info, AlertCircle
+    User, Home, Plus, X, ShoppingBag, Copy, Heart, Info, AlertCircle, Navigation, Phone
 } from 'lucide-react';
 
 import axiosInstance from '../../api/axiosInstance';
@@ -16,25 +16,19 @@ import Footer from '../../components/Footer';
 
 const Checkout = ({ userData }) => {
     const navigate = useNavigate();
-    const addressSectionRef = useRef(null);
-
-    // --- 📦 สเตทข้อมูล ---
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [shopSettings, setShopSettings] = useState({ delivery_fee: 0, min_free_shipping: 0 });
     const [paymentMethods, setPaymentMethods] = useState([]);
     const [savedAddresses, setSavedAddresses] = useState([]);
-
     const [isAddingNew, setIsAddingNew] = useState(false);
     const [selectedAddressId, setSelectedAddressId] = useState(null);
     const [addressForm, setAddressForm] = useState({ recipient_name: '', phone_number: '', address_detail: '' });
-    
-    const [errors, setErrors] = useState({});
     const [selectedMethod, setSelectedMethod] = useState(null);
     const [slipFile, setSlipFile] = useState(null);
     const [slipPreview, setSlipPreview] = useState(null);
 
-    // --- 🛠️ ระบบจัดรูปแบบอัตโนมัติ ---
+    // --- Helper Functions ---
     const formatBankNumber = (num) => {
         if (!num) return '';
         const cleaned = num.toString().replace(/\D/g, '');
@@ -43,9 +37,7 @@ const Checkout = ({ userData }) => {
 
     const formatPhoneNumber = (val) => {
         const cleaned = val.replace(/\D/g, '');
-        if (cleaned.length <= 10) {
-            return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-        }
+        if (cleaned.length <= 10) return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
         return cleaned;
     };
 
@@ -54,18 +46,16 @@ const Checkout = ({ userData }) => {
         toast.success("คัดลอกเลขบัญชีแล้ว", { style: { borderRadius: '15px', background: '#2D241E', color: '#fff' } });
     };
 
-    // --- 🧮 การคำนวณยอดรวม ---
-    const { subtotal, shippingCost, isFreeShipping, totalAmount, totalItemsCount } = useMemo(() => {
+    const { subtotal, shippingCost, isFreeShipping, totalAmount } = useMemo(() => {
         const sub = cartItems.reduce((acc, item) => acc + (Number(item.unit_price) * item.quantity), 0);
         const count = cartItems.reduce((acc, item) => acc + item.quantity, 0);
         const fee = Number(shopSettings.delivery_fee) || 0;
         const minItems = Number(shopSettings.min_free_shipping) || 0;
         const free = minItems > 0 && count >= minItems;
         const ship = free ? 0 : fee;
-        return { subtotal: sub, shippingCost: ship, isFreeShipping: free, totalAmount: sub + ship, totalItemsCount: count };
+        return { subtotal: sub, shippingCost: ship, isFreeShipping: free, totalAmount: sub + ship };
     }, [cartItems, shopSettings]);
 
-    // --- 🔄 การดึงข้อมูล ---
     const initCheckout = useCallback(async () => {
         const localCart = JSON.parse(localStorage.getItem('cart')) || [];
         if (localCart.length === 0) return navigate('/cart');
@@ -85,10 +75,10 @@ const Checkout = ({ userData }) => {
                 }).filter(i => i.product_id));
             }
             if (settingsRes.success) {
-                setShopSettings({ 
-                    delivery_fee: parseFloat(settingsRes.data.delivery_fee) || 0, 
-                    min_free_shipping: parseInt(settingsRes.data.min_free_shipping, 10) || 0 
-                });
+                const settings = Array.isArray(settingsRes.data)
+                    ? settingsRes.data.reduce((acc, curr) => ({ ...acc, [curr.config_key]: curr.config_value }), {})
+                    : settingsRes.data;
+                setShopSettings({ delivery_fee: parseFloat(settings.delivery_fee) || 0, min_free_shipping: parseInt(settings.min_free_shipping, 10) || 0 });
             }
             if (paymentRes.success && paymentRes.data.length > 0) {
                 setPaymentMethods(paymentRes.data);
@@ -99,100 +89,80 @@ const Checkout = ({ userData }) => {
                 if (addrRes.data.length > 0) setSelectedAddressId(addrRes.data[0].address_id);
                 else setIsAddingNew(true);
             }
-        } catch (err) { toast.error("การเชื่อมต่อระบบขัดข้อง"); } 
+        } catch (err) { toast.error("การเชื่อมต่อระบบขัดข้อง"); }
         finally { setLoading(false); }
     }, [navigate]);
 
     useEffect(() => { initCheckout(); }, [initCheckout]);
 
-    // --- ✅ Form Validation ---
-    const validateForm = () => {
-        let newErrors = {};
-        if (isAddingNew) {
-            if (!addressForm.recipient_name.trim()) newErrors.recipient_name = "กรุณาระบุชื่อผู้รับ";
-            if (addressForm.phone_number.replace(/\D/g, '').length !== 10) newErrors.phone_number = "เบอร์โทรศัพท์ต้องครบ 10 หลัก";
-            if (!addressForm.address_detail.trim()) newErrors.address_detail = "กรุณาระบุที่อยู่";
-        } else if (!selectedAddressId) {
-            newErrors.address = "กรุณาเลือกที่อยู่จัดส่ง";
-        }
-        if (!slipFile) newErrors.slip = "กรุณาแนบสลิปโอนเงิน";
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (file) { 
-            setSlipFile(file); 
-            setSlipPreview(URL.createObjectURL(file)); 
-            setErrors(prev => ({ ...prev, slip: null })); 
-        }
+        if (file) { setSlipFile(file); setSlipPreview(URL.createObjectURL(file)); }
     };
 
-    // --- 🚀 แก้ไขฟังก์ชัน handleSubmitOrder ---
+    const handleAddressChange = (e) => {
+        const { name, value } = e.target;
+        setAddressForm(prev => ({ ...prev, [name]: name === 'phone_number' ? value.replace(/\D/g, '').slice(0, 10) : value }));
+    };
+
+    // --- จุดสำคัญ: ฟังก์ชันสั่งซื้อแบบสมบูรณ์ ---
     const handleSubmitOrder = async () => {
-        if (!validateForm()) {
-            toast.error("กรุณาตรวจสอบข้อมูลให้ถูกต้อง");
-            return;
-        }
+        if (!slipFile) return toast.error("กรุณาแนบสลิปโอนเงิน");
+
         try {
-            Swal.fire({ title: 'กำลังประมวลผล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            
+            Swal.fire({ title: 'กำลังประมวลผล...', text: 'กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูล', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
             let finalAddressId = selectedAddressId;
 
-            // ✨ แก้ไขจุด Error 500: Clean ข้อมูลที่อยู่ก่อนส่ง
+            // 1. บันทึกที่อยู่ใหม่ถ้ามีการกรอกเพิ่ม
             if (isAddingNew) {
-                const cleanedAddressData = {
-                    recipient_name: addressForm.recipient_name.trim(),
-                    phone_number: addressForm.phone_number.replace(/\D/g, ''), // ลบขีดออกให้เหลือ 10 หลัก
-                    address_detail: addressForm.address_detail.trim()
-                };
+                if (!addressForm.recipient_name || !addressForm.phone_number || !addressForm.address_detail) {
+                    Swal.close();
+                    return toast.error("กรุณากรอกข้อมูลที่อยู่ให้ครบถ้วน");
+                }
 
-                const addrRes = await axiosInstance.post(API_ENDPOINTS.ADDRESSES, cleanedAddressData);
+                console.log("Saving New Address:", addressForm); // Debug
+                const addrRes = await axiosInstance.post(API_ENDPOINTS.ADDRESSES, addressForm);
                 
                 if (addrRes.success) {
                     finalAddressId = addrRes.data.address_id;
+                    console.log("Address Saved Success, ID:", finalAddressId); // Debug
                 } else {
-                    throw new Error(addrRes.message || "ไม่สามารถบันทึกที่อยู่ได้");
+                    throw new Error(addrRes.message || "บันทึกที่อยู่ล้มเหลว");
                 }
             }
 
+            if (!finalAddressId) {
+                Swal.close();
+                return toast.error("กรุณาเลือกที่อยู่จัดส่ง");
+            }
+
+            // 2. สร้างคำสั่งซื้อ
             const formData = new FormData();
             formData.append('slip', slipFile);
             formData.append('order_data', JSON.stringify({
                 address_id: finalAddressId,
                 total_amount: totalAmount,
                 shipping_cost: shippingCost,
-                items: cartItems.map(i => ({ 
-                    product_id: i.product_id, 
-                    quantity: i.quantity, 
-                    price: i.unit_price 
-                }))
+                items: cartItems.map(i => ({ product_id: i.product_id, quantity: i.quantity, price: i.unit_price }))
             }));
 
-            const res = await axiosInstance.post(API_ENDPOINTS.ORDERS, formData, { 
-                headers: { 'Content-Type': 'multipart/form-data' } 
+            const res = await axiosInstance.post(API_ENDPOINTS.ORDERS, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
 
             if (res.success) {
                 localStorage.removeItem('cart');
                 window.dispatchEvent(new Event('storage'));
                 Swal.fire({ 
-                    icon: 'success', 
-                    title: 'สั่งซื้อสำเร็จ!', 
-                    text: 'เราได้รับออเดอร์ของคุณเรียบร้อยแล้ว',
-                    confirmButtonColor: '#2D241E',
-                    customClass: { popup: 'rounded-[3rem] font-["Kanit"]' }
+                    icon: 'success', title: 'สั่งซื้อสำเร็จ!', text: 'เราได้รับออเดอร์เรียบร้อยแล้ว', confirmButtonColor: '#2D241E',
+                    customClass: { popup: 'rounded-[3rem] border-4 border-[#2D241E] font-["Kanit"]' }
                 }).then(() => navigate('/my-orders'));
             }
         } catch (err) {
-            console.error("Order Error:", err);
+            console.error("Submit Order Detail Error:", err.response?.data || err.message); // Debug ดู Error จริงจาก Backend
             Swal.fire({ 
-                icon: 'error', 
-                title: 'ขออภัย!', 
-                text: err.response?.data?.message || 'เกิดข้อผิดพลาดในการสั่งซื้อ กรุณาลองใหม่อีกครั้ง',
-                confirmButtonColor: '#2D241E',
-                customClass: { popup: 'rounded-[3rem] font-["Kanit"]' }
+                icon: 'error', title: 'ขออภัย!', text: err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', confirmButtonColor: '#2D241E' 
             });
         }
     };
@@ -200,119 +170,78 @@ const Checkout = ({ userData }) => {
     if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={48} /></div>;
 
     return (
-        <div className="min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden selection:bg-[#F3E9DC] relative">
+        <div className="min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden relative selection:bg-[#F3E9DC]">
             <Toaster position="bottom-center" />
             <HeaderHome userData={userData} />
-
-            {/* --- ☁️ Cozy Patterns Background --- */}
-            <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-0 overflow-hidden">
-                <Leaf className="absolute top-[10%] left-[5%] rotate-12" size={200} />
-                <Cookie className="absolute bottom-[20%] right-[5%] -rotate-12" size={180} />
-                <Sparkles className="absolute top-[30%] right-[15%]" size={150} />
-                <Smile className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 opacity-[0.1]" size={400} />
-            </div>
-
-            <main className="relative z-10 max-w-[1366px] mx-auto px-6 md:px-10 pt-28 md:pt-40 pb-32">
-                <div className="mb-16 text-left">
-                    <button onClick={() => navigate('/cart')} className="flex items-center gap-2 text-xs md:text-sm font-black text-[#C2B8A3] hover:text-[#2D241E] mb-6 uppercase tracking-widest transition-all group">
-                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> ย้อนกลับไปตะกร้า
-                    </button>
-                    <div className="flex items-center gap-4">
-                        <div className="w-2 h-12 bg-[#D97706] rounded-full"></div>
-                        <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter italic">ยืนยันการสั่งซื้อ</h1>
-                    </div>
-                </div>
-
-                <div className="flex flex-col lg:flex-row gap-12 md:gap-20 items-start">
-                    <div className="flex-1 space-y-12 w-full text-left">
-                        
-                        {/* 1. ที่อยู่จัดส่ง - Pearl White Style */}
-                        <section ref={addressSectionRef} className="bg-white p-8 md:p-14 rounded-[4rem] shadow-sm border border-slate-100 relative">
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8 mb-12">
-                                <h2 className="text-2xl md:text-3xl font-black italic uppercase flex items-center gap-5">
-                                    <span className="text-[#C2B8A3] text-xl not-italic">01.</span> ที่อยู่จัดส่ง
-                                </h2>
-                                <div className="flex bg-white p-1 rounded-full border border-slate-100 shadow-inner">
-                                    <button onClick={() => setIsAddingNew(false)} className={`flex-1 sm:px-10 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${!isAddingNew ? 'bg-white shadow-md text-[#2D241E] border border-slate-100' : 'text-[#C2B8A3]'}`}>เลือกที่อยู่เดิม</button>
-                                    <button onClick={() => setIsAddingNew(true)} className={`flex-1 sm:px-10 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${isAddingNew ? 'bg-white shadow-md text-[#2D241E] border border-slate-100' : 'text-[#C2B8A3]'}`}>+ เพิ่มใหม่</button>
+            
+            <main className="max-w-[1300px] mx-auto px-4 md:px-6 py-24 relative z-10">
+                <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+                    
+                    {/* Left Column: Shipping & Payment */}
+                    <div className="flex-1 space-y-8">
+                        {/* 01. Shipping */}
+                        <section className="bg-white p-6 md:p-10 rounded-[3rem] shadow-xl border-2 border-slate-50">
+                            <div className="flex justify-between items-center mb-8">
+                                <h2 className="text-xl md:text-2xl font-black italic uppercase">01. Shipping</h2>
+                                <div className="flex bg-slate-100 p-1 rounded-full">
+                                    <button onClick={() => setIsAddingNew(false)} className={`px-6 py-2 rounded-full text-xs font-bold ${!isAddingNew ? 'bg-white shadow-sm' : 'text-slate-500'}`}>ที่อยู่เดิม</button>
+                                    <button onClick={() => setIsAddingNew(true)} className={`px-6 py-2 rounded-full text-xs font-bold ${isAddingNew ? 'bg-white shadow-sm' : 'text-slate-500'}`}>เพิ่มใหม่</button>
                                 </div>
                             </div>
 
-                            {isAddingNew ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-[#C2B8A3] ml-4 tracking-widest">ชื่อผู้รับ</label>
-                                        <input placeholder="ชื่อ-นามสกุล" className={`w-full px-8 py-5 rounded-[2rem] bg-white border-2 transition-all text-lg font-bold outline-none ${errors.recipient_name ? 'border-red-100' : 'border-slate-100 focus:border-[#F3E9DC]'}`} value={addressForm.recipient_name} onChange={e => setAddressForm({...addressForm, recipient_name: e.target.value})} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-[#C2B8A3] ml-4 tracking-widest">เบอร์โทรศัพท์</label>
-                                        <input placeholder="08X-XXX-XXXX" className={`w-full px-8 py-5 rounded-[2rem] bg-white border-2 transition-all text-lg font-bold outline-none ${errors.phone_number ? 'border-red-100' : 'border-slate-100 focus:border-[#F3E9DC]'}`} value={addressForm.phone_number} onChange={e => setAddressForm({...addressForm, phone_number: formatPhoneNumber(e.target.value)})} maxLength={12} />
-                                    </div>
-                                    <div className="md:col-span-2 space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-[#C2B8A3] ml-4 tracking-widest">รายละเอียดที่อยู่</label>
-                                        <textarea placeholder="บ้านเลขที่, ถนน, แขวง/ตำบล, รหัสไปรษณีย์" className={`w-full px-8 py-6 rounded-[2.5rem] bg-white border-2 transition-all text-lg font-medium outline-none resize-none ${errors.address_detail ? 'border-red-100' : 'border-slate-100 focus:border-[#F3E9DC]'}`} rows="3" value={addressForm.address_detail} onChange={e => setAddressForm({...addressForm, address_detail: e.target.value})} />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {!isAddingNew ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {savedAddresses.map(addr => (
-                                        <div key={addr.address_id} onClick={() => setSelectedAddressId(addr.address_id)} className={`p-8 rounded-[3rem] border-2 cursor-pointer transition-all duration-500 relative group ${selectedAddressId === addr.address_id ? 'border-[#F3E9DC] bg-white shadow-lg' : 'border-slate-100 bg-white hover:shadow-md'}`}>
-                                            <div className="flex justify-between items-start mb-6">
-                                                <div className={`p-3 rounded-2xl ${selectedAddressId === addr.address_id ? 'bg-[#2D241E] text-white' : 'bg-slate-50 text-[#C2B8A3]'}`}><Home size={20} /></div>
-                                                {selectedAddressId === addr.address_id && <CheckCircle2 size={24} className="text-[#D97706]" />}
-                                            </div>
-                                            <p className="font-black text-xl uppercase italic leading-none mb-3">{addr.recipient_name}</p>
-                                            <p className="text-sm text-[#A8A294] font-medium line-clamp-2 mb-6">{addr.address_detail}</p>
-                                            <p className="text-base font-black border-t border-slate-100 pt-5">{formatPhoneNumber(addr.phone_number)}</p>
+                                        <div key={addr.address_id} onClick={() => setSelectedAddressId(addr.address_id)} className={`p-6 rounded-[2rem] border-2 cursor-pointer transition-all ${selectedAddressId === addr.address_id ? 'border-[#2D241E] bg-slate-50' : 'border-slate-100 hover:border-slate-300'}`}>
+                                            <p className="font-black italic uppercase mb-1">{addr.recipient_name}</p>
+                                            <p className="text-sm text-slate-600 mb-4 italic leading-relaxed">"{addr.address_detail}"</p>
+                                            <p className="text-sm font-bold flex items-center gap-2 border-t pt-4"><Phone size={14}/> {formatPhoneNumber(addr.phone_number)}</p>
                                         </div>
                                     ))}
-                                    <button onClick={() => setIsAddingNew(true)} className="flex flex-col items-center justify-center p-10 rounded-[3rem] border-2 border-dashed border-slate-100 text-[#C2B8A3] hover:border-[#2D241E] hover:text-[#2D241E] transition-all bg-white group">
-                                        <Plus size={32} />
-                                        <span className="text-[10px] font-black uppercase mt-4 tracking-widest">เพิ่มข้อมูลใหม่</span>
-                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-6 animate-in fade-in slide-in-from-top-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <input name="recipient_name" value={addressForm.recipient_name} onChange={handleAddressChange} placeholder="ชื่อผู้รับ" className="w-full px-6 py-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 ring-[#2D241E]/10" />
+                                        <input name="phone_number" value={formatPhoneNumber(addressForm.phone_number)} onChange={handleAddressChange} placeholder="เบอร์โทรศัพท์" className="w-full px-6 py-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 ring-[#2D241E]/10" />
+                                    </div>
+                                    <textarea name="address_detail" value={addressForm.address_detail} onChange={handleAddressChange} placeholder="ที่อยู่โดยละเอียด" rows="3" className="w-full px-6 py-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 ring-[#2D241E]/10 resize-none" />
                                 </div>
                             )}
                         </section>
 
-                        {/* 2. การชำระเงิน - Pearl White Style */}
-                        <section className="bg-white p-8 md:p-14 rounded-[4rem] shadow-sm border border-slate-100">
-                            <h2 className="text-2xl md:text-3xl font-black italic uppercase flex items-center gap-5 mb-12">
-                                <span className="text-[#C2B8A3] text-xl not-italic">02.</span> ชำระเงิน
-                            </h2>
-                            <div className="flex flex-wrap gap-3 mb-10">
+                        {/* 02. Payment (Simplified for length) */}
+                        <section className="bg-white p-6 md:p-10 rounded-[3rem] shadow-xl border-2 border-slate-50">
+                            <h2 className="text-xl md:text-2xl font-black italic uppercase mb-8">02. Payment</h2>
+                            <div className="flex flex-wrap gap-2 mb-8">
                                 {paymentMethods.map(m => (
-                                    <button key={m.method_id} onClick={() => setSelectedMethod(m)} className={`px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border ${selectedMethod?.method_id === m.method_id ? 'bg-[#2D241E] text-white border-[#2D241E] shadow-xl' : 'bg-white text-[#C2B8A3] border-slate-200 hover:border-slate-300'}`}>{m.bank_name}</button>
+                                    <button key={m.method_id} onClick={() => setSelectedMethod(m)} className={`px-8 py-3 rounded-full text-xs font-black uppercase border-2 transition-all ${selectedMethod?.method_id === m.method_id ? 'bg-[#2D241E] text-white border-[#2D241E]' : 'border-slate-200'}`}>{m.bank_name}</button>
                                 ))}
                             </div>
-
+                            
                             {selectedMethod && (
-                                <div className="space-y-10">
-                                    <div className="group relative bg-white p-10 md:p-14 rounded-[3.5rem] border border-[#F3E9DC] shadow-sm overflow-hidden">
-                                        <Landmark className="absolute -left-10 -bottom-10 opacity-[0.03] -rotate-12" size={200} />
-                                        <div className="flex flex-col md:flex-row justify-between items-center gap-10 relative z-10 text-center md:text-left">
-                                            <div>
-                                                <p className="text-[10px] font-black text-[#C2B8A3] uppercase tracking-[0.4em] mb-3">บัญชีธนาคาร</p>
-                                                <p className="text-2xl md:text-3xl font-black italic uppercase leading-none">{selectedMethod.account_name}</p>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <p className="text-4xl md:text-6xl font-black italic tracking-tighter">{formatBankNumber(selectedMethod.account_number)}</p>
-                                                <button onClick={() => copyToClipboard(selectedMethod.account_number)} className="p-4 bg-slate-50 hover:bg-[#2D241E] hover:text-white rounded-2xl transition-all shadow-sm"><Copy size={18}/></button>
-                                            </div>
+                                <div className="space-y-6">
+                                    <div className="bg-slate-50 p-8 rounded-[2rem] border border-[#F3E9DC] flex flex-col md:flex-row justify-between items-center gap-6">
+                                        <div className="text-center md:text-left">
+                                            <p className="text-[10px] uppercase font-black tracking-widest opacity-50">Account Name</p>
+                                            <p className="text-xl font-black italic uppercase">{selectedMethod.account_name}</p>
+                                        </div>
+                                        <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100">
+                                            <p className="text-2xl font-black italic tabular-nums">{formatBankNumber(selectedMethod.account_number)}</p>
+                                            <button onClick={() => copyToClipboard(selectedMethod.account_number)} className="p-2 bg-[#2D241E] text-white rounded-lg hover:bg-black"><Copy size={16}/></button>
                                         </div>
                                     </div>
-
-                                    <div className={`relative border-4 border-dashed rounded-[3.5rem] p-12 md:p-16 flex flex-col items-center justify-center transition-all duration-700 group ${slipPreview ? 'border-emerald-100' : errors.slip ? 'border-red-100 bg-red-50/5' : 'border-slate-100 bg-white hover:border-[#F3E9DC]'}`}>
-                                        <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" onChange={handleFileChange} />
+                                    <div className={`border-4 border-dashed rounded-[2.5rem] p-10 flex flex-col items-center justify-center relative transition-all ${slipPreview ? 'border-emerald-100 bg-emerald-50/20' : 'border-slate-100 hover:border-[#2D241E]'}`}>
+                                        <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
                                         {slipPreview ? (
                                             <div className="relative z-30">
-                                                <img src={slipPreview} className="w-56 h-72 object-cover rounded-[2rem] shadow-2xl border-8 border-white mx-auto" alt="สลิปโอนเงิน" />
-                                                <button onClick={(e) => {e.stopPropagation(); setSlipFile(null); setSlipPreview(null);}} className="absolute -top-4 -right-4 bg-white text-red-500 rounded-full p-4 shadow-xl border border-slate-50 transition-all"><X size={18}/></button>
+                                                <img src={slipPreview} className="w-40 h-56 object-cover rounded-xl shadow-lg border-4 border-white" alt="slip" />
+                                                <button onClick={() => { setSlipFile(null); setSlipPreview(null); }} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-2 border-4 border-white"><X size={14}/></button>
                                             </div>
                                         ) : (
-                                            <div className="text-center pointer-events-none">
-                                                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-100 group-hover:scale-110 transition-transform"><Upload className="text-[#C2B8A3]" size={32} /></div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest mb-2">อัปโหลดสลิปการโอน</p>
-                                                <p className="text-[#C2B8A3] text-[9px] font-bold italic uppercase">รองรับไฟล์รูปภาพเท่านั้น</p>
+                                            <div className="text-center">
+                                                <Upload className="mx-auto mb-2 opacity-20" size={32} />
+                                                <p className="text-sm font-black uppercase tracking-widest">Attach Payment Slip</p>
                                             </div>
                                         )}
                                     </div>
@@ -321,66 +250,42 @@ const Checkout = ({ userData }) => {
                         </section>
                     </div>
 
-                    {/* ฝั่งขวา: สรุปรายการสินค้า */}
-                    <div className="w-full lg:w-[420px] xl:w-[480px] lg:sticky lg:top-36">
-                        <div className="bg-white p-10 md:p-14 rounded-[4.5rem] shadow-lg border border-slate-100 relative overflow-hidden group text-left">
-                            <Receipt className="absolute -top-16 -right-16 opacity-[0.02] -rotate-12" size={300} />
-                            <h3 className="text-3xl font-black italic uppercase mb-12 pb-6 border-b border-slate-100 relative z-10">รายการขนม</h3>
-                            <div className="space-y-8 mb-14 max-h-[350px] overflow-y-auto pr-4 custom-scrollbar relative z-10">
+                    {/* Right Column: Order Summary */}
+                    <div className="w-full lg:w-[400px] xl:w-[450px] lg:sticky lg:top-32">
+                        <div className="bg-white p-8 md:p-10 rounded-[3rem] shadow-2xl border-2 border-slate-50 relative overflow-hidden">
+                            <Receipt className="absolute -top-10 -right-10 opacity-[0.03] -rotate-12" size={250} />
+                            <h3 className="text-xl font-black italic uppercase mb-8 border-b-4 border-slate-50 pb-4">Summary</h3>
+                            
+                            <div className="space-y-4 mb-10 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                                 {cartItems.map(item => (
-                                    <div key={item.product_id} className="flex gap-6 items-center">
-                                        <img src={item.image_url} className="w-16 h-16 rounded-2xl border border-slate-100 shadow-sm shrink-0 object-cover" alt={item.product_name} />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-black text-xs uppercase truncate italic">{item.product_name}</p>
-                                            <p className="text-[10px] text-[#C2B8A3] font-black uppercase tracking-widest">{item.quantity} ชิ้น — ฿{Number(item.unit_price).toLocaleString()}</p>
+                                    <div key={item.product_id} className="flex justify-between items-center gap-4">
+                                        <div className="flex gap-3 items-center min-w-0">
+                                            <div className="w-12 h-12 rounded-xl bg-slate-50 overflow-hidden shrink-0"><img src={item.image_url} className="w-full h-full object-cover" alt="" /></div>
+                                            <div className="min-w-0"><p className="text-xs font-black uppercase truncate italic">{item.product_name}</p><p className="text-[10px] font-bold opacity-50 uppercase">{item.quantity} x ฿{item.unit_price.toLocaleString()}</p></div>
                                         </div>
-                                        <p className="font-black text-lg italic tracking-tight text-[#2D241E]">฿{(item.unit_price * item.quantity).toLocaleString()}</p>
+                                        <p className="font-black italic">฿{(item.unit_price * item.quantity).toLocaleString()}</p>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="space-y-5 mb-14 relative z-10 border-t border-slate-100 pt-8 ">
-                                <div className="flex justify-between text-xs font-black uppercase text-[#C2B8A3] tracking-widest">
-                                    <span className="text-2xl font-black uppercase text-[#C2B8A3] tracking-tighter italic">ยอดรวมสินค้า</span>
-                                    <span className="text-[#2D241E] text-2xl">฿{subtotal.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between text-xs font-black uppercase text-[#C2B8A3] tracking-widest">
-                                    <span className="text-2xl font-black uppercase text-[#C2B8A3] tracking-tighter italic">ค่าจัดส่ง</span>
-                                    {isFreeShipping ? <span className="text-emerald-500 italic text-2xl">ฟรีจัดส่ง</span> : <span className="text-[#2D241E] text-2xl">฿{shippingCost.toLocaleString()}</span>}
-                                </div>
-                                {!isFreeShipping && shopSettings.min_free_shipping > 0 && (
-                                    <div className="p-4 bg-white border border-[#F3E9DC] rounded-2xl flex gap-3 items-center text-[#8B7E66] shadow-sm">
-                                        <Info size={16} className="text-[#D97706] shrink-0" />
-                                        <p className="text-[20px] font-bold uppercase tracking-wider">
-                                            ซื้อเพิ่มอีก <span className="text-[#D97706]">{shopSettings.min_free_shipping - totalItemsCount} ชิ้น</span> เพื่อส่งฟรี!
-                                        </p>
-                                    </div>
-                                )}
+                            <div className="border-t-2 border-slate-50 pt-6 space-y-3 mb-8">
+                                <div className="flex justify-between text-sm font-bold"><span>Subtotal</span><span>฿{subtotal.toLocaleString()}</span></div>
+                                <div className="flex justify-between text-sm font-bold"><span>Delivery</span><span>{isFreeShipping ? <span className="text-emerald-600">FREE</span> : `฿${shippingCost.toLocaleString()}`}</span></div>
                             </div>
 
-                            <div className="pt-10 border-t-4 border-[#2D241E] mb-14 relative z-10">
-                                <div className="flex justify-between items-end">
-                                    <div><p className="text-xs font-black text-[#D97706] uppercase tracking-[0.4em] mb-2">ยอดสุทธิ</p><span className="text-3xl font-black uppercase text-[#C2B8A3] tracking-tighter italic">Net total</span></div>
-                                    <p className="text-5xl md:text-6xl font-black italic tracking-tighter leading-none">฿{totalAmount.toLocaleString()}</p>
-                                </div>
+                            <div className="border-t-4 border-[#2D241E] pt-6 mb-8 flex justify-between items-end">
+                                <div><p className="text-[10px] font-black uppercase tracking-widest opacity-50">Total Amount</p><p className="text-2xl font-black italic uppercase leading-none">ยอดสุทธิ</p></div>
+                                <p className="text-4xl font-black tracking-tighter tabular-nums">฿{totalAmount.toLocaleString()}</p>
                             </div>
 
-                            <button onClick={handleSubmitOrder} className="w-full bg-white text-[#2D241E] border border-slate-200 py-7 md:py-9 rounded-full font-black uppercase tracking-[0.4em] text-[10px] md:text-xs shadow-md hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-4 relative z-10 group overflow-hidden">
-                                <span className="relative z-10">ยืนยันการสั่งซื้อ</span>
-                                <ChevronRight size={18} className="text-[#D97706] relative z-10 transition-transform group-hover:translate-x-1" />
+                            <button onClick={handleSubmitOrder} className="w-full bg-[#2D241E] text-white py-6 rounded-full font-black uppercase tracking-widest shadow-xl hover:bg-black transition-all flex items-center justify-center gap-4 italic group">
+                                Confirm Order <Navigation size={20} className="rotate-90 group-hover:translate-x-1 transition-transform" />
                             </button>
                         </div>
                     </div>
                 </div>
             </main>
             <Footer />
-
-            <style dangerouslySetInnerHTML={{ __html: `
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #F3E9DC; border-radius: 10px; }
-                @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-                .animate-bounce-slow { animation: bounce-slow 4s ease-in-out infinite; }
-            `}} />
         </div>
     );
 };

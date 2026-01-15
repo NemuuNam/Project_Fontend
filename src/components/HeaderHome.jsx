@@ -1,263 +1,211 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  ShoppingCart, Search, ChevronDown, LogOut,
-  User, Mail, Menu, X, LayoutDashboard, History, Package, ShieldCheck, Sparkles,
-  Cookie, Smile, Leaf, Heart
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { 
+    ShoppingCart, User, LogOut, ChevronDown, Store, 
+    History, UserCircle, Loader2, Sparkles, Home,
+    Package, Info, PhoneCall, Menu, X, LayoutDashboard
 } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
-
 import axiosInstance from '../api/axiosInstance';
 import { API_ENDPOINTS } from '../api/config';
 
 const HeaderHome = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const dropdownRef = useRef(null);
+    const navigate = useNavigate();
+    const location = useLocation();
+    const dropdownRef = useRef(null);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userData, setUserData] = useState(null);
+    
+    // 1. ปรับชื่อร้านเริ่มต้นให้เป็นเรื่องคุกกี้ตามโครงงานใหม่
+    const [shopName, setShopName] = useState('COOKIE SHOP');
+    
+    // 2. เพิ่ม State สำหรับเก็บจำนวนสินค้าในตะกร้า
+    const [cartCount, setCartCount] = useState(0);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
-  const [userData, setUserData] = useState(null);
-  const [shopName, setShopName] = useState('THE BAKERY');
+    const navItems = [
+        { label: 'HOME', path: '/', icon: <Home size={18} strokeWidth={3} /> },
+        { label: 'PRODUCTS', path: '/products', icon: <Package size={18} strokeWidth={3} /> },
+        { label: 'ABOUT', path: '/about', icon: <Info size={18} strokeWidth={3} /> },
+        { label: 'CONTACT', path: '/contact', icon: <PhoneCall size={18} strokeWidth={3} /> },
+    ];
 
-  const menuItems = [
-    { name: 'หน้าแรก', path: '/' },
-    { name: 'เมนูสินค้า', path: '/products' },
-    { name: 'เกี่ยวกับเรา', path: '/about' },
-    { name: 'ติดต่อเรา', path: '/contact' }
-  ];
+    // 3. ฟังก์ชันสำหรับคำนวณจำนวนสินค้าทั้งหมดใน LocalStorage
+    const updateCartBadge = useCallback(() => {
+        const localCart = JSON.parse(localStorage.getItem('cart')) || [];
+        const total = localCart.reduce((acc, item) => acc + (item.quantity || 0), 0);
+        setCartCount(total);
+    }, []);
 
-  // --- 🔄 Logic (คงเดิมตามต้นฉบับ) ---
-  const fetchShopName = useCallback(async () => {
-    try {
-      const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
-      if (res.success && res.data) {
-        setShopName(res.data.shop_name || 'THE BAKERY');
-      }
-    } catch (err) { console.error("Fetch shop name error:", err); }
-  }, []);
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            setIsLoggedIn(true);
+            fetchUserProfile();
+        }
+        fetchShopInfo();
 
-  const fetchProfile = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    try {
-      const res = await axiosInstance.get(`${API_ENDPOINTS.PROFILE}`);
-      if (res.success) { setUserData(res.data); }
-    } catch (err) { setUserData(null); }
-  }, []);
+        // 4. เรียกใช้ครั้งแรกเพื่อดึงค่าจำนวนสินค้า
+        updateCartBadge();
 
-  const updateCart = useCallback(() => {
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    setCartCount(cart.reduce((acc, item) => acc + item.quantity, 0));
-  }, []);
+        // 5. ติดตั้ง Listener เพื่อดักฟัง "สัญญาณ" จากหน้า Cart.js (Zustand)
+        // เมื่อมีการ setCartItems ในหน้า Cart มันจะส่ง Event มาที่นี่
+        window.addEventListener('storage', updateCartBadge);
 
-  useEffect(() => {
-    fetchShopName();
-    fetchProfile();
-    updateCart();
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setShowDropdown(false);
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowDropdown(false);
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+
+        return () => {
+            window.removeEventListener('storage', updateCartBadge);
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [updateCartBadge]);
+
+    const fetchShopInfo = async () => {
+        try {
+            const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
+            if (res.success && res.data?.shop_name) {
+                // หากใน DB ยังเป็นชื่อเก่า ให้ใช้ชื่อที่สื่อถึงคุกกี้แทน
+                setShopName(res.data.shop_name !== "EMPTY" ? res.data.shop_name : 'COOKIE SHOP');
+            }
+        } catch (err) { console.error(err); }
     };
-    window.addEventListener('storage', updateCart);
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      window.removeEventListener('storage', updateCart);
-      document.removeEventListener('mousedown', handleClickOutside);
+
+    const fetchUserProfile = async () => {
+        try {
+            const res = await axiosInstance.get(`${API_ENDPOINTS.AUTH}/profile`);
+            if (res.success) setUserData(res.data);
+        } catch (err) { console.error(err); }
     };
-  }, [fetchShopName, fetchProfile, updateCart]);
 
-  const handleSearch = (e) => {
-    if (e.key === 'Enter' || e.type === 'click') {
-      if (searchTerm.trim()) {
-        navigate(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
-        setIsMobileMenuOpen(false);
-      }
-    }
-  };
+    const handleLogout = () => {
+        localStorage.clear();
+        setIsLoggedIn(false);
+        navigate('/login');
+    };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    setUserData(null);
-    setShowDropdown(false);
-    navigate('/');
-    window.location.reload();
-  };
+    return (
+        <header className="sticky top-0 w-full bg-white/90 backdrop-blur-md z-[1000] font-['Kanit'] py-4 px-6 shadow-sm border-b border-slate-200 text-left">
+            <div className="max-w-7xl mx-auto flex justify-between items-center">
+                
+                {/* --- Logo Area --- */}
+                <Link to="/" className="flex items-center gap-3 group">
+                    <div className="w-11 h-11 bg-[#2D241E] text-white rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-all">
+                        <Sparkles size={22} strokeWidth={2.5} />
+                    </div>
+                    <span className="text-xl md:text-2xl font-black text-[#2D241E] uppercase tracking-tighter italic leading-none">
+                        {shopName}
+                    </span>
+                </Link>
 
-  const isStaff = userData && [1, 2, 3].includes(Number(userData.role_level));
-
-  return (
-    <nav className="sticky top-0 z-[100] bg-white border-b border-slate-100 font-['Kanit'] transition-all duration-500">
-
-      {/* ☁️ Cozy Gimmick Patterns (Opacity 0.02) */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <Leaf className="absolute top-2 left-[10%] rotate-12 text-[#2D241E] opacity-[0.02]" size={60} />
-        <Cookie className="absolute bottom-1 right-[20%] -rotate-12 text-[#2D241E] opacity-[0.02]" size={50} />
-        <Smile className="absolute top-3 right-[15%] text-[#2D241E] opacity-[0.02]" size={45} />
-      </div>
-
-      <div className="container mx-auto px-6 lg:px-12 py-4 lg:py-5 flex justify-between items-center relative z-10">
-
-        {/* 🍪 Logo Section - Pearl White Button Style */}
-        <div className="flex items-center gap-4">
-          <button
-            className="lg:hidden bg-white text-[#2D241E] p-2.5 rounded-2xl shadow-sm border border-slate-100 transition-all active:scale-95"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-
-          <div
-            className="flex items-center gap-3 cursor-pointer group"
-            onClick={() => navigate('/')}
-          >
-            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-[#D97706] shadow-sm border border-slate-100 group-hover:shadow-md transition-all">
-              <Sparkles size={20} fill="currentColor" />
-            </div>
-            <span className="hidden sm:block text-xl font-black text-[#2D241E] tracking-tighter uppercase italic">{shopName}</span>
-          </div>
-        </div>
-
-        {/* ☕ Desktop Menu - ปรับปรุงใหม่ให้เส้นตรงเป๊ะ */}
-        <div className="hidden lg:flex items-center gap-10">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <button
-                key={item.name}
-                className={`text-sm font-bold cursor-pointer transition-all relative py-2 outline-none ${isActive ? 'text-[#2D241E]' : 'text-[#8B7E66] hover:text-[#2D241E]'
-                  } group`}
-                onClick={() => navigate(item.path)}
-              >
-                {item.name}
-                <span
-                  className={`absolute bottom-0 left-0 right-0 h-0.5 bg-[#D97706] rounded-full transition-all duration-300 transform origin-center ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
-                    }`}
-                ></span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 🍯 Actions Section - Pearl Style Buttons */}
-        <div className="flex items-center gap-3 lg:gap-4">
-          {/* Search Input - Pearl Style */}
-          <div className="hidden md:flex relative items-center group">
-            <Search
-              size={18}
-              className="absolute left-4 text-[#8B7E66] group-focus-within:text-[#D97706] transition-colors cursor-pointer"
-              onClick={handleSearch}
-            />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={handleSearch}
-              className="pl-11 pr-5 py-2.5 w-44 lg:w-52 rounded-2xl bg-white border border-slate-100 focus:border-[#F3E9DC] focus:ring-0 focus:w-64 transition-all text-sm text-[#2D241E] placeholder-[#C2B8A3] shadow-sm"
-              placeholder="ค้นหาเมนูโฮมเมด..."
-            />
-          </div>
-
-          {/* Cart - Pearl White Card */}
-          <div
-            className="relative cursor-pointer bg-white p-3 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all active:scale-95"
-            onClick={() => navigate('/cart')}
-          >
-            <ShoppingCart size={22} className="text-[#2D241E]" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#2D241E] text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-black shadow-sm ring-2 ring-white">
-                {cartCount}
-              </span>
-            )}
-          </div>
-
-          {/* User Section */}
-          {userData ? (
-            <div className="relative" ref={dropdownRef}>
-              <div
-                className="flex items-center gap-2 cursor-pointer bg-white p-1.5 pr-3 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all"
-                onClick={() => setShowDropdown(!showDropdown)}
-              >
-                <div className="w-9 h-9 bg-white text-[#2D241E] border border-slate-100 rounded-xl flex items-center justify-center font-black text-sm shadow-inner uppercase">
-                  {userData.first_name?.charAt(0)}
-                </div>
-                <ChevronDown size={14} className={`hidden sm:block text-[#C2B8A3] transition-transform duration-500 ${showDropdown ? 'rotate-180' : ''}`} />
-              </div>
-
-              {/* Dropdown Modal Style - Only White */}
-              {showDropdown && (
-                <div className="absolute top-14 right-0 w-72 bg-white rounded-[2.5rem] shadow-2xl border border-slate-50 p-2 animate-in fade-in slide-in-from-top-3 duration-300">
-                  <div className="px-6 py-5 border-b border-slate-50 mb-1">
-                    <p className="font-black text-[#2D241E] text-sm truncate">{userData.first_name} {userData.last_name}</p>
-                    <p className="text-[10px] text-[#C2B8A3] flex items-center gap-2 mt-1 truncate italic tracking-wider"><Mail size={12} /> {userData.email}</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <button onClick={() => { navigate('/profile'); setShowDropdown(false); }} className="w-full flex items-center gap-4 px-5 py-3.5 text-xs font-bold text-[#2D241E] hover:bg-slate-50 rounded-2xl transition-all"><User size={18} className="text-[#C2B8A3]" /> โปรไฟล์ส่วนตัว</button>
-                    <button onClick={() => { navigate('/my-orders'); setShowDropdown(false); }} className="w-full flex items-center gap-4 px-5 py-3.5 text-xs font-bold text-[#2D241E] hover:bg-slate-50 rounded-2xl transition-all"><Package size={18} className="text-[#C2B8A3]" /> คำสั่งซื้อของฉัน</button>
-
-                    {isStaff && (
-                      <div className="mt-1 pt-1 border-t border-slate-50">
-                        <button
-                          onClick={() => { navigate('/admin/dashboard'); setShowDropdown(false); }}
-                          className="w-full flex items-center gap-4 px-5 py-3.5 text-xs font-black text-[#D97706] hover:bg-amber-50/50 rounded-2xl transition-all"
+                {/* --- Desktop Navigation --- */}
+                <nav className="hidden lg:flex items-center gap-2">
+                    {navItems.map((item) => (
+                        <Link 
+                            key={item.path}
+                            to={item.path}
+                            className={`px-5 py-2.5 rounded-2xl font-black text-[13px] uppercase tracking-widest transition-all
+                                ${location.pathname === item.path 
+                                    ? 'bg-[#2D241E] text-white shadow-md italic' 
+                                    : 'text-[#2D241E] hover:bg-slate-100'}`}
                         >
-                          <ShieldCheck size={18} /> ระบบจัดการร้านค้า
-                        </button>
-                      </div>
+                            {item.label}
+                        </Link>
+                    ))}
+                </nav>
+
+                {/* --- Actions --- */}
+                <div className="flex items-center gap-3 relative" ref={dropdownRef}>
+                    <Link to="/cart" className="p-3 bg-white rounded-xl text-[#2D241E] border-2 border-[#2D241E] hover:shadow-md transition-all active:scale-90 relative">
+                        <ShoppingCart size={20} strokeWidth={3} />
+                        
+                        {/* 6. แสดงตัวเลขจำนวนสินค้าจริงจาก State */}
+                        {cartCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white animate-in zoom-in duration-300">
+                                {cartCount}
+                            </span>
+                        )}
+                    </Link>
+
+                    {isLoggedIn ? (
+                        <div className="relative">
+                            <button 
+                                className="flex items-center gap-3 p-1.5 pr-4 bg-white rounded-xl border-2 border-[#2D241E] shadow-sm hover:shadow-md transition-all active:scale-95"
+                                onClick={() => setShowDropdown(!showDropdown)}
+                            >
+                                <div className="w-9 h-9 bg-[#2D241E] text-white rounded-lg flex items-center justify-center font-black text-sm uppercase">
+                                    {userData?.first_name?.charAt(0) || <Loader2 size={14} className="animate-spin" />}
+                                </div>
+                                <span className="hidden sm:block text-xs font-black text-[#2D241E] uppercase italic">
+                                    {userData?.first_name || 'USER'}
+                                </span>
+                                <ChevronDown size={14} strokeWidth={3} className={`text-[#2D241E] transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {showDropdown && (
+                                <div className="absolute top-14 right-0 w-64 bg-white rounded-[2rem] shadow-2xl z-[1001] p-6 animate-in fade-in slide-in-from-top-4 duration-300 border-2 border-[#2D241E] text-left">
+                                    <div className="text-center pb-4 border-b-2 border-slate-100 mb-4">
+                                        <div className="w-14 h-14 bg-[#2D241E] text-white rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-3 shadow-md uppercase italic">
+                                            {userData?.first_name?.charAt(0)}
+                                        </div>
+                                        <h3 className="text-base font-black text-[#2D241E] uppercase italic leading-none">{userData?.first_name} {userData?.last_name}</h3>
+                                        <p className="text-[10px] font-black text-[#2D241E] opacity-70 tracking-widest mt-2 uppercase">{userData?.email}</p>
+                                    </div>
+
+                                    <div className="flex flex-col gap-2">
+                                        <Link to="/" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 p-3 text-[12px] font-black text-[#2D241E] uppercase tracking-widest hover:bg-slate-50 rounded-xl transition-all">
+                                            <Home size={18} strokeWidth={3} /> หน้าแรก
+                                        </Link>
+
+                                        <Link to="/profile" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 p-3 text-[12px] font-black text-[#2D241E] uppercase tracking-widest hover:bg-slate-50 rounded-xl transition-all">
+                                            <UserCircle size={18} strokeWidth={3} /> Profile
+                                        </Link>
+                                         
+                                        <Link to="/my-orders" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 p-3 text-[12px] font-black text-[#2D241E] uppercase tracking-widest hover:bg-slate-50 rounded-xl transition-all">
+                                            <History size={18} strokeWidth={3} /> My Orders
+                                        </Link>
+
+                                        {userData?.role_level <= 3 && (
+                                            <Link to="/admin/dashboard" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 p-3 text-[12px] font-black text-[#2D241E] bg-[#F3E9DC] uppercase tracking-widest hover:bg-[#EBDCC9] rounded-xl transition-all border border-[#2D241E]/10">
+                                                <LayoutDashboard size={18} strokeWidth={3} /> แผงควบคุมแอดมิน
+                                            </Link>
+                                        )}
+
+                                        <button onClick={handleLogout} className="flex items-center gap-3 p-3 text-[12px] font-black text-red-600 uppercase tracking-widest hover:bg-red-50 rounded-xl transition-all mt-2 italic border-2 border-red-100 text-left">
+                                            <LogOut size={18} strokeWidth={3} /> Sign Out
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <Link to="/login" className="px-6 py-3 bg-[#2D241E] text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-lg italic">
+                            Sign In
+                        </Link>
                     )}
-                  </div>
 
-                  <div className="mt-1 pt-1 border-t border-slate-50">
-                    <button onClick={handleLogout} className="w-full flex items-center gap-4 px-5 py-3.5 text-xs text-red-400 font-bold hover:bg-red-50 rounded-2xl transition-all"><LogOut size={18} /> ลงชื่อออก</button>
-                  </div>
+                    <button className="lg:hidden p-3 bg-white rounded-xl text-[#2D241E] border-2 border-[#2D241E] shadow-sm" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                        {isMenuOpen ? <X size={20} strokeWidth={3} /> : <Menu size={20} strokeWidth={3} />}
+                    </button>
                 </div>
-              )}
             </div>
-          ) : (
-            <button
-              onClick={() => navigate('/login')}
-              className="px-7 py-3 bg-white text-[#2D241E] rounded-full font-black text-xs uppercase tracking-widest shadow-sm border border-slate-100 hover:shadow-md transition-all active:scale-95"
-            >
-              ลงชื่อเข้าใช้
-            </button>
-          )}
-        </div>
-      </div>
 
-      {/* 🍂 Mobile Menu Slide Down - Pearl White */}
-      <div className={`lg:hidden overflow-hidden transition-all duration-500 bg-white ${isMobileMenuOpen ? 'max-h-[600px] border-t border-slate-50' : 'max-h-0'}`}>
-        <div className="px-6 py-8 space-y-6">
-          <div className="relative">
-            <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#C2B8A3]" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={handleSearch}
-              className="w-full pl-14 pr-6 py-4 rounded-3xl bg-white border border-slate-100 text-sm text-[#2D241E] shadow-sm"
-              placeholder="ค้นหาเมนู..."
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-3">
-            {menuItems.map((item) => (
-              <button
-                key={item.name}
-                className={`text-sm font-bold p-5 rounded-3xl transition-all text-left flex justify-between items-center border ${location.pathname === item.path
-                    ? 'bg-white shadow-md border-slate-100 text-[#D97706]'
-                    : 'bg-white border-transparent text-[#8B7E66]'
-                  }`}
-                onClick={() => { navigate(item.path); setIsMobileMenuOpen(false); }}
-              >
-                {item.name}
-                {location.pathname === item.path && <Heart size={16} fill="currentColor" />}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
+            {/* Mobile Nav */}
+            {isMenuOpen && (
+                <div className="lg:hidden fixed inset-0 top-[76px] bg-white z-[999] p-6 animate-in slide-in-from-right duration-300">
+                    <div className="flex flex-col gap-3">
+                        {navItems.map((item) => (
+                            <Link key={item.path} to={item.path} onClick={() => setIsMenuOpen(false)} className={`flex items-center gap-4 p-4 rounded-2xl transition-all shadow-sm ${location.pathname === item.path ? 'bg-[#2D241E] text-white italic font-black' : 'bg-slate-50 text-[#2D241E] font-black uppercase'}`}>
+                                {item.icon} <span className="text-lg italic tracking-tighter">{item.label}</span>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </header>
+    );
 };
 
 export default HeaderHome;

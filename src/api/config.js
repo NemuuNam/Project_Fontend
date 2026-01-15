@@ -1,5 +1,3 @@
-// 🚩 ลบ import Profile ออก เพราะไฟล์ config ไม่ควรนำเข้า Page component ครับ
-
 // 1. กำหนด BASE_URL (รองรับทั้ง Local และ Production บน Vercel)
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -23,8 +21,8 @@ export const API_ENDPOINTS = {
         
         // ✅ ใช้สำหรับหน้า "เกี่ยวกับเรา" และ "ตั้งชื่อร้าน"
         SHOP_SETTINGS: `${BASE_URL}/api/admin/shop-settings`, 
-        
-        SHIPPING_PROVIDERS: `${BASE_URL}/api/admin/shipping-providers`, // บริษัทขนส่ง
+
+        SHIPPING_PROVIDERS: `${BASE_URL}/api/admin/orders/shipping-providers`, // บริษัทขนส่ง
         SYSTEM_LOG: `${BASE_URL}/api/admin/system-log`,     // ประวัติการทำงานในระบบ
         INVENTORY_LOG: `${BASE_URL}/api/admin/inv-log`,     // ประวัติการเข้า-ออกของสินค้า
         REPORTS: `${BASE_URL}/api/admin/reports/sales`,     // รายงานยอดขาย

@@ -1,15 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-    TrendingUp, DollarSign, ShoppingBag, BarChart3, Loader2, 
-    RefreshCw, Download, ArrowUpRight, Layers, CreditCard, 
+import {
+    TrendingUp, DollarSign, ShoppingBag, BarChart3, Loader2,
+    RefreshCw, Download, ArrowUpRight, Layers, CreditCard,
     CheckCircle2, XCircle, Clock, Package, Menu, Zap,
     Target, Activity, ChevronRight, Calendar, Star, ArrowRight, Image as ImageIcon,
     Leaf, Cookie, Smile, Sparkles
 } from 'lucide-react';
-import { 
-    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-    AreaChart, Area, PieChart, Pie, Cell, Legend 
+import {
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
 import toast, { Toaster } from 'react-hot-toast';
 import axiosInstance from '../api/axiosInstance';
@@ -17,13 +17,13 @@ import { API_ENDPOINTS } from '../api/config';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
-const COLORS = ['#2D241E', '#D97706', '#8B7E66', '#C2B8A3', '#F3E9DC'];
+const COLORS = ['#2D241E', '#8B7E66', '#5C4D42', '#E53E3E', '#05CD99'];
 
 const SalesReport = () => {
     const navigate = useNavigate();
     const [salesData, setSalesData] = useState({
         summary: { totalRevenue: 0, totalOrders: 0, avgOrderValue: 0, totalUnits: 0 },
-        chartData: [], 
+        chartData: [],
         topProducts: [],
         categoryData: [],
         statusSummary: { completed: 0, pending: 0, cancelled: 0 }
@@ -34,9 +34,9 @@ const SalesReport = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // --- 📦 Logic (คงเดิม 100%) ---
-    const fetchSales = useCallback(async () => {
+    const fetchSales = useCallback(async (isSilent = false) => {
         try {
-            setLoading(true);
+            if (!isSilent) setLoading(true);
             const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.REPORTS}?type=${filterType}`);
             if (res && res.success) {
                 const rawData = res.data || {};
@@ -48,10 +48,10 @@ const SalesReport = () => {
                     statusSummary: rawData.statusSummary || { completed: 0, pending: 0, cancelled: 0 }
                 });
             }
-        } catch (err) { 
-            toast.error("ดึงข้อมูลจากระบบล้มเหลว"); 
-        } finally { 
-            setLoading(false); 
+        } catch (err) {
+            toast.error("ดึงข้อมูลจากระบบล้มเหลว");
+        } finally {
+            setLoading(false);
         }
     }, [filterType]);
 
@@ -64,117 +64,84 @@ const SalesReport = () => {
     );
 
     return (
-        <div className="flex min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden relative selection:bg-[#F3E9DC]">
-            
-            {/* ☁️ Global Cozy Patterns จางๆ (Opacity 0.02) */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <Leaf className="absolute top-[10%] left-[5%] rotate-12 text-[#2D241E] opacity-[0.02]" size={200} />
-                <Cookie className="absolute bottom-[10%] right-[5%] -rotate-12 text-[#2D241E] opacity-[0.02]" size={180} />
-                <Smile className="absolute top-[40%] right-[20%] text-[#2D241E] opacity-[0.015]" size={300} />
-                <Sparkles className="absolute top-[15%] left-[45%] text-[#2D241E] opacity-[0.02]" size={100} />
-            </div>
-
+        <div className="flex min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden relative max-w-[1920px] mx-auto shadow-2xl">
             <Toaster position="top-right" />
             <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} isMobileOpen={isSidebarOpen} setIsMobileOpen={setIsSidebarOpen} activePage="reports" />
 
-            <main className={`flex-1 p-4 md:p-10 lg:p-14 transition-all duration-500 ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[280px]'} w-full relative z-10 text-left`}>
-                
-                <div className="mb-12 flex items-center gap-4">
-                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white rounded-2xl text-[#2D241E] shadow-sm border border-slate-100 active:scale-95 transition-all"><Menu size={24} /></button>
+            {/* 🚀 Main: Scale มาตรฐาน Product */}
+            <main className={`flex-1 transition-all duration-500 ease-in-out ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[280px]'} p-4 md:p-8 lg:p-10 w-full relative z-10`}>
+
+                <div className="mb-6 flex items-center gap-4">
+                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white rounded-xl text-[#2D241E] shadow-sm border-2 border-[#2D241E] active:scale-90"><Menu size={24} /></button>
                     <Header title="การวิเคราะห์ธุรกิจ" />
                 </div>
 
-                {/* 🏷️ Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16 px-2">
-                    <div className="flex-1 space-y-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white rounded-full shadow-sm border border-slate-100 mb-2 animate-bounce-slow">
-                            <Sparkles size={14} className="text-[#D97706]" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#8B7E66]">บันทึกรายได้และประสิทธิภาพ</span>
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-10 px-2 text-left">
+                    <div className="flex-1 space-y-3">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#2D241E] rounded-full shadow-md animate-bounce-slow">
+                            <Sparkles size={14} className="text-white" />
+                            <span className="text-xs font-black uppercase tracking-widest text-white">Financial Analysis</span>
                         </div>
-                        <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter text-[#2D241E] leading-none italic">
-                            Sales<span className="opacity-10">Report.</span>
-                        </h1>
+                        <h1 className="text-5xl md:text-6xl 2xl:text-7xl font-black uppercase tracking-tighter text-[#2D241E] leading-none italic">SalesReport</h1>
                     </div>
-                    <button onClick={fetchSales} className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group active:scale-90">
-                        <RefreshCw size={24} className={`text-[#2D241E]/40 ${loading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} />
+                    <button onClick={() => fetchSales(true)} className="p-4 rounded-2xl bg-white border-2 border-[#2D241E] shadow-lg hover:rotate-180 transition-all active:scale-90 group shrink-0">
+                        <RefreshCw size={24} className={`text-[#2D241E] ${loading ? 'animate-spin' : ''}`} strokeWidth={3} />
                     </button>
                 </div>
 
-                {/* 📊 Stat Cards (Pearl White Style) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16 px-2">
-                    <StatCard title="รายได้สุทธิ" value={`฿${(salesData.summary?.totalRevenue || 0).toLocaleString()}`} icon={<DollarSign size={24}/>} color="#2D241E" />
-                    <StatCard title="ออเดอร์ทั้งหมด" value={salesData.summary?.totalOrders || 0} icon={<ShoppingBag size={24}/>} color="#2D241E" />
-                    <StatCard title="จำนวนที่ขายได้" value={`${(salesData.summary?.totalUnits || 0).toLocaleString()} ชิ้น`} icon={<Package size={24}/>} color="#2D241E" />
-                    <StatCard title="ยอดเฉลี่ย/บิล" value={`฿${Math.round(salesData.summary?.avgOrderValue || 0).toLocaleString()}`} icon={<Target size={24}/>} color="#2D241E" />
+                {/* 📊 Stat Cards - เข้มชัด 100% */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10 px-2">
+                    <StatCardSmall title="รายได้สุทธิ" value={`฿${(salesData.summary?.totalRevenue || 0).toLocaleString()}`} icon={<DollarSign />} />
+                    <StatCardSmall title="ออเดอร์ทั้งหมด" value={(salesData.summary?.totalOrders || 0).toLocaleString()} icon={<ShoppingBag />} />
+                    <StatCardSmall title="จำนวนที่ขายได้" value={`${(salesData.summary?.totalUnits || 0).toLocaleString()} ชิ้น`} icon={<Package />} />
+                    <StatCardSmall title="ยอดเฉลี่ย/บิล" value={`฿${Math.round(salesData.summary?.avgOrderValue || 0).toLocaleString()}`} icon={<Target />} />
                 </div>
 
-                {/* 📈 Main Performance Area (Pearl White Card) */}
-                <div className="bg-white p-6 md:p-12 rounded-[3rem] md:rounded-[4.5rem] border border-slate-100 shadow-sm relative overflow-hidden group transition-all duration-500 hover:shadow-md mb-16">
-                    <div className="absolute top-0 right-0 p-10 opacity-[0.01] group-hover:rotate-12 transition-transform duration-700">
-                        <TrendingUp size={200} />
-                    </div>
-                    
-                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-10 mb-14 relative z-10 border-b border-slate-50 pb-10">
-                        <div className="flex flex-col gap-4">
-                            <h3 className="text-3xl font-black text-[#2D241E] tracking-tighter uppercase italic flex items-center gap-4">
-                                <Activity className="opacity-20" /> แนวโน้มรายได้
+                {/* 📈 Chart Area - High Contrast กราฟเข้มจัด */}
+                <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xl mb-10">
+                    <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8 text-left">
+                        <div className="flex flex-col gap-1">
+                            <h3 className="text-xl font-black uppercase italic text-[#2D241E] flex items-center gap-2">
+                                <Activity size={20} strokeWidth={3} className="text-[#2D241E]" /> Revenue Trends
                             </h3>
-                            <div className="flex gap-2 p-1.5 bg-slate-50/50 rounded-2xl border border-slate-100 w-fit">
-                                {[
-                                    { id: 'daily', label: 'รายวัน' },
-                                    { id: 'monthly', label: 'รายเดือน' },
-                                    { id: 'yearly', label: 'รายปี' }
-                                ].map(t => (
-                                    <button 
-                                        key={t.id} 
-                                        onClick={() => setFilterType(t.id)} 
-                                        className={`px-8 py-2.5 rounded-xl text-[15px] font-black uppercase tracking-widest transition-all duration-300 ${filterType === t.id ? 'bg-white text-[#2D241E] shadow-sm scale-105' : 'text-[#2D241E] hover:text-[#C2B8A3]'}`}
-                                    >
-                                        {t.label}
-                                    </button>
+                            <div className="flex gap-2 p-1 bg-slate-50 rounded-full border-2 border-[#2D241E]/10 w-fit mt-2">
+                                {[{ id: 'daily', label: 'รายวัน' }, { id: 'monthly', label: 'รายเดือน' }, { id: 'yearly', label: 'รายปี' }].map(t => (
+                                    <button key={t.id} onClick={() => setFilterType(t.id)} className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${filterType === t.id ? 'bg-[#2D241E] text-white shadow-md' : 'text-[#2D241E] hover:bg-white'}`}>{t.label}</button>
                                 ))}
                             </div>
                         </div>
-
-                        <div className="flex flex-wrap gap-4">
-                            <StatusBadge label="สำเร็จ" value={salesData.statusSummary?.completed} color="emerald" icon={<CheckCircle2 size={20}/>} />
-                            <StatusBadge label="รอนุมัติ" value={salesData.statusSummary?.pending} color="amber" icon={<Clock size={20}/>} />
-                            <StatusBadge label="ยกเลิก" value={salesData.statusSummary?.cancelled} color="rose" icon={<XCircle size={20}/>} />
+                        <div className="flex gap-3 flex-wrap">
+                            <StatusBadgeMini label="สำเร็จ" value={salesData.statusSummary?.completed} color="text-emerald-600" />
+                            <StatusBadgeMini label="รออนุมัติ" value={salesData.statusSummary?.pending} color="text-amber-600" />
+                            <StatusBadgeMini label="ยกเลิก" value={salesData.statusSummary?.cancelled} color="text-red-600" />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 relative z-10">
-                        <div className="xl:col-span-8 h-[450px]">
-                            
+                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                        <div className="xl:col-span-8 h-[350px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={salesData.chartData || []}>
                                     <defs>
                                         <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#2D241E" stopOpacity={0.05}/>
-                                            <stop offset="95%" stopColor="#2D241E" stopOpacity={0}/>
+                                            <stop offset="5%" stopColor="#2D241E" stopOpacity={0.2} />
+                                            <stop offset="95%" stopColor="#2D241E" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{fill: '#C2B8A3', fontSize: 10, fontWeight: 700}} dy={15} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#C2B8A3', fontSize: 10, fontWeight: 700}} />
-                                    <Tooltip contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.05)', padding: '20px', fontFamily: 'Kanit'}} />
-                                    <Area type="monotone" dataKey="amount" stroke="#2D241E" strokeWidth={4} fill="url(#salesGradient)" animationDuration={1500} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#2D241E', fontSize: 10, fontWeight: 900 }} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#2D241E', fontSize: 10, fontWeight: 900 }} />
+                                    <Tooltip contentStyle={{ borderRadius: '16px', border: '2px solid #2D241E', boxShadow: '0 10px 30px rgba(0,0,0,0.15)', fontFamily: 'Kanit', fontSize: '12px', color: '#2D241E', fontWeight: 900 }} />
+                                    <Area type="monotone" dataKey="amount" stroke="#2D241E" strokeWidth={4} fill="url(#salesGradient)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
-
-                        <div className="xl:col-span-4 flex flex-col justify-center bg-slate-50/30 rounded-[3.5rem] p-8 border border-slate-50 shadow-inner">
-                            <h4 className="text-[15px] font-black uppercase tracking-widest text-[#2D241E]/50 mb-8 text-center">สัดส่วนตามหมวดหมู่</h4>
-                            
-                            <div className="h-[280px]">
-                                
+                        <div className="xl:col-span-4 bg-slate-50 rounded-3xl p-6 border-2 border-[#2D241E]/10 flex flex-col items-center justify-center shadow-inner">
+                            <p className="text-[11px] font-black uppercase tracking-widest text-[#2D241E] mb-6 italic">Market Share</p>
+                            <div className="h-[220px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
-                                        <Pie 
-                                            data={salesData.categoryData?.length > 0 ? salesData.categoryData : [{name: 'ว่าง', value: 1}]} 
-                                            innerRadius={75} outerRadius={105} dataKey="value" stroke="none" paddingAngle={8}
-                                        >
-                                            {(salesData.categoryData || []).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                        <Pie data={salesData.categoryData?.length > 0 ? salesData.categoryData : [{ name: 'EMPTY', value: 1 }]} innerRadius={60} outerRadius={85} dataKey="value" stroke="#fff" strokeWidth={2} paddingAngle={5}>
+                                            {salesData.categoryData?.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                         </Pie>
                                         <Tooltip />
                                     </PieChart>
@@ -184,108 +151,65 @@ const SalesReport = () => {
                     </div>
                 </div>
 
-                {/* 🏆 Top Selling Section (Pearl White Card) */}
-                <div className="bg-white p-8 md:p-14 rounded-[3rem] md:rounded-[4rem] border border-slate-100 shadow-sm mb-10 group relative overflow-hidden transition-all duration-500 hover:shadow-md">
-                    <div className="absolute top-0 right-0 p-10 opacity-[0.01] group-hover:rotate-12 transition-transform duration-1000">
-                        <Star size={220} />
-                    </div>
-                    
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-14 relative z-10 gap-6">
-                        <div className="flex flex-col gap-1">
-                            <p className="text-[15px] font-black text-[#D97706] uppercase tracking-[0.4em] mb-2 italic">ตารางอันดับสินค้าขายดี</p>
-                            <h3 className="text-4xl font-black uppercase tracking-tighter italic text-[#2D241E]">สินค้าที่ทำรายได้สูงสุด</h3>
-                        </div>
-                        <button onClick={() => navigate('/admin/products')} className="flex items-center gap-3 px-8 py-4 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase tracking-widest text-[#2D241E] hover:bg-slate-50 shadow-sm transition-all active:scale-95">
-                            จัดการคลังสินค้า <ArrowRight size={14} />
-                        </button>
+                {/* 🏆 Top Products - รายการสินค้าเข้มจัด */}
+                <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xl">
+                    <div className="flex justify-between items-center mb-8">
+                        <h3 className="text-xl font-black uppercase italic text-[#2D241E] flex items-center gap-2 text-left">
+                            <Star size={20} strokeWidth={3} className="text-[#2D241E]" /> High Performers
+                        </h3>
+                        <button onClick={() => navigate('/admin/products')} className="text-[10px] font-black uppercase border-b-2 border-[#2D241E] pb-0.5 text-[#2D241E] hover:opacity-50 transition-all">Manage Stock</button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {(salesData.topProducts || []).map((p, i) => (
-                            <div key={i} className="flex items-center justify-between p-6 bg-white border border-slate-50 hover:border-[#2D241E]/10 hover:shadow-xl transition-all group/item rounded-[2.5rem] duration-500">
-                                <div className="flex items-center gap-6">
-                                    <span className="text-3xl font-black text-slate-800 italic group-hover/item:text-[#2D241E]/20 transition-colors w-10">0{i + 1}</span>
-                                    
-                                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden bg-white border-2 border-slate-50 shadow-sm shrink-0">
-                                        {p.image ? (
-                                            <img src={p.image} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-1000" alt="product" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-slate-100"><ImageIcon size={30}/></div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex flex-col text-left">
-                                        <span className="font-black text-lg md:text-xl uppercase tracking-tighter text-[#2D241E] leading-tight mb-1 italic">{p.product_name}</span>
-                                        <div className="flex items-center gap-3">
-                                            <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-full text-[13px] font-black text-[#8B7E66] uppercase">
-                                                ขายแล้ว: {(p.total_qty || 0).toLocaleString()} ชิ้น
-                                            </div>
-                                        </div>
+                            <div key={i} className="flex items-center justify-between p-4 bg-white border-2 border-slate-50 rounded-2xl hover:border-[#2D241E] transition-all group shadow-sm">
+                                <div className="flex items-center gap-4 text-left">
+                                    <span className="text-xl font-black italic text-[#2D241E] w-6">0{i + 1}</span>
+                                    <img src={p.image || '/placeholder.png'} className="w-12 h-12 rounded-xl object-cover border-2 border-slate-100 shadow-sm" alt="" />
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="font-black text-sm uppercase truncate max-w-[150px] italic text-[#2D241E]">{p.product_name}</span>
+                                        <span className="text-[11px] font-black text-[#8B7E66] uppercase tracking-tighter italic">Sold: {(p.total_qty || 0).toLocaleString()} units</span>
                                     </div>
                                 </div>
-
                                 <div className="text-right">
-                                    <p className="text-[13px] font-black text-[#2D241E]/20 uppercase mb-1 tracking-widest italic">มูลค่ารวม</p>
-                                    <span className="text-2xl md:text-3xl font-black italic tracking-tighter text-[#2D241E]">
-                                        ฿{(p.total_sales || 0).toLocaleString()}
-                                    </span>
+                                    <p className="text-[9px] font-black uppercase text-[#2D241E]">Revenue</p>
+                                    <p className="font-black text-base italic text-[#2D241E]">฿{(p.total_sales || 0).toLocaleString()}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
-
-                    {(!salesData.topProducts || salesData.topProducts.length === 0) && (
-                        <div className="py-24 text-center border-2 border-dashed border-slate-100 rounded-[3rem]">
-                            <ImageIcon size={60} className="mx-auto text-slate-100 mb-6 opacity-20" />
-                            <p className="text-[#C2B8A3] font-black uppercase tracking-widest text-sm italic">ยังไม่มีข้อมูลการขายในส่วนนี้</p>
-                        </div>
-                    )}
                 </div>
-
             </main>
 
-            <style dangerouslySetInnerHTML={{ __html: `
-                @keyframes bounce-slow {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-5px); }
-                }
-                .animate-bounce-slow { animation: bounce-slow 3s infinite; }
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E10; border-radius: 10px; }
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+                .animate-bounce-slow { animation: bounce-slow 4s infinite; }
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E; border-radius: 10px; }
             `}} />
         </div>
     );
 };
 
-// --- ส่วนประกอบย่อย (Pearl White Stat Cards) ---
-
-const StatCard = ({ title, value, icon, color }) => (
-    <div className="bg-white p-8 rounded-[3rem] md:rounded-[3.5rem] border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition-all hover:-translate-y-1.5 duration-500 group relative overflow-hidden">
-        <div className="flex-1 text-left min-w-0 relative z-10">
-            <p className="text-[9px] font-black text-[#2D241E]/30 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }}></span>
-                {title}
-            </p>
-            <h2 className="text-[#2D241E] text-4xl lg:text-5xl font-black italic tracking-tighter leading-none uppercase truncate">{value}</h2>
+// 💎 StatCardSmall: เข้มจัด High Contrast
+const StatCardSmall = ({ title, value, icon }) => (
+    <div className="bg-white p-5 rounded-2xl border-2 border-[#2D241E] shadow-lg flex items-center justify-between hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
+        <div className="flex-1 text-left min-w-0">
+            <p className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest mb-1 leading-none">{title}</p>
+            <h2 className="text-[#2D241E] text-2xl font-black italic leading-none">{value || 0}</h2>
         </div>
-        <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center bg-white shadow-sm border border-slate-50 text-[#2D241E]/20 group-hover:scale-110 group-hover:text-[#2D241E] transition-all duration-500 relative z-10 shrink-0 ml-4">
-            {React.cloneElement(icon, { size: 28, strokeWidth: 2.5 })}
+        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-[#2D241E] border-2 border-[#2D241E] shadow-inner group-hover:bg-[#2D241E] group-hover:text-white transition-all duration-500">
+            {React.cloneElement(icon, { size: 20, strokeWidth: 3 })}
         </div>
     </div>
 );
 
-const StatusBadge = ({ label, value, color, icon }) => {
-    const variants = {
-        emerald: "text-emerald-600 border-emerald-50",
-        amber: "text-amber-600 border-amber-50",
-        rose: "text-rose-600 border-rose-50"
-    };
-    return (
-        <div className={`flex items-center gap-3 px-6 py-3 bg-white rounded-full border font-black text-[10px] uppercase tracking-tighter shadow-sm transition-transform hover:scale-105 ${variants[color]}`}>
-            <span className="opacity-40">{icon}</span>
-            {label}: <span className="text-sm ml-1 text-[#2D241E]">{value || 0}</span>
-        </div>
-    );
-};
+// 💎 Status Badge: สีเข้มจัดอ่านง่าย
+const StatusBadgeMini = ({ label, value, color }) => (
+    <div className={`flex items-center gap-2 px-3 py-1 bg-white rounded-lg border-2 border-[#2D241E] text-[10px] font-black uppercase ${color} shadow-sm`}>
+        {label}: <span className="text-[#2D241E]">{value || 0}</span>
+    </div>
+);
 
 export default SalesReport;

@@ -1,18 +1,18 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { 
-    Users, ShieldCheck, UserCog, UserCheck, Search, 
-    Trash2, Edit, Loader2, X, Save, Filter, RefreshCw, Menu, ShieldAlert,
-    CheckCircle, Sparkles, Leaf, Cookie, Smile, ChevronRight, ChevronLeft
+import {
+    Users, ShieldCheck, UserCheck, Search, Trash2, Edit, Loader2, X, Save,
+    Filter, RefreshCw, Menu, ShieldAlert, CheckCircle, Sparkles, ChevronLeft, ChevronRight, Activity
 } from 'lucide-react';
-import { jwtDecode } from 'jwt-decode'; 
+import { jwtDecode } from 'jwt-decode';
 import toast, { Toaster } from 'react-hot-toast';
-import Swal from 'sweetalert2'; 
+import Swal from 'sweetalert2';
 import axiosInstance from '../api/axiosInstance';
 import { API_ENDPOINTS } from '../api/config';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 const UserManagement = () => {
+    // --- 🏗️ States & Logic (คงเดิม 100%) ---
     const [users, setUsers] = useState([]);
     const [summary, setSummary] = useState({ total: 0, systemAdmins: 0, owners: 0, managers: 0, customers: 0 });
     const [loading, setLoading] = useState(true);
@@ -20,376 +20,234 @@ const UserManagement = () => {
     const [roleFilter, setRoleFilter] = useState('all');
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    
-    // --- ✨ Pagination State ---
     const [currentPage, setCurrentPage] = useState(1);
     const usersPerPage = 10;
-
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [newRole, setNewRole] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
 
     const token = localStorage.getItem('token');
-    const decodedToken = token ? jwtDecode(token) : {};
+    const decodedToken = useMemo(() => {
+        try { return token ? jwtDecode(token) : {}; } catch (err) { return {}; }
+    }, [token]);
     const currentUserId = decodedToken.id || decodedToken.user_id;
+    const canDelete = Number(decodedToken.role_level) === 1;
 
-    // --- 📦 Logic (คงเดิม 100%) ---
-    const calculateSummary = useCallback((userList) => {
-        return {
-            total: userList.length,
-            systemAdmins: userList.filter(u => u.role_id === 1).length,
-            owners: userList.filter(u => u.role_id === 2).length,
-            managers: userList.filter(u => u.role_id === 3).length,
-            customers: userList.filter(u => u.role_id === 4).length
+    // --- 🎨 Role UI Mapping (สีเข้มพิเศษ) ---
+    const getRoleStyle = (roleId) => {
+        const styles = {
+            1: { text: '#E53E3E', label: 'ADMIN', icon: <ShieldAlert size={14} strokeWidth={3} /> },
+            2: { text: '#2D241E', label: 'OWNER', icon: <ShieldCheck size={14} strokeWidth={3} /> },
+            3: { text: '#05CD99', label: 'MANAGER', icon: <UserCheck size={14} strokeWidth={3} /> },
+            4: { text: '#8B7E66', label: 'CUSTOMER', icon: <Users size={14} strokeWidth={3} /> }
         };
-    }, []);
+        return styles[roleId] || { text: '#2D241E', label: 'UNKNOWN', icon: <Users size={14} strokeWidth={3} /> };
+    };
 
-    const fetchUsers = useCallback(async () => {
+    const calculateSummary = useCallback((userList) => ({
+        total: userList.length,
+        systemAdmins: userList.filter(u => u.role_id === 1).length,
+        owners: userList.filter(u => u.role_id === 2).length,
+        managers: userList.filter(u => u.role_id === 3).length,
+        customers: userList.filter(u => u.role_id === 4).length
+    }), []);
+
+    const fetchUsers = useCallback(async (isSilent = false) => {
         try {
-            setLoading(true);
+            if (!isSilent) setLoading(true);
             const res = await axiosInstance.get(API_ENDPOINTS.ADMIN.USERS);
             if (res.success) {
                 setUsers(res.data);
                 setSummary(calculateSummary(res.data));
             }
-        } catch (err) { 
-            toast.error("ดึงข้อมูลผู้ใช้ไม่สำเร็จ"); 
-        } finally { 
-            setLoading(false); 
-        }
+        } catch (err) { toast.error("ดึงข้อมูลไม่สำเร็จ"); } finally { setLoading(false); }
     }, [calculateSummary]);
 
     useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
     const handleUpdateRole = async () => {
-        if (!selectedUser) return;
-        if (selectedUser.user_id === currentUserId) return toast.error("คุณไม่สามารถแก้ไขสิทธิ์ของตนเองได้");
-
+        if (!selectedUser || selectedUser.user_id === currentUserId) return toast.error("แก้ไขสิทธิ์ตนเองไม่ได้");
         setIsUpdating(true);
-        const loadingToast = toast.loading("กำลังอัปเดตสิทธิ์ผู้ใช้...");
+        const load = toast.loading("กำลังอัปเดต...");
         try {
-            const res = await axiosInstance.patch(`${API_ENDPOINTS.ADMIN.USERS}/${selectedUser.user_id}/role`, { 
-                role_id: parseInt(newRole) 
-            });
-            
+            const res = await axiosInstance.patch(`${API_ENDPOINTS.ADMIN.USERS}/${selectedUser.user_id}/role`, { role_id: parseInt(newRole) });
             if (res.success) {
-                toast.success(`เปลี่ยนสิทธิ์เรียบร้อยแล้ว`, { id: loadingToast });
-                fetchUsers();
+                toast.success(`เปลี่ยนสิทธิ์เรียบร้อยแล้ว`, { id: load });
+                fetchUsers(true);
                 setIsModalOpen(false);
             }
-        } catch (err) { 
-            toast.error(err.response?.data?.message || "อัปเดตสิทธิ์ล้มเหลว", { id: loadingToast }); 
-        } finally { 
-            setIsUpdating(false); 
-        }
+        } catch (err) { toast.error("ล้มเหลว", { id: load }); } finally { setIsUpdating(false); }
     };
 
     const handleDelete = async (userId, name) => {
-        if (userId === currentUserId) return toast.error("คุณไม่สามารถลบบัญชีที่กำลังใช้งานอยู่ได้");
-
+        if (userId === currentUserId) return toast.error("ลบบัญชีที่ใช้งานอยู่ไม่ได้");
         const result = await Swal.fire({
-            title: 'ยืนยันการลบผู้ใช้?',
-            text: `ข้อมูลของคุณ ${name} จะถูกลบออกถาวร`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#2D241E',
-            confirmButtonText: 'ยืนยัน ลบข้อมูล',
-            cancelButtonText: 'ยกเลิก',
-            background: '#ffffff',
-            color: '#2D241E',
-            customClass: { popup: 'rounded-[3rem] font-["Kanit"]' }
+            title: 'ยืนยันการลบ?', text: `ข้อมูลของคุณ ${name} จะหายไปถาวร`, icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#2D241E', confirmButtonText: 'ลบข้อมูล',
+            customClass: { popup: 'rounded-[2rem] font-["Kanit"] border-4 border-[#2D241E]' }
         });
-
         if (result.isConfirmed) {
             try {
                 const res = await axiosInstance.delete(`${API_ENDPOINTS.ADMIN.USERS}/${userId}`);
-                if (res.success) {
-                    toast.success("ลบผู้ใช้งานเรียบร้อยแล้ว");
-                    fetchUsers();
-                }
-            } catch (err) { 
-                toast.error("ไม่สามารถลบผู้ใช้ได้ในขณะนี้"); 
-            }
+                if (res.success) { toast.success("ลบเรียบร้อยแล้ว"); fetchUsers(true); }
+            } catch (err) { toast.error("ไม่สามารถลบได้"); }
         }
     };
 
-    const getRoleStyle = (roleId) => {
-        const styles = {
-            1: { bg: '#fff', text: '#E53E3E', label: 'System Admin', icon: <ShieldAlert size={12}/> },
-            2: { bg: '#fff', text: '#D97706', label: 'Owner', icon: <ShieldCheck size={12}/> },
-            3: { bg: '#fff', text: '#05CD99', label: 'Manager', icon: <UserCheck size={12}/> },
-            4: { bg: '#fff', text: '#2D241E', label: 'Customer', icon: <Users size={12}/> }
-        };
-        return styles[roleId] || { bg: '#fff', text: '#64748b', label: 'Unknown', icon: <Users size={12}/> };
-    };
-
-    // --- 🔍 Filtering & Pagination Logic ---
-    const filteredUsers = useMemo(() => {
-        return users.filter(user => {
-            const matchesSearch = (user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) || user.email?.toLowerCase().includes(searchTerm.toLowerCase()));
-            const matchesRole = roleFilter === 'all' || user.role_id === parseInt(roleFilter);
-            return matchesSearch && matchesRole;
-        });
-    }, [users, searchTerm, roleFilter]);
+    const filteredUsers = useMemo(() => users.filter(user =>
+        (user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) || user.email?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (roleFilter === 'all' || user.role_id === parseInt(roleFilter))
+    ), [users, searchTerm, roleFilter]);
 
     const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+    const currentUsers = filteredUsers.slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage);
 
-    const currentUsers = useMemo(() => {
-        const start = (currentPage - 1) * usersPerPage;
-        return filteredUsers.slice(start, start + usersPerPage);
-    }, [filteredUsers, currentPage]);
+    useEffect(() => { setCurrentPage(1); }, [searchTerm, roleFilter]);
 
-    // รีเซ็ตหน้ากลับไปหน้า 1 เมื่อมีการค้นหาหรือกรอง
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, roleFilter]);
-
-    if (loading && users.length === 0) return (
-        <div className="flex h-screen items-center justify-center bg-white">
-            <Loader2 className="animate-spin text-[#2D241E]" size={40} />
-        </div>
-    );
+    if (loading && users.length === 0) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={40} /></div>;
 
     return (
-        <div className="flex min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden relative selection:bg-[#F3E9DC]">
-            
-            {/* ☁️ Global Cozy Patterns */}
-            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-                <Leaf className="absolute top-[10%] left-[5%] rotate-12 opacity-[0.02] text-[#2D241E]" size={200} />
-                <Cookie className="absolute bottom-[20%] right-[10%] -rotate-12 opacity-[0.02] text-[#2D241E]" size={150} />
-                <Smile className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.015] text-[#2D241E]" size={400} />
-            </div>
-
+        <div className="flex min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden relative max-w-[1920px] mx-auto shadow-2xl">
             <Toaster position="top-right" />
             <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} isMobileOpen={isSidebarOpen} setIsMobileOpen={setIsSidebarOpen} activePage="users" />
 
-            <main className={`flex-1 p-4 md:p-10 lg:p-14 transition-all duration-500 ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[280px]'} w-full relative z-10 text-left`}>
-                
-                <div className="mb-12 flex items-center gap-4">
-                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white rounded-2xl text-[#2D241E] shadow-sm border border-slate-100 active:scale-95 transition-all"><Menu size={24} /></button>
-                    <Header title="การจัดการสิทธิ์เข้าถึง" />
+            <main className={`flex-1 transition-all duration-500 ease-in-out ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[280px]'} p-4 md:p-8 lg:p-10 w-full relative z-10`}>
+                <div className="mb-6 flex items-center gap-4">
+                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white rounded-xl text-[#2D241E] shadow-sm border-2 border-[#2D241E] active:scale-90 transition-all"><Menu size={24} /></button>
+                    <Header title="จัดการผู้ใช้งาน" />
                 </div>
 
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16 px-2">
-                    <div className="flex-1 space-y-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white rounded-full shadow-sm border border-slate-100 mb-2 animate-bounce-slow">
-                            <Sparkles size={14} className="text-[#D97706]" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#8B7E66]">การจัดการตัวตนผู้ใช้งาน</span>
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-10 px-2 text-left">
+                    <div className="flex-1 space-y-3">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#2D241E] rounded-full shadow-md animate-bounce-slow">
+                            <Sparkles size={14} className="text-white" />
+                            <span className="text-xs font-black uppercase tracking-widest text-white">Identity Access</span>
                         </div>
-                        <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter text-[#2D241E] leading-none italic">
-                            Users<span className="opacity-10">.</span>
-                        </h1>
+                        <h1 className="text-5xl md:text-6xl 2xl:text-7xl font-black uppercase tracking-tighter text-[#2D241E] leading-none italic">Users</h1>
                     </div>
-                    <button onClick={fetchUsers} className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-90 group">
-                        <RefreshCw size={24} className={`text-[#2D241E]/40 ${loading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} />
+                    <button onClick={() => fetchUsers()} className="p-4 rounded-2xl bg-white border-2 border-[#2D241E] shadow-lg hover:rotate-180 transition-all active:scale-90 group shrink-0">
+                        <RefreshCw size={24} className="text-[#2D241E]" strokeWidth={3} />
                     </button>
                 </div>
 
-                {/* 📊 Stat Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-16 px-2">
-                    <StatCardPureWhite title="ทั้งหมด" value={summary.total} icon={<Users size={24} />} color="#2D241E" />
-                    <StatCardPureWhite title="แอดมิน" value={summary.systemAdmins} icon={<ShieldAlert size={24} />} color="#E53E3E" />
-                    <StatCardPureWhite title="เจ้าของ" value={summary.owners} icon={<ShieldCheck size={24} />} color="#D97706" />
-                    <StatCardPureWhite title="ผู้จัดการ" value={summary.managers} icon={<UserCheck size={24} />} color="#05CD99" />
-                    <StatCardPureWhite title="ลูกค้า" value={summary.customers} icon={<Users size={24} />} color="#8B7E66" />
+                {/* 📊 Stat Cards (เข้มชัด) */}
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10 px-2">
+                    <StatCardSmall title="ทั้งหมด" value={summary.total} icon={<Users />} color="#2D241E" />
+                    <StatCardSmall title="แอดมิน" value={summary.systemAdmins} icon={<ShieldAlert />} color="#E53E3E" />
+                    <StatCardSmall title="เจ้าของ" value={summary.owners} icon={<ShieldCheck />} color="#2D241E" />
+                    <StatCardSmall title="ผู้จัดการ" value={summary.managers} icon={<UserCheck />} color="#05CD99" />
+                    <StatCardSmall title="ลูกค้า" value={summary.customers} icon={<Users />} color="#8B7E66" />
                 </div>
 
-                <div className="bg-white p-6 md:p-12 rounded-[3rem] md:rounded-[4rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-10 mb-14 relative z-10">
-                        <div className="space-y-2">
-                            <h3 className="text-3xl font-black text-[#2D241E] tracking-tighter uppercase italic flex items-center gap-4">
-                                <UserCog className="opacity-20" /> รายชื่อสมาชิก
-                            </h3>
+                {/* Table Section (เข้มจัด High Contrast) */}
+                <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xl overflow-hidden">
+                    <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
+                        <div className="relative w-full lg:max-w-md">
+                            <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#2D241E]" strokeWidth={3} />
+                            <input className="w-full pl-12 pr-6 py-3 rounded-full bg-slate-50 border-2 border-slate-100 outline-none font-black text-sm text-[#2D241E] focus:border-[#2D241E] transition-all shadow-inner" placeholder="ค้นหาชื่อหรืออีเมล..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
-
-                        <div className="flex flex-col md:flex-row gap-4 w-full xl:max-w-3xl">
-                            <div className="relative w-full md:w-64">
-                                <select 
-                                    className="w-full px-6 py-4 rounded-full bg-slate-50/50 border border-slate-100 outline-none font-bold text-xs appearance-none focus:bg-white focus:border-[#2D241E]/10 transition-all shadow-inner text-[#2D241E] uppercase tracking-widest cursor-pointer"
-                                    value={roleFilter} 
-                                    onChange={(e) => setRoleFilter(e.target.value)}
-                                >
-                                    <option value="all">ระดับสมาชิกทั้งหมด</option>
-                                    <option value="1">System Admin</option>
-                                    <option value="2">Owner</option>
-                                    <option value="3">Manager</option>
-                                    <option value="4">Customer</option>
-                                </select>
-                                <Filter size={14} className="absolute right-6 top-1/2 -translate-y-1/2 text-[#C2B8A3] pointer-events-none" />
-                            </div>
-                            <div className="relative flex-1 group">
-                                <Search size={22} className="absolute left-6 top-1/2 -translate-y-1/2 text-[#2D241E]/20 group-focus-within:text-[#2D241E] transition-colors" />
-                                <input 
-                                    className="w-full pl-16 pr-8 py-4 rounded-full bg-slate-50/50 border border-transparent focus:bg-white focus:border-slate-200 outline-none font-bold text-lg transition-all shadow-inner placeholder:text-[#2D241E]/20" 
-                                    placeholder="ค้นหาด้วยชื่อหรืออีเมล..." 
-                                    value={searchTerm} 
-                                    onChange={(e) => setSearchTerm(e.target.value)} 
-                                />
-                            </div>
+                        <div className="flex gap-4">
+                            <select className="px-6 py-3 rounded-full bg-slate-50 border-2 border-slate-100 font-black text-xs uppercase tracking-widest outline-none text-[#2D241E] focus:border-[#2D241E]" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+                                <option value="all">ทุกระดับสิทธิ์</option>
+                                <option value="1">ADMIN</option><option value="2">OWNER</option><option value="3">MANAGER</option><option value="4">CUSTOMER</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto relative z-10 custom-scrollbar">
-                        <table className="w-full text-left border-separate border-spacing-y-3 min-w-[900px]">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-separate border-spacing-y-2">
                             <thead>
-                                <tr className="text-[#C2B8A3] uppercase text-[15px] font-black tracking-[0.2em] px-8">
-                                    <th className="px-10 pb-2">ข้อมูลผู้ใช้งาน</th>
-                                    <th className="px-10 pb-2">ช่องทางติดต่อ</th>
-                                    <th className="px-10 pb-2">ระดับสิทธิ์</th>
-                                    <th className="px-10 pb-2 text-right">จัดการ</th>
+                                <tr className="text-[#2D241E] uppercase text-xs font-black tracking-widest px-6">
+                                    <th className="px-6 pb-2">ข้อมูลผู้ใช้งาน</th>
+                                    <th className="px-6 pb-2">อีเมล</th>
+                                    <th className="px-6 pb-2 text-center">ระดับสิทธิ์</th>
+                                    <th className="px-6 pb-2 text-right">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y-0">
-                                {currentUsers.length > 0 ? currentUsers.map(user => {
+                            <tbody>
+                                {currentUsers.map(user => {
                                     const role = getRoleStyle(user.role_id);
                                     return (
-                                        <tr key={user.user_id} className="group/row hover:translate-x-1 transition-all">
-                                            <td className="py-7 px-10 rounded-l-[2.5rem] md:rounded-l-[3rem] bg-white border-y border-l border-slate-50 group-hover/row:bg-slate-50/50">
-                                                <div className="flex items-center gap-5">
-                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-[#2D241E] shadow-sm border border-slate-100 group-hover/row:scale-110 transition-transform">
-                                                        {user.first_name?.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <span className="font-black text-[15px] text-[#2D241E] uppercase tracking-tighter italic leading-none">{user.first_name} {user.last_name}</span>
+                                        <tr key={user.user_id} className="group hover:translate-x-1 transition-all">
+                                            <td className="py-4 px-6 rounded-l-2xl bg-white border-y border-l border-slate-100">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-[#2D241E] text-white rounded-xl flex items-center justify-center font-black text-sm uppercase shadow-md">{user.first_name?.charAt(0)}</div>
+                                                    <span className="font-black text-sm uppercase truncate max-w-[200px] text-[#2D241E]">{user.first_name} {user.last_name}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-7 px-10 bg-white border-y border-slate-50 group-hover/row:bg-slate-50/50">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-[#2D241E] text-[15px] leading-none mb-1">{user.email}</span>
-                                                    <span className="text-[14px] text-[#8B7E66] font-light italic">ลงทะเบียนเมื่อ {new Date(user.created_at || Date.now()).toLocaleDateString('th-TH')}</span>
-                                                </div>
-                                            </td>
-                                            <td className="py-7 px-10 bg-white border-y border-slate-50 group-hover/row:bg-slate-50/50">
-                                                <span className="px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 w-fit shadow-sm bg-white" style={{ color: role.text, borderColor: `${role.text}20` }}>
+                                            <td className="py-4 px-6 bg-white border-y border-slate-100 text-sm font-black text-[#2D241E]">{user.email}</td>
+                                            <td className="py-4 px-6 bg-white border-y border-slate-100 text-center">
+                                                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white rounded-full border-2 border-[#2D241E] text-[10px] font-black uppercase tracking-widest shadow-sm" style={{ color: role.text }}>
                                                     {role.icon} {role.label}
                                                 </span>
                                             </td>
-                                            <td className="py-7 px-10 rounded-r-[2.5rem] md:rounded-r-[3rem] bg-white border-y border-r border-slate-50 group-hover/row:bg-slate-50/50 text-right">
-                                                <div className="flex justify-end gap-3 opacity-20 group-hover/row:opacity-100 transition-opacity">
-                                                    <button className="p-3 bg-white text-[#2D241E] border border-slate-100 rounded-xl hover:shadow-md transition-all active:scale-90" onClick={() => { setSelectedUser(user); setNewRole(user.role_id.toString()); setIsModalOpen(true); }}><Edit size={18} /></button>
-                                                    <button className="p-3 bg-white text-red-500 border border-slate-100 rounded-xl hover:shadow-md transition-all active:scale-90" onClick={() => handleDelete(user.user_id, user.first_name)}><Trash2 size={18} /></button>
+                                            <td className="py-4 px-6 rounded-r-2xl bg-white border-y border-r border-slate-100 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => { setSelectedUser(user); setNewRole(user.role_id.toString()); setIsModalOpen(true); }} className="p-2 bg-slate-50 border border-slate-100 rounded-lg hover:bg-[#2D241E] hover:text-white transition-all shadow-sm text-[#2D241E]"><Edit size={16} strokeWidth={3} /></button>
+                                                    {canDelete && <button onClick={() => handleDelete(user.user_id, user.first_name)} className="p-2 bg-slate-50 border border-slate-100 rounded-lg hover:bg-red-600 hover:text-white transition-all shadow-sm text-[#2D241E]"><Trash2 size={16} strokeWidth={3} /></button>}
                                                 </div>
                                             </td>
                                         </tr>
                                     );
-                                }) : (
-                                    <tr><td colSpan="4" className="py-32 text-center text-[#C2B8A3] font-black uppercase italic tracking-widest">ไม่พบข้อมูลสมาชิก</td></tr>
-                                )}
+                                })}
                             </tbody>
                         </table>
                     </div>
 
-                    {/* --- ✨ Pagination System (Only White) --- */}
                     {totalPages > 1 && (
-                        <div className="mt-12 flex justify-center items-center gap-4 relative z-10 pb-4">
-                            <button 
-                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                disabled={currentPage === 1}
-                                className="p-3 bg-white border border-slate-100 rounded-2xl text-[#2D241E] disabled:opacity-20 hover:shadow-lg transition-all active:scale-90 shadow-sm"
-                            >
-                                <ChevronLeft size={20} />
-                            </button>
-                            
-                            <div className="flex items-center gap-2 bg-slate-50/50 p-2 rounded-[2rem] border border-slate-100 shadow-inner">
-                                {[...Array(totalPages)].map((_, i) => {
-                                    const pageNum = i + 1;
-                                    if (totalPages > 5 && Math.abs(pageNum - currentPage) > 2) return null;
-                                    return (
-                                        <button
-                                            key={pageNum}
-                                            onClick={() => setCurrentPage(pageNum)}
-                                            className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${currentPage === pageNum ? 'bg-[#2D241E] text-white shadow-xl scale-110' : 'text-[#C2B8A3] hover:text-[#2D241E]'}`}
-                                        >
-                                            {pageNum}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            <button 
-                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                disabled={currentPage === totalPages}
-                                className="p-3 bg-white border border-slate-100 rounded-2xl text-[#2D241E] disabled:opacity-20 hover:shadow-lg transition-all active:scale-90 shadow-sm"
-                            >
-                                <ChevronRight size={20} />
-                            </button>
+                        <div className="mt-8 flex justify-center items-center gap-4">
+                            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 border-2 border-[#2D241E] rounded-xl text-[#2D241E] disabled:opacity-30 active:scale-90 transition-all shadow-md"><ChevronLeft size={20} strokeWidth={3} /></button>
+                            <span className="text-xs font-black text-[#2D241E] italic">Page {currentPage} of {totalPages}</span>
+                            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 border-2 border-[#2D241E] rounded-xl text-[#2D241E] disabled:opacity-30 active:scale-90 transition-all shadow-md"><ChevronRight size={20} strokeWidth={3} /></button>
                         </div>
                     )}
                 </div>
             </main>
 
-            {/* 🛡️ Role Update Modal */}
+            {/* 🛡️ Modal ปรับปรุงสิทธิ์ (เข้มจัด) */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 md:p-6 bg-[#2D241E]/10 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsModalOpen(false)}>
-                    <div className="bg-white w-full max-w-lg rounded-[3.5rem] md:rounded-[4rem] shadow-2xl overflow-hidden animate-in zoom-in-95 border border-white" onClick={e => e.stopPropagation()}>
-                        <div className="p-10 md:p-14 relative">
-                            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 p-3 bg-slate-50 text-[#2D241E]/20 hover:text-red-500 rounded-full transition-all active:scale-90 shadow-sm border border-white"><X size={20}/></button>
-                            <div className="mb-12 text-left">
-                                <p className="text-[#D97706] font-bold text-[15px] uppercase tracking-[0.5em] mb-2 italic">สิทธิ์การเข้าถึงข้อมูล</p>
-                                <h3 className="text-3xl font-black text-[#2D241E] tracking-tighter uppercase italic leading-tight">แก้ไข <span className="opacity-20 font-light">ระดับผู้ใช้งาน</span></h3>
-                                <p className="text-[#8B7E66] font-bold mt-2 text-[20px] italic">{selectedUser?.first_name} {selectedUser?.last_name}</p>
-                            </div>
-                            <div className="space-y-8">
-                                <div className="space-y-3">
-                                    {[
-                                        { id: 1, label: 'System Admin', desc: 'สิทธิ์สูงสุดในการควบคุมโครงสร้างระบบ' },
-                                        { id: 2, label: 'Owner', desc: 'สิทธิ์ในการวิเคราะห์และตรวจสอบร้านค้า' },
-                                        { id: 3, label: 'Manager', desc: 'สิทธิ์จัดการสินค้าและรายการคำสั่งซื้อ' },
-                                        { id: 4, label: 'Customer', desc: 'สิทธิ์ผู้ใช้งานทั่วไปสำหรับการสั่งซื้อ' }
-                                    ].map(role => (
-                                        <button 
-                                            key={role.id}
-                                            onClick={() => setNewRole(role.id.toString())}
-                                            className={`w-full p-5 rounded-[2rem] text-left border-2 transition-all flex items-center justify-between group/btn ${newRole === role.id.toString() ? 'border-[#2D241E] bg-slate-50/50' : 'border-slate-50 hover:border-slate-100 bg-white'}`}
-                                        >
-                                            <div className="text-left">
-                                                <p className={`font-black uppercase text-sm tracking-tight ${newRole === role.id.toString() ? 'text-[#2D241E]' : 'text-[#C2B8A3]'}`}>{role.label}</p>
-                                                <p className="text-[15px] text-[#8B7E66] font-light italic mt-1">{role.desc}</p>
-                                            </div>
-                                            {newRole === role.id.toString() ? (
-                                                <div className="w-8 h-8 rounded-full bg-[#2D241E] flex items-center justify-center text-white shadow-md animate-in zoom-in">
-                                                    <CheckCircle size={16} strokeWidth={3} />
-                                                </div>
-                                            ) : (
-                                                <ChevronRight size={16} className="text-slate-200 group-hover/btn:text-[#2D241E] transition-colors" />
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                                <button 
-                                    onClick={handleUpdateRole} 
-                                    disabled={isUpdating} 
-                                    className="w-full py-6 bg-[#ffff] text-black rounded-full font-black text-sm shadow-xl hover:bg-slate-100 transition-all flex justify-center items-center gap-4 uppercase tracking-[0.4em] active:scale-95 disabled:opacity-50"
-                                >
-                                    {isUpdating ? <Loader2 className="animate-spin" size={20} /> : <><Save size={20} /> ยืนยันการเปลี่ยนสิทธิ์</>}
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[#2D241E]/30 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-8 border-4 border-[#2D241E] flex flex-col animate-in zoom-in-95">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-black uppercase italic text-[#2D241E]">Edit Access</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-50 text-[#2D241E] rounded-full hover:text-red-500 transition-all border-2 border-[#2D241E]"><X size={20} strokeWidth={3} /></button>
+                        </div>
+                        <div className="space-y-3">
+                            {[
+                                { id: 1, label: 'ADMIN', desc: 'ควบคุมระบบสูงสุด' },
+                                { id: 2, label: 'Owner', desc: 'ตรวจสอบวิเคราะห์ร้านค้า' },
+                                { id: 3, label: 'Manager', desc: 'จัดการสินค้าและออเดอร์' },
+                                { id: 4, label: 'Customer', desc: 'สิทธิ์ผู้ใช้งานทั่วไป' }
+                            ].map(role => (
+                                <button key={role.id} onClick={() => setNewRole(role.id.toString())} className={`w-full p-4 rounded-2xl text-left border-2 flex justify-between items-center transition-all ${newRole === role.id.toString() ? 'border-[#2D241E] bg-slate-100 shadow-md scale-[1.02]' : 'border-slate-100 bg-white hover:border-slate-300'}`}>
+                                    <div>
+                                        <p className="font-black text-sm uppercase italic text-[#2D241E]">Level {role.id}: {role.label}</p>
+                                        <p className="text-[10px] font-bold text-[#2D241E]">{role.desc}</p>
+                                    </div>
+                                    {newRole === role.id.toString() && <CheckCircle size={18} className="text-[#2D241E]" strokeWidth={3} />}
                                 </button>
-                            </div>
+                            ))}
+                            <button onClick={handleUpdateRole} disabled={isUpdating} className="w-full mt-4 py-4 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95 shadow-xl">
+                                {isUpdating ? <Loader2 className="animate-spin" size={20} /> : 'Save Changes'}
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
-
-            <style dangerouslySetInnerHTML={{ __html: `
-                @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-                .animate-bounce-slow { animation: bounce-slow 4s ease-in-out infinite; }
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E10; border-radius: 10px; }
-            `}} />
         </div>
     );
 };
 
-const StatCardPureWhite = ({ title, value, icon, color }) => (
-    <div className="bg-white p-8 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition-all hover:-translate-y-1.5 duration-500 group relative overflow-hidden">
-        <div className="flex-1 text-left min-w-0 relative z-10">
-            <p className="text-[10px] font-black text-[#2D241E]/30 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }}></span>
-                {title}
-            </p>
-            <h2 className="text-[#2D241E] text-4xl font-black italic tracking-tighter leading-none uppercase truncate">{value || 0}</h2>
+// 💎 StatCard: เข้มจัด High Contrast
+const StatCardSmall = ({ title, value, icon }) => (
+    <div className="bg-white p-5 rounded-2xl border-2 border-[#2D241E] shadow-lg flex items-center justify-between hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
+        <div className="flex-1 text-left min-w-0">
+            <p className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest mb-1 leading-none">{title}</p>
+            <h2 className="text-[#2D241E] text-2xl font-black italic leading-none">{value || 0}</h2>
         </div>
-        <div style={{ color: color }} className="w-16 h-16 rounded-[1.8rem] flex items-center justify-center bg-white shadow-sm border border-slate-50 group-hover:scale-110 transition-transform duration-500 relative z-10">
-            {React.cloneElement(icon, { size: 24, strokeWidth: 2.5 })}
+        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-[#2D241E] border-2 border-[#2D241E] shadow-inner group-hover:bg-[#2D241E] group-hover:text-white transition-all duration-500">
+            {React.cloneElement(icon, { size: 20, strokeWidth: 3 })}
         </div>
     </div>
 );
