@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const axiosInstance = axios.create({
     baseURL: API_URL,
     // ✅ จำเป็นสำหรับการทำ CORS ข้ามโดเมนระหว่าง Vercel Frontend และ Backend
-    withCredentials: true, 
+    //withCredentials: true, 
     headers: {
         'Content-Type': 'application/json',
     },
