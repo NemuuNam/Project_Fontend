@@ -162,7 +162,7 @@ const Checkout = ({ userData }) => {
         } catch (err) {
             console.error("Submit Order Detail Error:", err.response?.data || err.message); // Debug ดู Error จริงจาก Backend
             Swal.fire({ 
-                icon: 'error', title: 'ขออภัย!', text: err.response?.data?.message || 'ไฟล์รูปของคุณมีขนาดใหญ่เกินไป กรุณาอัพโหลดสลิปใหม่', confirmButtonColor: '#2D241E' 
+                icon: 'error', title: 'ขออภัย!', text: err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', confirmButtonColor: '#2D241E' 
             });
         }
     };
@@ -241,7 +241,7 @@ const Checkout = ({ userData }) => {
                                         ) : (
                                             <div className="text-center">
                                                 <Upload className="mx-auto mb-2 opacity-20" size={32} />
-                                                <p className="text-sm font-black uppercase tracking-widest">โปรดอัพโหลดสลิป ขนาดไม่เกิน 4.5 MB</p>
+                                                <p className="text-sm font-black uppercase tracking-widest">Attach Payment Slip</p>
                                             </div>
                                         )}
                                     </div>
