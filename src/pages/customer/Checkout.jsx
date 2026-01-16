@@ -241,7 +241,7 @@ const Checkout = ({ userData }) => {
                                         ) : (
                                             <div className="text-center">
                                                 <Upload className="mx-auto mb-2 opacity-20" size={32} />
-                                                <p className="text-sm font-black uppercase tracking-widest">อัพโหลดสลิป ขนาดไม่เกิน 4.5 MB</p>
+                                                <p className="text-sm font-black uppercase tracking-widest">โปรดอัพโหลดสลิป ขนาดไม่เกิน 4.5 MB</p>
                                             </div>
                                         )}
                                     </div>
