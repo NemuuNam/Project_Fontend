@@ -1,43 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
     Trash2, Plus, Minus, ArrowLeft, 
-    Loader2, ShoppingCart, Sparkles, Navigation, 
-    Leaf, Cookie, ShoppingBag
+    Loader2, ShoppingCart, Sparkles, Navigation
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast, { Toaster } from 'react-hot-toast';
-
-// --- ⚡ นำเข้า Zustand ---
 import { create } from 'zustand';
-
 import axiosInstance from '../../api/axiosInstance';
 import { API_ENDPOINTS } from '../../api/config';
 import HeaderHome from '../../components/HeaderHome';
 import Footer from '../../components/Footer';
 
-// --- 📦 ZUSTAND STORE (Internal) ---
-// จัดการสถานะตะกร้าสินค้า โดยยังคงเชื่อมต่อกับ LocalStorage ชื่อ 'cart' เดิม
+// --- 📦 ZUSTAND STORE ---
 const useCartStore = create((set, get) => ({
     cartItems: [],
-    
-    // ฟังก์ชันสำหรับตั้งค่าข้อมูลสินค้าในตะกร้าและซิงค์กับ LocalStorage
     setCartItems: (items) => {
-        // บันทึกลง LocalStorage เฉพาะ id และจำนวน เพื่อให้เข้ากับระบบเดิมของหน้าอื่นๆ
-        const simplifiedCart = items.map(i => ({ 
-            product_id: i.product_id, 
-            quantity: i.quantity 
-        }));
+        const simplifiedCart = items.map(i => ({ product_id: i.product_id, quantity: i.quantity }));
         localStorage.setItem('cart', JSON.stringify(simplifiedCart));
-        
-        // อัปเดต State ในหน้าปัจจุบัน
         set({ cartItems: items });
-        
-        // แจ้งเตือนหน้า Header/Navbar ให้เปลี่ยนตัวเลขตาม (ใช้ Event เดิม)
         window.dispatchEvent(new Event('storage'));
     },
-
-    // ฟังก์ชันเพิ่ม/ลดจำนวนสินค้า
     updateQty: (id, delta) => {
         const { cartItems, setCartItems } = get();
         const updated = cartItems.map(item => {
@@ -49,8 +32,6 @@ const useCartStore = create((set, get) => ({
         });
         setCartItems(updated);
     },
-
-    // ฟังก์ชันลบสินค้า
     removeProduct: (id) => {
         const { cartItems, setCartItems } = get();
         const updated = cartItems.filter(item => item.product_id !== id);
@@ -60,16 +41,12 @@ const useCartStore = create((set, get) => ({
 
 const Cart = ({ userData }) => {
     const navigate = useNavigate();
-    
-    // ดึงสถานะจาก Store
     const { cartItems, setCartItems, updateQty, removeProduct } = useCartStore();
-    
     const [loading, setLoading] = useState(true);
     const [shopSettings, setShopSettings] = useState({ delivery_fee: 0, min_free_shipping: 0 });
 
     const isStaff = userData && [1, 2, 3].includes(Number(userData.role_level));
 
-    // --- 🌐 API: ดึงค่าตั้งค่าร้านค้า (ค่าขนส่ง) ---
     const fetchSettings = useCallback(async () => {
         try {
             const res = await axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/public`);
@@ -77,49 +54,33 @@ const Cart = ({ userData }) => {
                 const settings = Array.isArray(res.data) 
                     ? res.data.reduce((acc, curr) => ({ ...acc, [curr.config_key]: curr.config_value }), {})
                     : res.data;
-
                 setShopSettings({
                     delivery_fee: parseFloat(settings.delivery_fee) || 0,
                     min_free_shipping: parseInt(settings.min_free_shipping, 10) || 0
                 });
             }
-        } catch (err) { 
-            // กรณี Error ให้ใช้ค่า Default
-            setShopSettings({ delivery_fee: 35, min_free_shipping: 5 }); 
-        }
+        } catch (err) { setShopSettings({ delivery_fee: 35, min_free_shipping: 5 }); }
     }, []);
 
-    // --- 🔄 API: ซิงค์ข้อมูลสินค้ากับฐานข้อมูล (ราคา/สต็อก/รูปภาพ) ---
     const syncCartWithDatabase = useCallback(async () => {
         const localCart = JSON.parse(localStorage.getItem('cart')) || [];
-        if (localCart.length === 0) { 
-            setCartItems([]); 
-            return; 
-        }
-        
+        if (localCart.length === 0) { setCartItems([]); return; }
         try {
             const productIds = localCart.map(item => item.product_id);
             const res = await axiosInstance.post(`${API_ENDPOINTS.PRODUCTS}/sync-cart`, { ids: productIds });
-            
             if (res.success) {
                 const mergedCart = localCart.map(localItem => {
                     const latestInfo = res.data.find(p => p.product_id === localItem.product_id);
                     if (!latestInfo) return null;
-                    
-                    const finalQty = Math.min(localItem.quantity, latestInfo.stock_quantity);
-
                     return {
                         ...latestInfo,
-                        quantity: finalQty,
+                        quantity: Math.min(localItem.quantity, latestInfo.stock_quantity),
                         image_url: latestInfo.images?.find(img => img.is_main)?.image_url || latestInfo.images?.[0]?.image_url
                     };
                 }).filter(Boolean);
-
                 setCartItems(mergedCart);
             }
-        } catch (err) { 
-            console.error("Sync Error:", err); 
-        }
+        } catch (err) { console.error("Sync Error:", err); }
     }, [setCartItems]);
 
     useEffect(() => {
@@ -131,7 +92,6 @@ const Cart = ({ userData }) => {
         init();
     }, [syncCartWithDatabase, fetchSettings]);
 
-    // --- 🧮 การคำนวณยอดรวม ---
     const subtotal = cartItems.reduce((acc, item) => acc + (Number(item.unit_price) * item.quantity), 0);
     const totalItemsCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
     const isFreeShipping = shopSettings.min_free_shipping > 0 && totalItemsCount >= shopSettings.min_free_shipping;
@@ -140,90 +100,75 @@ const Cart = ({ userData }) => {
 
     const handleRemove = (id) => {
         Swal.fire({
-            title: 'นำออกจากตะกร้า?',
-            text: "คุณต้องการนำสินค้าชิ้นนี้ออกจากถาดขนมใช่หรือไม่",
+            title: 'นำขนมออก?',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#2D241E',
-            confirmButtonText: 'ยืนยันการลบ',
+            confirmButtonColor: '#000000',
+            confirmButtonText: 'ยืนยัน',
             cancelButtonText: 'ยกเลิก',
-            customClass: {
-                popup: 'rounded-[2.5rem] border-4 border-[#2D241E] font-["Kanit"]',
-                confirmButton: 'rounded-full px-8 py-2 font-black uppercase italic',
-                cancelButton: 'rounded-full px-8 py-2 font-bold text-[#2D241E]'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                removeProduct(id);
-                toast.success("นำสินค้าออกเรียบร้อย");
-            }
-        });
+            customClass: { popup: 'rounded-[3rem] border-2 border-slate-300 font-["Kanit"]' }
+        }).then((result) => { if (result.isConfirmed) { removeProduct(id); toast.success("นำสินค้าออกเรียบร้อย"); } });
     };
 
-    if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={40} /></div>;
+    if (loading) return <div className="h-screen flex items-center justify-center bg-[#FDFCFB]"><Loader2 className="animate-spin text-[#000000]" size={48} /></div>;
 
     return (
-        <div className="min-h-screen bg-white font-['Kanit'] text-[#2D241E] relative overflow-x-hidden">
+        <div className="min-h-screen bg-[#FDFCFB] font-['Kanit'] text-[#111827] relative overflow-x-hidden">
             <Toaster position="bottom-right" />
             <HeaderHome userData={userData} />
 
-            {/* --- ☁️ Background Decoration --- */}
-            <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-0">
-                <Leaf className="absolute top-[10%] left-[5%] rotate-12 text-[#2D241E]" size={250} />
-                <Cookie className="absolute bottom-[10%] right-[10%] -rotate-12 text-[#2D241E]" size={150} />
-            </div>
-
-            {/* --- 🍃 Hero Header --- */}
-            <section className="relative pt-24 pb-6 md:pt-32 md:pb-8 bg-[#FAFAFA] border-b-2 border-slate-100">
-                <div className="container mx-auto px-6 text-left relative z-10">
-                    <button onClick={() => navigate('/products')} className="inline-flex items-center gap-2 px-4 py-1.5 bg-white rounded-full shadow-sm border border-slate-200 mb-4 hover:bg-[#2D241E] hover:text-white transition-all group">
-                        <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-                        <span className="text-[11px] font-black uppercase tracking-widest text-[#2D241E]">Back to Menu</span>
+            {/* --- ☁️ Hero Section: pt-20 --- */}
+            <section className="relative pt-20 pb-8 bg-[#FDFCFB] border-b-2 border-slate-300 text-left">
+                <div className="container mx-auto px-6 lg:px-16">
+                    <button onClick={() => navigate('/products')} className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border-2 border-slate-300 mb-6 hover:bg-slate-50 transition-all text-sm font-medium uppercase italic text-[#000000]">
+                        <ArrowLeft size={16} /> Return to Shop
                     </button>
-                    
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter italic leading-none text-[#2D241E]">
-                            Shopping <span className="font-light not-italic text-[#2D241E]/60">Bag</span>
+                    <div className="flex justify-between items-end">
+                        <h1 className="text-5xl md:text-7xl font-medium uppercase tracking-tighter leading-none text-[#000000]">
+                            Shopping <span className="font-light italic text-[#374151]">Bag</span>
                         </h1>
-                        <p className="text-sm md:text-base font-bold italic text-[#2D241E] underline decoration-[#2D241E]/10 underline-offset-4">มีสินค้าทั้งหมด {totalItemsCount} ชิ้นในถาด</p>
+                        <p className="text-2xl font-medium text-[#374151] italic">({totalItemsCount} items)</p>
                     </div>
                 </div>
             </section>
             
-            <main className="container mx-auto px-4 md:px-6 lg:px-12 py-6 md:py-10 relative z-10">
+            <main className="container mx-auto px-6 lg:px-16 py-8 relative z-10">
                 {cartItems.length === 0 ? (
-                    <div className="text-center py-32 bg-white rounded-[3rem] border-4 border-dashed border-slate-100 flex flex-col items-center">
-                        <ShoppingCart size={80} strokeWidth={1} className="text-slate-200 mb-6" />
-                        <h2 className="text-3xl font-black text-[#2D241E] uppercase italic mb-6">ถาดขนมว่างเปล่า</h2>
-                        <button onClick={() => navigate('/products')} className="bg-[#2D241E] text-white px-10 py-4 rounded-full font-black uppercase tracking-widest text-lg shadow-xl hover:scale-105 transition-all italic">
-                            เลือกขนมเลย
+                    <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-slate-300 flex flex-col items-center">
+                        <ShoppingCart size={80} strokeWidth={1.5} className="text-[#374151] mb-6" />
+                        <h2 className="text-4xl font-medium text-[#000000] uppercase italic mb-8">Your bag is empty</h2>
+                        <button 
+                            onClick={() => navigate('/products')} 
+                            className="bg-white text-[#000000] border-2 border-slate-300 px-12 py-4 rounded-full font-medium uppercase text-lg shadow-md hover:bg-slate-50 transition-all italic"
+                        >
+                            Start Shopping
                         </button>
                     </div>
                 ) : (
-                    <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
                         
-                        {/* 🛒 Cart Items List */}
-                        <div className="w-full lg:w-[62%] space-y-4 text-left">
+                        {/* 🛒 Items List */}
+                        <div className="lg:col-span-8 space-y-4 text-left">
                             {cartItems.map((item) => (
-                                <div key={item.product_id} className="bg-white p-4 md:p-6 rounded-[2.5rem] flex flex-col sm:flex-row items-center gap-6 shadow-lg border-2 border-slate-50 hover:border-[#2D241E]/10 transition-all duration-500 group relative">
-                                    <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 overflow-hidden rounded-[2rem] bg-slate-50 border-2 border-white shadow-md">
-                                        <img src={item.image_url || '/placeholder.png'} alt={item.product_name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                <div key={item.product_id} className="bg-white p-8 rounded-[3rem] flex items-center gap-8 border-2 border-slate-300 shadow-sm transition-all">
+                                    <div className="w-32 h-32 shrink-0 overflow-hidden rounded-[2rem] bg-[#FDFCFB] border-2 border-slate-300">
+                                        <img src={item.image_url || '/placeholder.png'} alt={item.product_name} className="w-full h-full object-cover" />
                                     </div>
-
-                                    <div className="flex-1 space-y-2">
-                                        <span className="text-[11px] font-black text-[#2D241E] uppercase tracking-widest italic">{item.category?.category_name || "Bakery"}</span>
-                                        <h3 className="text-xl md:text-2xl font-black text-[#2D241E] tracking-tight uppercase leading-tight italic">{item.product_name}</h3>
-                                        <p className="text-2xl font-black text-[#2D241E] tracking-tighter">฿{Number(item.unit_price).toLocaleString()}</p>
-
-                                        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                                            <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-full border border-slate-200 shadow-inner">
-                                                <button onClick={() => updateQty(item.product_id, -1)} className="w-9 h-9 flex items-center justify-center bg-white rounded-full text-[#2D241E] hover:bg-[#2D241E] hover:text-white shadow-sm transition-all active:scale-90"><Minus size={14} strokeWidth={3} /></button>
-                                                <span className="text-lg font-black w-8 text-center tabular-nums text-[#2D241E]">{item.quantity}</span>
-                                                <button onClick={() => updateQty(item.product_id, 1)} className="w-9 h-9 flex items-center justify-center bg-white rounded-full text-[#2D241E] hover:bg-[#2D241E] hover:text-white shadow-sm transition-all active:scale-90"><Plus size={14} strokeWidth={3} /></button>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <span className="text-sm font-medium text-[#374151] uppercase tracking-widest leading-none whitespace-nowrap">{item.category?.category_name || "Bakery"}</span>
+                                                <h3 className="text-2xl font-medium text-[#111827] tracking-tight uppercase italic mt-1">{item.product_name}</h3>
+                                                <p className="text-3xl font-medium italic text-[#000000] mt-2">฿{Number(item.unit_price).toLocaleString()}</p>
                                             </div>
-                                            <button onClick={() => handleRemove(item.product_id)} className="text-[#2D241E] hover:text-red-500 transition-all p-2 group/del">
-                                                <Trash2 size={20} className="group-hover/del:scale-110 transition-transform" />
+                                            <button onClick={() => handleRemove(item.product_id)} className="text-[#374151] hover:text-red-600 transition-all p-2">
+                                                <Trash2 size={24} />
                                             </button>
+                                        </div>
+                                        <div className="flex items-center gap-4 mt-4 bg-white w-fit p-2 rounded-full border-2 border-slate-300">
+                                            <button onClick={() => updateQty(item.product_id, -1)} className="w-8 h-8 flex items-center justify-center bg-white border-2 border-slate-300 rounded-full active:scale-90"><Minus size={14} strokeWidth={2.5} /></button>
+                                            <span className="text-2xl font-medium w-8 text-center tabular-nums text-[#000000]">{item.quantity}</span>
+                                            <button onClick={() => updateQty(item.product_id, 1)} className="w-8 h-8 flex items-center justify-center bg-white border-2 border-slate-300 rounded-full active:scale-90"><Plus size={14} strokeWidth={2.5} /></button>
                                         </div>
                                     </div>
                                 </div>
@@ -231,79 +176,54 @@ const Cart = ({ userData }) => {
                         </div>
 
                         {/* 📊 Order Summary */}
-                        <div className="w-full lg:w-[38%] lg:sticky lg:top-28 text-left">
-                            <div className="bg-white text-[#2D241E] p-8 md:p-10 rounded-[3rem] shadow-2xl border-2 border-slate-100 relative overflow-hidden animate-in slide-in-from-right-4 duration-700">
-                                <Sparkles className="absolute -top-10 -right-10 opacity-[0.05] text-[#2D241E] rotate-12" size={180} />
+                        <div className="lg:col-span-4 lg:sticky lg:top-28 text-left">
+                            <div className="bg-white p-8 rounded-[3rem] border-2 border-slate-300 shadow-lg relative overflow-hidden">
+                                <h2 className="text-3xl font-medium text-[#000000] mb-8 uppercase tracking-tighter italic border-b-2 border-slate-300 pb-4">Summary</h2>
                                 
-                                <h2 className="text-xl md:text-2xl font-black mb-8 uppercase tracking-tighter italic border-b-4 border-slate-50 pb-6">
-                                    Summary <span className="font-light not-italic text-[#2D241E]/40">Order</span>
-                                </h2>
-
-                                <div className="space-y-6 mb-10 relative z-10">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-base font-black uppercase tracking-[0.1em] opacity-80">Subtotal</span>
-                                        <span className="font-black text-xl italic">฿{subtotal.toLocaleString()}</span>
+                                <div className="space-y-6 mb-8">
+                                    <div className="flex justify-between items-center text-xl font-medium text-[#374151]">
+                                        <span className="uppercase tracking-widest">Subtotal</span>
+                                        <span className="text-[#111827]">฿{subtotal.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xl font-medium text-[#374151]">
+                                        <span className="uppercase tracking-widest">Delivery</span>
+                                        {isFreeShipping ? <span className="text-[#000000] font-bold italic underline decoration-slate-300">FREE</span> : <span className="text-[#111827]">฿{shippingCost.toLocaleString()}</span>}
                                     </div>
                                     
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-base font-black uppercase tracking-[0.1em] opacity-80">Delivery Fee</span>
-                                        {isFreeShipping ? (
-                                            <span className="text-green-700 font-black text-xl uppercase tracking-widest italic">FREE</span>
-                                        ) : (
-                                            <span className="font-black text-xl italic">฿{shippingCost.toLocaleString()}</span>
-                                        )}
-                                    </div>
-
                                     {!isFreeShipping && shopSettings.min_free_shipping > 0 && (
-                                        <div className="bg-[#F3E9DC]/40 border-2 border-[#F3E9DC] rounded-[2.5rem] p-5 text-center shadow-inner mt-4">
-                                            <p className="text-[15px] font-bold italic text-[#2D241E] leading-relaxed">
-                                                ซื้อเพิ่มอีก <span className="font-black text-xl text-black">{(shopSettings.min_free_shipping - totalItemsCount)}</span> ชิ้น เพื่อ <span className="underline underline-offset-8 decoration-4 decoration-[#2D241E]">จัดส่งฟรี!</span>
-                                            </p>
+                                        <div className="bg-white rounded-[2rem] p-4 text-center border-2 border-slate-300 mt-4">
+                                            <p className="text-lg font-medium text-[#111827] italic">Add <span className="text-[#000000] font-medium">{(shopSettings.min_free_shipping - totalItemsCount)} pcs</span> for <span className="underline decoration-slate-300">Free Delivery</span></p>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="pt-8 border-t-4 border-[#2D241E] mb-10 relative z-10">
+                                <div className="pt-6 border-t-2 border-slate-300 mb-8">
                                     <div className="flex justify-between items-end">
-                                        <div className="flex flex-col">
-                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-50 mb-1">Grand Total</span>
-                                            <span className="text-xl md:text-2xl font-black uppercase italic leading-none">ยอดสุทธิ</span>
-                                        </div>
-                                        <span className="text-4xl md:text-5xl font-black tracking-tighter tabular-nums leading-none">
-                                            ฿{finalTotal.toLocaleString()}
-                                        </span>
+                                        <span className="text-lg font-medium uppercase text-[#374151]">Total</span>
+                                        <span className="text-5xl font-medium tracking-tighter italic text-[#000000] leading-none">฿{finalTotal.toLocaleString()}</span>
                                     </div>
                                 </div>
 
+                                {/* 🚀 ปุ่ม Proceed to Checkout: พื้นขาว ขอบชัด */}
                                 <button 
                                     onClick={() => navigate('/checkout')} 
-                                    disabled={isStaff}
-                                    className={`w-full py-6 rounded-full font-black text-lg flex items-center justify-center gap-4 transition-all shadow-xl uppercase tracking-widest italic active:scale-95 ${
+                                    disabled={isStaff} 
+                                    className={`w-full py-5 rounded-full font-medium text-lg flex items-center justify-center gap-3 transition-all uppercase tracking-widest italic shadow-md border-2 ${
                                         isStaff 
-                                        ? 'bg-slate-100 text-slate-300 cursor-not-allowed border-none' 
-                                        : 'bg-[#2D241E] text-white hover:bg-black hover:scale-[1.02]'
+                                        ? 'bg-slate-100 text-slate-400 border-slate-300 cursor-not-allowed' 
+                                        : 'bg-white text-[#000000] border-slate-300 hover:bg-slate-50 active:scale-95'
                                     }`}
                                 >
-                                    Proceed to Checkout <Navigation size={20} strokeWidth={3} className="rotate-90" />
+                                    Proceed to Checkout <Navigation size={20} strokeWidth={2.5} className="rotate-90" />
                                 </button>
                                 
-                                <button onClick={() => navigate('/products')} className="w-full mt-6 text-[#2D241E] hover:underline font-bold uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 italic">
-                                    <ArrowLeft size={12} /> Continue Shopping
-                                </button>
+                                <button onClick={() => navigate('/products')} className="w-full mt-6 text-[#374151] font-medium uppercase text-sm transition-all italic text-center underline underline-offset-4 decoration-slate-300">Continue Shopping</button>
                             </div>
                         </div>
                     </div>
                 )}
             </main>
-
             <Footer />
-
-            <style dangerouslySetInnerHTML={{ __html: `
-                .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E; border-radius: 10px; }
-                @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-                .animate-bounce-slow { animation: bounce-slow 4s ease-in-out infinite; }
-            `}} />
         </div>
     );
 };

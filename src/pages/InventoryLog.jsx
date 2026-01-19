@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
     ClipboardList, Search, ArrowUpCircle, ArrowDownCircle,
     Package, Loader2, User, Trash2, Calendar, RefreshCw, Menu, Clock,
-    Filter, ChevronRight, ChevronLeft, Activity, Sparkles, Leaf, Cookie, Smile
+    Filter, ChevronRight, ChevronLeft, Activity, Sparkles, X
 } from 'lucide-react';
 import { jwtDecode } from 'jwt-decode';
 import toast, { Toaster } from 'react-hot-toast';
@@ -14,7 +14,6 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 const InventoryLog = () => {
-    // --- 🏗️ States (Logic เดิมครบถ้วน) ---
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -25,17 +24,9 @@ const InventoryLog = () => {
     const logsPerPage = 10;
 
     const token = localStorage.getItem('token');
-    let userRole = 0;
-    try {
-        if (token) {
-            const decoded = jwtDecode(token);
-            userRole = Number(decoded.role_level) || 0;
-        }
-    } catch (err) { console.error("Token decode error:", err); }
+    const userRole = token ? jwtDecode(token).role_level : 0;
+    const isSuperAdmin = Number(userRole) === 1;
 
-    const canClearLogs = userRole === 1;
-
-    // --- 📦 Logic Functions ---
     const fetchLogs = useCallback(async (isSilent = false) => {
         try {
             if (!isSilent) setLoading(true);
@@ -49,13 +40,13 @@ const InventoryLog = () => {
 
     const handleClearAll = async () => {
         const result = await Swal.fire({
-            title: 'ล้างประวัติทั้งหมด?',
-            text: "ข้อมูลกิจกรรมสต็อกจะถูกลบถาวร!",
+            title: 'ล้างประวัติสต็อกทั้งหมด?',
+            text: "ข้อมูลกิจกรรมจะถูกลบถาวร! ยืนยันการลบหรือไม่?",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#2D241E',
+            confirmButtonColor: '#000000',
             confirmButtonText: 'ยืนยัน ลบทั้งหมด',
-            customClass: { popup: 'rounded-[2rem] font-["Kanit"] border-4 border-[#2D241E]' }
+            customClass: { popup: 'rounded-[2.5rem] font-["Kanit"] border border-slate-300' }
         });
         if (!result.isConfirmed) return;
         try {
@@ -64,7 +55,6 @@ const InventoryLog = () => {
         } catch (err) { toast.error("ลบข้อมูลไม่สำเร็จ"); }
     };
 
-    // --- 🔍 Filtering & Pagination ---
     const filteredLogs = useMemo(() => {
         return logs.filter(log => {
             const fullName = `${log.user?.first_name || ''} ${log.user?.last_name || ''}`.toLowerCase();
@@ -83,145 +73,124 @@ const InventoryLog = () => {
 
     useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType]);
 
-    if (loading && logs.length === 0) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={40} /></div>;
+    if (loading && logs.length === 0) return <div className="h-screen flex items-center justify-center bg-[#FDFCFB]"><Loader2 className="animate-spin text-slate-800" size={40} /></div>;
 
     return (
-        <div className="flex min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden relative max-w-[1920px] mx-auto shadow-2xl">
-            <Toaster position="top-right" />
+        <div className="flex min-h-screen bg-[#FDFCFB] font-['Kanit'] text-[#111827] overflow-x-hidden relative max-w-full">
+            <Toaster position="top-right" containerStyle={{ zIndex: 9999 }} />
             <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} isMobileOpen={isSidebarOpen} setIsMobileOpen={setIsSidebarOpen} activePage="invlog" />
 
-            {/* 🚀 Main: Scale มาตรฐาน (เท่าหน้า Product) */}
-            <main className={`flex-1 transition-all duration-500 ease-in-out ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[280px]'} p-4 md:p-8 lg:p-10 w-full relative z-10`}>
-                
-                <div className="mb-6 flex items-center gap-4">
-                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white rounded-xl text-[#2D241E] shadow-sm border-2 border-[#2D241E] active:scale-90 transition-all"><Menu size={24} /></button>
-                    <Header title="ตรวจสอบคลังสินค้า" />
+            {/* 🚀 ปรับ Margin Left ตาม Sidebar 280px และลด Padding ขวา */}
+            <main className={`flex-1 transition-all duration-500 ease-in-out ${isCollapsed ? 'lg:ml-[110px]' : 'lg:ml-[280px]'} p-4 md:p-5 lg:p-6 lg:pr-4 w-full relative z-10`}>
+                <div className="mb-4 flex items-center gap-4">
+                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 bg-white rounded-xl text-[#111827] border border-slate-300 shadow-sm"><Menu size={24} /></button>
+                    <Header title="ตรวจสอบคลังสินค้า" isCollapsed={isCollapsed} />
                 </div>
 
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-10 px-2 text-left">
-                    <div className="flex-1 space-y-3">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#2D241E] rounded-full shadow-md animate-bounce-slow">
-                            <Sparkles size={14} className="text-white" />
-                            <span className="text-xs font-black uppercase tracking-widest text-white">Inventory Movement</span>
-                        </div>
-                        <h1 className="text-5xl md:text-6xl 2xl:text-7xl font-black uppercase tracking-tighter text-[#2D241E] leading-none italic">StockLogs</h1>
-                    </div>
-                    <div className="flex gap-3 w-full lg:w-auto">
-                        {canClearLogs && (
-                            <button onClick={handleClearAll} className="flex-1 lg:flex-none border-2 border-red-600 text-red-600 px-6 py-3 rounded-full font-black text-sm uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2">
-                                <Trash2 size={16} strokeWidth={3} /> ล้างประวัติ
-                            </button>
-                        )}
-                        <button onClick={() => fetchLogs()} className="p-3.5 rounded-2xl bg-white border-2 border-[#2D241E] shadow-lg hover:rotate-180 transition-all active:scale-90 group">
-                            <RefreshCw size={24} className={`text-[#2D241E] ${loading ? 'animate-spin' : ''}`} strokeWidth={3} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* 📊 Stat Cards (เข้มจัด + Scale matched) */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10 px-2">
-                    <StatCardSmall title="รายการวันนี้" value={logs.filter(l => new Date(l.created_at).toDateString() === new Date().toDateString()).length} icon={<Activity />} />
-                    <StatCardSmall title="นำเข้าสต็อก" value={logs.filter(l => l.change_qty > 0).length} icon={<ArrowUpCircle />} />
-                    <StatCardSmall title="เบิกออกสต็อก" value={logs.filter(l => l.change_qty < 0).length} icon={<ArrowDownCircle />} />
-                    <StatCardSmall title="รวมทั้งหมด" value={logs.length} icon={<ClipboardList />} />
-                </div>
-
-                {/* Table Section - High Contrast */}
-                <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xl overflow-hidden">
-                    <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
-                        <div className="flex gap-2 p-1 bg-slate-50 rounded-full border-2 border-slate-100">
-                            {[
-                                { id: 'all', label: 'ทั้งหมด' },
-                                { id: 'increase', label: 'นำเข้า' },
-                                { id: 'decrease', label: 'เบิกออก' }
-                            ].map(tab => (
-                                <button key={tab.id} onClick={() => setFilterType(tab.id)} className={`px-5 py-1.5 rounded-full text-xs font-black uppercase transition-all ${filterType === tab.id ? 'bg-[#2D241E] text-white shadow-md' : 'text-[#2D241E] hover:bg-white transition-colors'}`}>{tab.label}</button>
-                            ))}
-                        </div>
-                        <div className="relative w-full lg:max-w-md">
-                            <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#2D241E]" strokeWidth={3} />
-                            <input className="w-full pl-12 pr-6 py-3 rounded-full bg-slate-50 border-2 border-slate-100 outline-none font-black text-sm text-[#2D241E] focus:border-[#2D241E] transition-all shadow-inner placeholder:text-[#2D241E]" placeholder="ค้นหาสินค้า หรือ ผู้ดูแล..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                        </div>
+                {/* 🚀 pt-24 หลบ Header ทึบ */}
+                <div className="pt-24">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 px-2">
+                        <StatCardSmall title="รายการวันนี้" value={logs.filter(l => new Date(l.created_at).toDateString() === new Date().toDateString()).length} />
+                        <StatCardSmall title="นำเข้าสต็อก" value={logs.filter(l => l.change_qty > 0).length} />
+                        <StatCardSmall title="เบิกออกสต็อก" value={logs.filter(l => l.change_qty < 0).length} />
+                        <StatCardSmall title="รวมทั้งหมด" value={logs.length} />
                     </div>
 
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left border-separate border-spacing-y-2">
-                            <thead>
-                                <tr className="text-[#2D241E] uppercase text-xs font-black tracking-widest px-6">
-                                    <th className="px-6 pb-2">วันและเวลา</th>
-                                    <th className="px-6 pb-2">ข้อมูลสินค้า</th>
-                                    <th className="px-6 pb-2 text-center">จำนวน</th>
-                                    <th className="px-6 pb-2 text-center">ผู้ดำเนินการ</th>
-                                    <th className="px-6 pb-2">เหตุผล</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentLogs.map(log => (
-                                    <tr key={log.inv_log_id} className="group hover:translate-x-1 transition-all">
-                                        <td className="py-4 px-6 rounded-l-2xl bg-white border-y border-l border-slate-100">
-                                            <div className="flex flex-col leading-tight text-left">
-                                                <span className="font-black text-sm text-[#2D241E]">{new Date(log.created_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                                                <span className="text-[10px] font-black text-[#2D241E] italic">{new Date(log.created_at).toLocaleTimeString('th-TH')} น.</span>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6 bg-white border-y border-slate-100 text-left">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-[#2D241E] border-2 border-[#2D241E]/10 group-hover:scale-110 transition-transform"><Package size={18} strokeWidth={3} /></div>
-                                                <span className="font-black text-sm uppercase truncate max-w-[200px] text-[#2D241E] italic">{log.product?.product_name || 'ไม่พบสินค้า'}</span>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6 bg-white border-y border-slate-100 text-center">
-                                            <span className={`inline-flex items-center gap-1 px-4 py-1 rounded-full text-xs font-black border-2 shadow-sm ${log.change_qty > 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-600' : 'bg-red-50 text-red-600 border-red-600'}`}>
-                                                {log.change_qty > 0 ? <ArrowUpCircle size={12} strokeWidth={3} /> : <ArrowDownCircle size={12} strokeWidth={3} />}
-                                                {log.change_qty > 0 ? `+${log.change_qty}` : log.change_qty}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-6 bg-white border-y border-slate-100 text-center">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <div className="w-8 h-8 bg-[#2D241E] text-white rounded-lg flex items-center justify-center font-black text-[10px] uppercase shadow-md">{log.user?.first_name?.charAt(0)}</div>
-                                                <span className="font-black text-xs uppercase truncate max-w-[150px] text-[#2D241E]">{log.user?.first_name || 'System'}</span>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6 rounded-r-2xl bg-white border-y border-r border-slate-100 text-left">
-                                            <span className="text-xs font-black text-[#2D241E] italic line-clamp-1">"{log.reason || 'ปรับปรุงคลังสินค้า'}"</span>
-                                        </td>
+                    <div className="bg-white p-6 rounded-[3rem] border border-slate-300 shadow-sm overflow-hidden">
+                        <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4 mb-8">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="flex gap-2 p-1 bg-slate-50 rounded-full border border-slate-200">
+                                    {[{ id: 'all', label: 'ทั้งหมด' }, { id: 'increase', label: 'นำเข้า' }, { id: 'decrease', label: 'เบิกออก' }].map(tab => (
+                                        <button key={tab.id} onClick={() => setFilterType(tab.id)} 
+                                            className={`px-4 py-1.5 rounded-full text-base font-medium uppercase transition-all ${filterType === tab.id ? 'bg-[#000000] text-white shadow-sm' : 'text-[#374151] hover:bg-white'}`}>
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                {isSuperAdmin && (
+                                    <button onClick={handleClearAll} className="bg-white border border-red-600 text-red-600 px-5 py-1.5 rounded-full font-medium text-base uppercase shadow-sm active:scale-95 flex items-center gap-2 italic transition-colors hover:bg-red-50">
+                                        <Trash2 size={18} /> ล้างประวัติ
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="relative w-full lg:max-w-md">
+                                <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#374151]" />
+                                <input className="w-full pl-12 pr-6 py-3 rounded-full bg-slate-50 border border-slate-200 outline-none text-xl font-medium text-[#000000] focus:bg-white shadow-inner" placeholder="ค้นหาสินค้า หรือ ผู้ดำเนินการ..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto custom-scrollbar">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="text-[#000000] bg-slate-50 uppercase text-xl font-medium tracking-widest border-b border-slate-300">
+                                        <th className="px-6 py-4">วันและเวลา</th>
+                                        <th className="px-6 py-4">ข้อมูลสินค้า</th>
+                                        <th className="px-6 py-4 text-center">จำนวน</th>
+                                        <th className="px-6 py-4 text-center">ผู้ดำเนินการ</th>
+                                        <th className="px-6 py-4">เหตุผล</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="mt-8 flex justify-center items-center gap-4">
-                            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 border-2 border-[#2D241E] rounded-xl text-[#2D241E] disabled:opacity-30 active:scale-90 transition-all shadow-md"><ChevronLeft size={20} strokeWidth={3}/></button>
-                            <span className="text-xs font-black text-[#2D241E] italic">Page {currentPage} of {totalPages}</span>
-                            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 border-2 border-[#2D241E] rounded-xl text-[#2D241E] disabled:opacity-30 active:scale-90 transition-all shadow-md"><ChevronRight size={20} strokeWidth={3}/></button>
+                                </thead>
+                                <tbody className="divide-y divide-slate-200">
+                                    {currentLogs.map(log => (
+                                        <tr key={log.inv_log_id} className="hover:bg-slate-50/50 transition-colors">
+                                            {/* 📉 py-4 เพื่อความกระชับ */}
+                                            <td className="py-4 px-6">
+                                                <div className="flex flex-col text-left leading-none">
+                                                    <span className="font-medium text-xl text-[#000000]">{new Date(log.created_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                                    <span className="text-base font-medium text-[#374151] italic mt-1">{new Date(log.created_at).toLocaleTimeString('th-TH')} น.</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-slate-100 border border-slate-300 text-[#000000] rounded-xl flex items-center justify-center font-medium text-lg shadow-sm"><Package size={20} /></div>
+                                                    <span className="text-xl font-medium text-[#000000] uppercase truncate max-w-[200px] italic leading-tight">{log.product?.product_name || 'ไม่พบสินค้า'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-6 text-center">
+                                                <span className={`inline-flex items-center gap-2 px-4 py-1 rounded-full text-xl font-medium border whitespace-nowrap shadow-sm ${log.change_qty > 0 ? 'bg-white text-emerald-700 border-emerald-200' : 'bg-white text-red-700 border-red-200'}`}>
+                                                    {log.change_qty > 0 ? `+${log.change_qty}` : log.change_qty}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-6 text-center">
+                                                <div className="flex items-center justify-center gap-3">
+                                                    <div className="w-8 h-8 bg-slate-100 border border-slate-300 text-[#000000] rounded-lg flex items-center justify-center font-medium text-xs uppercase">{log.user?.first_name?.charAt(0)}</div>
+                                                    <span className="text-lg font-medium text-[#000000] truncate max-w-[120px]">{log.user?.first_name || 'System'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-6 text-left">
+                                                <span className="text-lg font-medium text-[#374151] italic leading-tight truncate block max-w-[250px]">"{log.reason || 'ปรับปรุงคลังสินค้า'}"</span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                    )}
+
+                        {totalPages > 1 && (
+                            <div className="mt-8 flex justify-center items-center gap-6">
+                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className={`p-3 rounded-xl border border-slate-300 text-[#111827] ${currentPage === 1 ? 'opacity-30' : ''}`}><ChevronLeft size={28} /></button>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xl font-medium text-[#374151] uppercase">Page</span>
+                                    <div className="bg-white border border-[#111827] text-[#111827] px-6 py-1 rounded-lg text-3xl font-medium italic shadow-sm">{currentPage}</div>
+                                    <span className="text-xl font-medium text-[#374151]">/ {totalPages}</span>
+                                </div>
+                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className={`p-3 rounded-xl border border-slate-300 text-[#111827] ${currentPage === totalPages ? 'opacity-30' : ''}`}><ChevronRight size={28} /></button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </main>
-
-            <style dangerouslySetInnerHTML={{ __html: `
-                @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-                .animate-bounce-slow { animation: bounce-slow 4s infinite; }
-                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E; border-radius: 10px; }
-            `}} />
         </div>
     );
 };
 
-// 💎 StatCard: เข้มจัด High Contrast (มาตรฐาน Product)
-const StatCardSmall = ({ title, value, icon }) => (
-    <div className="bg-white p-5 rounded-2xl border-2 border-[#2D241E] shadow-lg flex items-center justify-between hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
-        <div className="flex-1 text-left min-w-0">
-            <p className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest mb-1 leading-none">{title}</p>
-            <h2 className="text-[#2D241E] text-2xl font-black italic leading-none">{value || 0}</h2>
-        </div>
-        <div className="w-10 h-10 rounded-xl bg-[#2D241E] flex items-center justify-center text-white border-2 border-white shadow-md transition-all">
-            {React.cloneElement(icon, { size: 18, strokeWidth: 3 })}
-        </div>
+// 💎 StatCard: ปรับระยะ p-6 และขอบบาง 1px เพื่อความมินิมอล
+const StatCardSmall = ({ title, value }) => (
+    <div className="bg-white p-6 rounded-[3rem] border border-slate-300 shadow-sm flex flex-col gap-1 text-left">
+        <p className="text-xl font-medium text-[#374151] uppercase tracking-widest italic leading-none">{title}</p>
+        <h2 className="text-5xl font-medium italic tracking-tighter text-[#000000] leading-none mt-1 truncate">{value || 0}</h2>
     </div>
 );
 

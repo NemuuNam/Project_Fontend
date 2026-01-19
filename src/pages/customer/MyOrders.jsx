@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-    Package, ChevronRight, ChevronLeft, Loader2, MapPin, Calendar, CreditCard,
-    Truck, X, ClipboardList, Clock, CheckCircle, Info, ArrowLeft,
-    ShoppingBag, Phone, Star, MessageSquare, Sparkles, Leaf, Cookie, Smile,
-    RotateCcw, Upload, Heart, Eye, AlertCircle, FileWarning, User, ExternalLink,
-    Copy, Landmark, PackageCheck
+    Package, ChevronRight, ChevronLeft, Loader2, MapPin, Calendar,
+    X, ShoppingBag, Phone, Sparkles, Eye, FileWarning, User, Truck, Star, Send, Upload, CheckCircle2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
@@ -13,8 +10,21 @@ import HeaderHome from '../../components/HeaderHome';
 import Footer from '../../components/Footer';
 import toast, { Toaster } from 'react-hot-toast';
 
+// --- มาตรฐานสถานะ (Status Badges) - ทึบ 100% ---
+const getStatusStyle = (status) => {
+    const base = "px-3 py-0.5 rounded-full text-lg font-medium border-2 whitespace-nowrap ";
+    const styles = {
+        'สำเร็จ': base + "bg-white text-green-700 border-green-700",
+        'กำลังจัดส่ง': base + "bg-white text-blue-700 border-blue-700",
+        'รอตรวจสอบชำระเงิน': base + "bg-white text-orange-700 border-orange-700",
+        'รอแก้ไขสลิป': base + "bg-white text-red-700 border-red-700",
+        'ยกเลิก': base + "bg-white text-gray-500 border-gray-500"
+    };
+    return styles[status] || base + "bg-white text-[#374151] border-slate-300";
+};
+
 // --- 1. Modal อัปโหลดสลิปใหม่ ---
-const ResubmitSlipModal = ({ order, paymentMethods, onClose, onRefresh }) => {
+const ResubmitSlipModal = ({ order, onClose, onRefresh }) => {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [uploading, setUploading] = useState(false);
@@ -22,85 +32,92 @@ const ResubmitSlipModal = ({ order, paymentMethods, onClose, onRefresh }) => {
     const handleUpload = async () => {
         if (!file) return toast.error("กรุณาแนบสลิปโอนเงินใหม่");
         setUploading(true);
-        const load = toast.loading("กำลังอัปเดต...");
         try {
             const formData = new FormData();
             formData.append('slip', file);
             const res = await axiosInstance.patch(`${API_ENDPOINTS.ORDERS}/${order.order_id}/reslip`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            if (res.success) {
-                toast.success("ส่งหลักฐานใหม่สำเร็จ", { id: load });
-                onRefresh(); onClose();
-            }
-        } catch (err) { toast.error("อัปโหลดล้มเหลว", { id: load }); } 
+            if (res.success) { toast.success("ส่งหลักฐานใหม่สำเร็จ"); onRefresh(); onClose(); }
+        } catch (err) { toast.error("อัปโหลดล้มเหลว"); } 
         finally { setUploading(false); }
     };
 
     return (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[#2D241E]/30 backdrop-blur-md animate-in fade-in">
-            <div className="bg-white rounded-[2rem] md:rounded-[3rem] w-full max-w-lg shadow-2xl border-4 border-[#2D241E] animate-in zoom-in-95 overflow-hidden flex flex-col relative" onClick={e => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-slate-50 text-[#2D241E] rounded-full border-2 border-[#2D241E] hover:text-red-500 transition-all z-30"><X size={20} strokeWidth={3} /></button>
-                <div className="p-6 md:p-10 text-left space-y-6">
-                    <div>
-                        <h3 className="text-xl md:text-2xl font-black text-[#2D241E] uppercase italic">Resubmit Slip</h3>
-                        <p className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest mt-1">Order ID: #{order.order_id}</p>
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-500/20 backdrop-blur-md animate-in fade-in">
+            <div className="bg-[#FDFCFB] rounded-[3rem] w-full max-w-lg shadow-2xl border-2 border-slate-300 overflow-hidden relative" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-white text-[#000000] rounded-full border-2 border-slate-300 hover:bg-slate-50 transition-all"><X size={20} strokeWidth={3} /></button>
+                <div className="p-8 space-y-6 text-left">
+                    <h3 className="text-2xl font-medium text-[#000000] uppercase italic">Fix Payment</h3>
+                    <div className="p-4 bg-white border-2 border-red-700 rounded-[2rem] flex gap-3 text-red-700 italic">
+                        <FileWarning size={24}/> <p>{order.rejection_reason}</p>
                     </div>
-                    <div className="p-4 bg-red-50 border-2 border-red-600 rounded-2xl flex items-start gap-3 italic">
-                        <FileWarning size={20} className="text-red-600 shrink-0" strokeWidth={3} />
-                        <p className="text-sm font-black text-[#2D241E] leading-relaxed">{order.rejection_reason}</p>
+                    <div className="relative border-2 border-dashed border-slate-300 rounded-[2rem] p-6 flex flex-col items-center bg-white">
+                        <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => { const f = e.target.files[0]; if (f) { setFile(f); setPreview(URL.createObjectURL(f)); } }} />
+                        {preview ? <img src={preview} className="w-24 h-36 object-cover rounded-xl border-2 border-slate-300" alt="" /> : 
+                        <div className="text-center text-[#374151]"><Upload size={32} className="mx-auto mb-2" /><p className="text-sm font-medium uppercase">Select Slip</p></div>}
                     </div>
-                    <div className="space-y-4">
-                        <div className="relative border-4 border-dashed border-[#2D241E]/10 rounded-[2rem] p-6 md:p-8 flex flex-col items-center justify-center bg-slate-50 group">
-                            <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" onChange={(e) => { const f = e.target.files[0]; if (f) { setFile(f); setPreview(URL.createObjectURL(f)); } }} />
-                            {preview ? (
-                                <img src={preview} className="w-24 h-36 md:w-32 md:h-44 object-cover rounded-xl shadow-lg border-2 border-white mx-auto z-10" alt="Preview" />
-                            ) : (
-                                <div className="text-center space-y-2 text-[#2D241E] opacity-40 group-hover:opacity-100 transition-opacity">
-                                    <Upload size={32} className="mx-auto" strokeWidth={3} />
-                                    <p className="text-[10px] font-black uppercase">Click to select new slip</p>
-                                </div>
-                            )}
-                        </div>
-                        <button onClick={handleUpload} disabled={uploading || !file} className="w-full py-4 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest shadow-xl hover:bg-black transition-all active:scale-95 italic">
-                            Confirm Resubmission
-                        </button>
-                    </div>
+                    <button onClick={handleUpload} disabled={uploading} className="w-full py-4 bg-white border-2 border-slate-300 text-[#000000] rounded-full font-medium uppercase italic shadow-sm hover:bg-slate-50">Confirm submission</button>
                 </div>
             </div>
         </div>
     );
 };
 
-// --- 2. Modal รีวิวสินค้า ---
-const ReviewModal = ({ order, onClose, onSubmit, isSubmitting }) => {
+// --- 2. Modal รีวิวสินค้า (Golden Stars & Logic) ---
+const ReviewModal = ({ order, onClose, onRefresh }) => {
     const [selectedProduct, setSelectedProduct] = useState(order.items?.[0] || null);
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!selectedProduct) return toast.error("กรุณาเลือกสินค้า");
+        setIsSubmitting(true);
+        try {
+            const res = await axiosInstance.post('/api/reviews', {
+                product_id: selectedProduct.product_id,
+                rating_score: rating,
+                comment: comment,
+                order_id: order.order_id // ส่ง Order ID ไปอัปเดตสถานะการรีวิว
+            });
+            if (res.success) { 
+                toast.success("ขอบคุณสำหรับรีวิวครับ"); 
+                onRefresh(); // รีเฟรชหน้าเพื่อล็อคปุ่มรีวิว
+                onClose(); 
+            }
+        } catch (err) { toast.error("ไม่สามารถบันทึกรีวิวได้"); } 
+        finally { setIsSubmitting(false); }
+    };
 
     return (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[#2D241E]/30 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-white rounded-[2rem] md:rounded-[3rem] w-full max-w-lg p-6 md:p-10 shadow-2xl border-4 border-[#2D241E] animate-in zoom-in-95 relative" onClick={e => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-slate-50 text-[#2D241E] rounded-full border-2 border-[#2D241E] hover:text-red-500 transition-all z-30"><X size={20} strokeWidth={3} /></button>
-                <div className="text-left space-y-6">
-                    <h2 className="text-xl md:text-2xl font-black text-[#2D241E] uppercase tracking-tighter italic">Product Review</h2>
-                    <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-500/20 backdrop-blur-md animate-in fade-in">
+            <div className="bg-[#FDFCFB] rounded-[3rem] w-full max-w-xl shadow-2xl border-2 border-slate-300 overflow-hidden relative" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-6 right-6 p-2 bg-white text-[#000000] rounded-full border-2 border-slate-300 hover:bg-slate-50"><X size={20} strokeWidth={3} /></button>
+                <div className="p-10 space-y-6 text-left">
+                    <h3 className="text-3xl font-medium text-[#000000] uppercase italic">Product Review</h3>
+                    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                         {order.items?.map((item) => (
-                            <button key={item.product_id} onClick={() => setSelectedProduct(item)} className={`flex-shrink-0 p-2 rounded-xl border-2 transition-all ${selectedProduct?.product_id === item.product_id ? 'border-[#2D241E] bg-slate-50' : 'border-slate-100'}`}>
-                                <img src={item.product?.images?.[0]?.image_url || '/placeholder.png'} className="w-10 h-10 rounded-lg object-cover" alt="" />
+                            <button key={item.product_id} onClick={() => setSelectedProduct(item)} className={`flex-shrink-0 p-1 rounded-2xl border-2 transition-all ${selectedProduct?.product_id === item.product_id ? 'border-[#000000]' : 'border-slate-100 opacity-50'}`}>
+                                <img src={item.product?.images?.[0]?.image_url || '/placeholder.png'} className="w-14 h-14 rounded-xl object-cover" alt="" />
                             </button>
                         ))}
                     </div>
-                    <div className="flex justify-center gap-2 py-2 md:py-4">
+                    {/* 🚀 เปลี่ยนดาวเป็นสีเหลืองทอง (#FACC15) */}
+                    <div className="flex justify-center gap-3 py-4 border-y-2 border-slate-50">
                         {[1, 2, 3, 4, 5].map((star) => (
                             <button key={star} onClick={() => setRating(star)} className="hover:scale-110 transition-transform">
-                                <Star size={28} md:size={32} strokeWidth={3} fill={star <= rating ? "#2D241E" : "none"} className={star <= rating ? "text-[#2D241E]" : "text-slate-200"} />
+                                <Star 
+                                    size={40} 
+                                    fill={star <= rating ? "#FACC15" : "none"} 
+                                    className={star <= rating ? "text-[#EAB308]" : "text-slate-200"} 
+                                />
                             </button>
                         ))}
                     </div>
-                    <textarea className="w-full p-4 md:p-5 bg-slate-50 border-2 border-[#2D241E]/10 focus:border-[#2D241E] rounded-2xl outline-none h-24 font-black text-sm italic transition-all text-[#2D241E]" placeholder="Tell us about your experience..." value={comment} onChange={(e) => setComment(e.target.value)} />
-                    <button onClick={() => onSubmit(selectedProduct.product_id, rating, comment)} disabled={isSubmitting || !selectedProduct} className="w-full py-4 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest shadow-xl active:scale-95 italic">
-                        Submit Review
+                    <textarea className="w-full p-4 bg-white border-2 border-slate-200 rounded-2xl outline-none h-28 font-medium italic text-[#111827]" placeholder="Share your experience..." value={comment} onChange={(e) => setComment(e.target.value)} />
+                    <button onClick={handleSubmit} disabled={isSubmitting} className="w-full py-4 bg-white border-2 border-slate-300 text-[#000000] rounded-full font-medium uppercase italic shadow-md hover:bg-slate-50 flex items-center justify-center gap-2">
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : <><Send size={18} /> Submit Review</>}
                     </button>
                 </div>
             </div>
@@ -108,250 +125,175 @@ const ReviewModal = ({ order, onClose, onSubmit, isSubmitting }) => {
     );
 };
 
-// --- 3. ส่วนหลัก ---
+// --- 3. Main Component ---
 const MyOrders = ({ userData }) => {
     const navigate = useNavigate();
     const [orders, setOrders] = useState([]);
-    const [paymentMethods, setPaymentMethods] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [isResubmitOpen, setIsResubmitOpen] = useState(false);
-    const [selectedOrderForAction, setSelectedOrderForAction] = useState(null);
-    const [reviewSubmitting, setReviewSubmitting] = useState(false);
+    const [orderForAction, setOrderForAction] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 8;
+    const itemsPerPage = 5; 
 
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const [ordersRes, paymentsRes] = await Promise.all([
-                axiosInstance.get(`${API_ENDPOINTS.ORDERS}/my-orders`),
-                axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/payments`)
-            ]);
+            const ordersRes = await axiosInstance.get(`${API_ENDPOINTS.ORDERS}/my-orders`);
             if (ordersRes.success) setOrders(ordersRes.data);
-            if (paymentsRes.success) setPaymentMethods(paymentsRes.data);
         } catch (err) { toast.error("ดึงข้อมูลล้มเหลว"); } 
         finally { setLoading(false); }
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    const totalPages = Math.ceil(orders.length / itemsPerPage) || 1;
     const paginatedOrders = orders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const totalPages = Math.ceil(orders.length / itemsPerPage) || 1;
 
-    const getStatusStyle = (status) => {
-        const styles = {
-            'สำเร็จ': "bg-green-50 text-green-600 border-green-600",
-            'กำลังจัดส่ง': "bg-blue-50 text-blue-600 border-blue-600",
-            'รอตรวจสอบชำระเงิน': "bg-orange-50 text-orange-600 border-orange-600",
-            'รอแก้ไขสลิป': "bg-red-50 text-red-600 border-red-600 animate-pulse",
-            'ยกเลิก': "bg-slate-50 text-slate-500 border-slate-400"
-        };
-        return styles[status] || 'bg-gray-50 text-gray-600 border-gray-400';
-    };
-
-    const handleOpenReview = (order) => { setSelectedOrderForAction(order); setIsReviewOpen(true); };
-    const handleOpenResubmit = (order) => { setSelectedOrderForAction(order); setIsResubmitOpen(true); };
-
-    const handleSubmitReview = async (productId, score, comment) => {
-        setReviewSubmitting(true);
-        try {
-            const res = await axiosInstance.post('/api/reviews', { product_id: productId, rating_score: score, comment: comment });
-            if (res.success) { toast.success("ส่งรีวิวสำเร็จ!"); setIsReviewOpen(false); }
-        } catch (err) { toast.error("ส่งรีวิวไม่สำเร็จ"); } 
-        finally { setReviewSubmitting(false); }
-    };
-
-    if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={40} /></div>;
+    if (loading) return <div className="h-screen flex items-center justify-center bg-[#FDFCFB]"><Loader2 className="animate-spin text-[#000000]" size={48} /></div>;
 
     return (
-        <div className="min-h-screen bg-white font-['Kanit'] text-[#2D241E] selection:bg-[#F3E9DC] relative overflow-x-hidden">
-            <Toaster position="top-right" />
+        <div className="min-h-screen bg-[#FDFCFB] font-['Kanit'] text-[#111827] relative overflow-x-hidden">
+            <Toaster position="bottom-right" />
             <HeaderHome userData={userData} />
 
-            <main className="max-w-[1400px] mx-auto pt-24 md:pt-40 pb-24 px-4 md:px-6 relative z-10 text-left">
-                
-                {/* 🏷️ Page Header */}
-                <div className="mb-8 md:mb-12 space-y-4 px-2">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#2D241E] rounded-full shadow-md animate-bounce-slow">
-                        <Sparkles size={14} className="text-white" strokeWidth={3} />
-                        <span className="text-xs font-black uppercase tracking-widest text-white">Member Records</span>
-                    </div>
-                    <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter text-[#2D241E] italic leading-none">OrderHistory</h1>
+            <main className="max-w-[1400px] mx-auto pt-12 pb-10 px-8 text-left">
+                <div className="mb-6 space-y-2 text-left">
+                    <h1 className="text-5xl md:text-7xl font-medium uppercase tracking-tighter text-[#000000] italic leading-none">Order Records</h1>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10 items-start">
-                    {/* 👤 Sidebar Navigation */}
-                    <div className="lg:col-span-3 space-y-6 lg:sticky lg:top-32">
-                        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] md:rounded-[3.5rem] border-2 border-[#2D241E] shadow-2xl text-center">
-                            <div className="w-16 h-16 md:w-20 md:h-20 bg-[#2D241E] text-white rounded-[1.5rem] md:rounded-[1.8rem] flex items-center justify-center shadow-xl mx-auto mb-4 md:mb-6 font-black text-2xl md:text-3xl italic">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                    <div className="lg:col-span-3 space-y-4 lg:sticky lg:top-28">
+                        <div className="bg-white p-5 rounded-[2.5rem] border-2 border-slate-300 text-center shadow-sm">
+                            <div className="w-14 h-14 bg-[#FDFCFB] text-[#000000] border-2 border-slate-300 rounded-2xl flex items-center justify-center mx-auto mb-3 font-medium text-2xl italic">
                                 {userData?.first_name?.charAt(0)}
                             </div>
-                            <h3 className="font-black text-lg md:text-xl uppercase italic text-[#2D241E]">{userData?.first_name} {userData?.last_name}</h3>
-                            <nav className="mt-8 md:mt-10 space-y-2 md:space-y-3">
-                                <button onClick={() => navigate('/profile')} className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-slate-50 rounded-2xl transition-all group font-black text-xs md:text-sm uppercase italic text-[#2D241E] border-2 border-transparent hover:border-slate-100">
-                                    <div className="flex items-center gap-4"><User size={18} strokeWidth={3} /> Profile</div> <ChevronRight size={14} strokeWidth={3}/>
+                            <h3 className="font-medium text-xl uppercase italic text-[#000000]">{userData?.first_name}</h3>
+                            <nav className="mt-6 space-y-1.5 text-left">
+                                <button onClick={() => navigate('/profile')} className="w-full flex items-center justify-between p-3.5 bg-white border-2 border-slate-100 rounded-xl transition-all hover:border-slate-300 font-medium text-xs uppercase italic text-[#111827]">
+                                    <div className="flex items-center gap-3"><User size={16} /> Profile</div> <ChevronRight size={14}/>
                                 </button>
-                                <button className="w-full flex items-center justify-between p-4 md:p-5 bg-slate-50 border-2 border-[#2D241E] rounded-2xl font-black text-xs md:text-sm uppercase italic text-[#2D241E]">
-                                    <div className="flex items-center gap-4"><Package size={18} strokeWidth={3} /> My Orders</div> <ChevronRight size={14} strokeWidth={3}/>
+                                <button className="w-full flex items-center justify-between p-3.5 bg-[#FDFCFB] border-2 border-[#000000] rounded-xl font-medium text-xs uppercase italic text-[#000000]">
+                                    <div className="flex items-center gap-3"><Package size={16} /> My Orders</div> <ChevronRight size={14}/>
                                 </button>
                             </nav>
                         </div>
                     </div>
 
-                    {/* 📦 Order Cards List */}
-                    <div className="lg:col-span-9 space-y-4 md:space-y-6">
+                    <div className="lg:col-span-9 space-y-3">
                         {paginatedOrders.map(order => (
-                            <div key={order.order_id} className="bg-white p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border-2 border-slate-100 shadow-xl hover:border-[#2D241E] transition-all group overflow-hidden">
-                                <div className="flex flex-col xl:flex-row justify-between gap-6 md:gap-8">
-                                    <div className="flex-1 space-y-4 md:space-y-6 text-left">
-                                        <div className="flex flex-wrap items-center gap-3 md:gap-4">
-                                            <span className="font-black text-xl md:text-2xl uppercase tracking-tighter italic text-[#2D241E]">#{order.order_id.substring(0,10)}</span>
-                                            <span className={`px-4 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider border-2 shadow-sm ${getStatusStyle(order.status)}`}>{order.status}</span>
-                                            <span className="text-[9px] md:text-[10px] font-black uppercase text-[#2D241E] flex items-center gap-2 italic"><Calendar size={12} strokeWidth={3}/> {new Date(order.created_at).toLocaleDateString('th-TH')}</span>
+                            <div key={order.order_id} className="bg-white p-4 rounded-[2.5rem] border-2 border-slate-300 shadow-sm transition-all hover:bg-[#FDFCFB]">
+                                <div className="flex flex-col xl:flex-row justify-between gap-4">
+                                    <div className="flex-1 space-y-3 text-left">
+                                        <div className="flex flex-wrap items-center gap-4">
+                                            <span className="font-medium text-2xl uppercase tracking-tighter italic text-[#000000]">#{order.order_id}</span>
+                                            <span className={getStatusStyle(order.status)}>{order.status}</span>
+                                            <span className="text-base font-medium text-[#374151] flex items-center gap-2 italic"><Calendar size={16}/> {new Date(order.created_at).toLocaleDateString('th-TH')}</span>
                                         </div>
-
-                                        <div className="flex flex-wrap gap-2 md:gap-3">
+                                        <div className="flex flex-wrap gap-2 border-t-2 border-slate-50 pt-3">
                                             {order.items?.map((item, idx) => (
-                                                <div key={idx} className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl overflow-hidden border-2 border-slate-100 shadow-sm bg-white group-hover:scale-105 transition-transform duration-500">
-                                                    <img src={item.product?.images?.[0]?.image_url || '/placeholder.png'} className="w-full h-full object-cover" alt="" />
+                                                <div key={idx} className="w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-200 bg-[#FDFCFB] p-0.5 shadow-sm">
+                                                    <img src={item.product?.images?.[0]?.image_url || '/placeholder.png'} className="w-full h-full object-cover rounded-lg" alt="" />
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="flex flex-row xl:flex-col justify-between items-center xl:items-end gap-4 border-t xl:border-t-0 xl:border-l-2 border-slate-50 pt-4 xl:pt-0 xl:pl-10 min-w-full xl:min-w-[250px]">
-                                        <div className="text-left xl:text-right">
-                                            <p className="text-[9px] md:text-[10px] font-black uppercase text-[#2D241E] mb-1 tracking-widest opacity-40">Net Amount</p>
-                                            <p className="text-2xl md:text-4xl font-black italic text-[#2D241E]">฿{Number(order.total_amount).toLocaleString()}</p>
+                                    <div className="flex flex-row xl:flex-col justify-between items-end border-t xl:border-t-0 xl:border-l-2 border-slate-100 pt-3 xl:pt-0 xl:pl-6 min-w-full xl:min-w-[280px]">
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-medium uppercase text-[#374151] mb-0.5 tracking-widest">Total Amount</p>
+                                            <p className="text-3xl font-medium italic text-[#000000]">฿{Number(order.total_amount).toLocaleString()}</p>
                                         </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => setSelectedOrder(order)} className="p-2.5 md:p-3 bg-slate-50 border-2 border-[#2D241E] rounded-xl md:rounded-2xl hover:bg-[#2D241E] hover:text-white transition-all shadow-sm text-[#2D241E]"><Eye size={18} strokeWidth={3}/></button>
+                                        <div className="flex gap-2 mt-2">
                                             {order.status === 'รอแก้ไขสลิป' && (
-                                                <button onClick={() => handleOpenResubmit(order)} className="px-4 md:px-6 py-2.5 md:py-3 bg-red-600 text-white rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] uppercase shadow-lg animate-pulse italic">Fix Payment</button>
+                                                <button onClick={() => { setOrderForAction(order); setIsResubmitOpen(true); }} className="px-4 py-2 bg-white border-2 border-red-700 text-red-700 rounded-xl font-medium text-xs uppercase italic hover:bg-red-50 shadow-sm">Fix Payment</button>
                                             )}
+                                            {/* 🚀 Logic ตรวจสอบการรีวิว: ถ้ามี order.is_reviewed เป็น true จะแสดง 'Reviewed' และกดไม่ได้ */}
                                             {order.status === 'สำเร็จ' && (
-                                                <button onClick={() => handleOpenReview(order)} className="px-4 md:px-6 py-2.5 md:py-3 bg-[#2D241E] text-white rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] uppercase shadow-lg italic hover:bg-black transition-all">Review Menu</button>
+                                                order.is_reviewed ? (
+                                                    <span className="px-4 py-2 bg-slate-50 text-slate-400 border-2 border-slate-100 rounded-xl font-medium text-xs uppercase italic flex items-center gap-2">
+                                                        <CheckCircle2 size={14} /> Reviewed
+                                                    </span>
+                                                ) : (
+                                                    <button 
+                                                        onClick={() => { setOrderForAction(order); setIsReviewOpen(true); }} 
+                                                        className="px-4 py-2 bg-white border-2 border-slate-300 rounded-xl hover:bg-slate-50 text-[#000000] font-medium text-xs uppercase italic shadow-sm flex items-center gap-2"
+                                                    >
+                                                        <Star size={14} className="fill-[#FACC15] text-[#EAB308]" /> Review
+                                                    </button>
+                                                )
                                             )}
+                                            <button onClick={() => setSelectedOrder(order)} className="px-5 py-2 bg-white border-2 border-slate-300 rounded-xl hover:bg-slate-50 transition-all text-[#000000] font-medium text-xs uppercase italic shadow-sm">Details</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ))}
-
-                        {orders.length === 0 && (
-                            <div className="text-center py-24 md:py-40 bg-slate-50 rounded-[3rem] md:rounded-[4rem] border-4 border-dashed border-slate-100">
-                                <ShoppingBag size={60} md:size={80} strokeWidth={1} className="mx-auto text-[#2D241E] opacity-10 mb-6" />
-                                <h2 className="text-xl md:text-2xl font-black uppercase text-[#2D241E] italic opacity-20">Your order history is empty</h2>
-                                <button onClick={() => navigate('/products')} className="mt-8 px-10 md:px-12 py-4 md:py-5 bg-[#2D241E] text-white rounded-full font-black text-[10px] md:text-xs uppercase tracking-widest shadow-2xl active:scale-95 italic">Shop Now</button>
+                        {totalPages > 1 && (
+                            <div className="flex justify-center items-center gap-4 pt-6">
+                                <button onClick={() => { setCurrentPage(p => Math.max(p - 1, 1)); window.scrollTo(0, 0); }} disabled={currentPage === 1} className="p-2.5 bg-white border-2 border-slate-300 rounded-xl text-[#000000] disabled:bg-slate-50 shadow-sm"><ChevronLeft size={20} strokeWidth={3} /></button>
+                                <span className="font-medium text-xl italic text-[#000000]">Page {currentPage} / {totalPages}</span>
+                                <button onClick={() => { setCurrentPage(p => Math.min(p + 1, totalPages)); window.scrollTo(0, 0); }} disabled={currentPage === totalPages} className="p-2.5 bg-white border-2 border-slate-300 rounded-xl text-[#000000] disabled:bg-slate-50 shadow-sm"><ChevronRight size={20} strokeWidth={3} /></button>
                             </div>
                         )}
                     </div>
                 </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="flex justify-center items-center gap-4 md:gap-5 pt-16 md:pt-20">
-                        <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="p-2.5 md:p-3 border-4 border-[#2D241E] rounded-xl md:rounded-2xl disabled:opacity-20 active:scale-90 shadow-lg text-[#2D241E]"><ChevronLeft size={20} md:size={24} strokeWidth={4} /></button>
-                        <span className="font-black text-base md:text-lg italic text-[#2D241E]">Page {currentPage} / {totalPages}</span>
-                        <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages} className="p-2.5 md:p-3 border-4 border-[#2D241E] rounded-xl md:rounded-2xl disabled:opacity-20 active:scale-90 shadow-lg text-[#2D241E]"><ChevronRight size={20} md:size={24} strokeWidth={4} /></button>
-                    </div>
-                )}
             </main>
 
-            {/* --- 📝 Order Detail Modal (Responsive & Optimized) --- */}
+            {/* --- Modals: Selected Order Details --- */}
             {selectedOrder && (
-                <div className="fixed inset-0 z-[1500] flex items-center justify-center p-2 md:p-4 lg:p-10 bg-[#2D241E]/40 backdrop-blur-md animate-in fade-in" onClick={() => setSelectedOrder(null)}>
-                    <div className="bg-white rounded-[2.5rem] md:rounded-[3.5rem] w-full max-w-6xl shadow-2xl border-4 border-[#2D241E] flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 h-full max-h-[95vh] md:max-h-[90vh] text-left relative" onClick={e => e.stopPropagation()}>
-                        
-                        {/* Left Side: Product Details (Scrollable) */}
-                        <div className="flex-1 p-6 md:p-10 lg:p-14 overflow-y-auto custom-scrollbar border-b-2 md:border-b-0 md:border-r-2 border-slate-50">
-                            <div className="flex justify-between items-start mb-8 md:mb-10">
-                                <div className="space-y-2">
-                                    <h2 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter text-[#2D241E]">Order Info</h2>
-                                    <span className={`inline-flex px-4 py-1 rounded-full text-[10px] font-black uppercase border-2 shadow-sm ${getStatusStyle(selectedOrder.status)}`}>
-                                        {selectedOrder.status}
-                                    </span>
-                                </div>
-                                <button onClick={() => setSelectedOrder(null)} className="p-2 bg-slate-50 text-[#2D241E] border-2 border-[#2D241E] rounded-full hover:text-red-500 transition-all"><X size={20} md:size={24} strokeWidth={3}/></button>
+                <div className="fixed inset-0 z-[1500] flex items-center justify-center p-4 bg-slate-500/20 backdrop-blur-md animate-in fade-in" onClick={() => setSelectedOrder(null)}>
+                    <div className="bg-[#FDFCFB] rounded-[3rem] w-full max-w-5xl shadow-2xl border-2 border-slate-300 flex flex-col md:flex-row overflow-hidden max-h-[90vh] text-left relative" onClick={e => e.stopPropagation()}>
+                        <div className="flex-1 p-8 overflow-y-auto border-r-2 border-slate-300 bg-white">
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="space-y-1"><h2 className="text-4xl font-medium uppercase italic text-[#000000]">Order Summary</h2><span className={getStatusStyle(selectedOrder.status)}>{selectedOrder.status}</span></div>
+                                <button onClick={() => setSelectedOrder(null)} className="p-2 bg-white text-[#000000] border-2 border-slate-300 rounded-full hover:bg-slate-50 shadow-sm"><X size={20} strokeWidth={3}/></button>
                             </div>
-
-                            <div className="bg-slate-50 rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 border-2 border-[#2D241E]/5 mb-8 md:mb-12 shadow-inner">
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2D241E] mb-2 opacity-50">Logistics Tracking</p>
-                                <p className="text-2xl md:text-3xl font-black italic text-[#2D241E] uppercase tracking-tighter">
-                                    {selectedOrder.tracking_number || 'Preparing your box...'}
-                                </p>
+                            <div className="bg-[#FDFCFB] rounded-2xl p-5 border-2 border-slate-200 mb-6 shadow-inner">
+                                <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#374151] mb-1">Full Order ID</p>
+                                <p className="text-xl font-medium italic text-[#000000] tracking-tight">{selectedOrder.order_id}</p>
                             </div>
-
-                            <div className="space-y-6 md:space-y-8">
-                                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] border-b-4 border-[#2D241E]/5 pb-3 text-[#2D241E]">Box Contents</h4>
+                            <div className="space-y-4">
+                                <h4 className="text-[10px] font-medium uppercase tracking-[0.3em] border-b-2 border-slate-300 pb-1.5 text-[#000000]">Box Contents</h4>
                                 {selectedOrder.items?.map(item => (
-                                    <div key={item.item_id} className="flex items-center justify-between group gap-4">
-                                        <div className="flex items-center gap-4 md:gap-8">
-                                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl overflow-hidden border-2 border-slate-100 shadow-sm flex-shrink-0">
-                                                <img src={item.product?.images?.[0]?.image_url || '/placeholder.png'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
-                                            </div>
-                                            <div>
-                                                <p className="font-black text-lg md:text-xl uppercase leading-tight italic text-[#2D241E]">{item.product?.product_name}</p>
-                                                <p className="text-[10px] md:text-[11px] font-black text-[#8B7E66] mt-2 md:mt-3 uppercase tracking-widest italic">Quantity: {item.quantity}</p>
-                                            </div>
+                                    <div key={item.item_id} className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-14 h-14 rounded-2xl border-2 border-slate-300 overflow-hidden bg-[#FDFCFB] p-0.5"><img src={item.product?.images?.[0]?.image_url || '/placeholder.png'} className="w-full h-full object-cover" alt="" /></div>
+                                            <div className="text-left"><p className="font-medium text-lg uppercase italic text-[#000000]">{item.product?.product_name}</p><p className="text-xs font-medium text-[#374151] uppercase italic">Qty: {item.quantity}</p></div>
                                         </div>
-                                        <p className="font-black text-xl md:text-2xl text-[#2D241E] italic tracking-tighter whitespace-nowrap">฿{(item.price_at_order * item.quantity).toLocaleString()}</p>
+                                        <p className="font-medium text-xl text-[#000000] italic">฿{(item.price_at_order * item.quantity).toLocaleString()}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
-
-                        {/* Right Sidebar: Summary (Scrollable on Mobile) */}
-                        <div className="w-full md:w-[380px] lg:w-[420px] bg-[#FAFAFA] flex flex-col p-6 md:p-10 lg:p-14 overflow-y-auto custom-scrollbar border-t-2 md:border-t-0 border-slate-50">
-                            <div className="space-y-4 md:space-y-5">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-[#2D241E] ml-2">Destination</p>
-                                <div className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] border-2 border-[#2D241E]/5 shadow-xl relative overflow-hidden">
-                                    <MapPin className="absolute -right-4 -bottom-4 text-[#2D241E] opacity-[0.03] rotate-12" size={80} md:size={100} />
-                                    <p className="font-black text-lg md:text-xl italic text-[#2D241E] uppercase leading-tight">{selectedOrder.address?.recipient_name}</p>
-                                    <p className="text-xs md:text-sm font-bold text-[#2D241E] italic mt-2 md:mt-3 leading-relaxed opacity-70">"{selectedOrder.address?.address_detail}"</p>
-                                    <div className="flex items-center gap-3 text-[10px] md:text-xs font-black mt-6 md:mt-8 text-[#2D241E] uppercase tracking-widest bg-slate-50 w-fit px-4 py-2 rounded-xl">
-                                        <Phone size={14} strokeWidth={3}/> {selectedOrder.address?.phone_number}
-                                    </div>
+                        <div className="w-[380px] bg-white flex flex-col p-8 overflow-y-auto border-l-2 border-slate-50 text-left">
+                            <div className="space-y-4 mb-6">
+                                <p className="text-[10px] font-medium uppercase tracking-widest text-[#374151] border-b border-slate-300 pb-1">Logistics</p>
+                                <div className="p-5 bg-[#FDFCFB] border-2 border-slate-300 rounded-2xl shadow-inner space-y-3">
+                                    <div><p className="text-[9px] font-medium uppercase text-[#374151] mb-1">Provider</p><p className="text-xl font-medium italic text-[#000000] uppercase">{selectedOrder.shippings?.[0]?.provider?.provider_name || 'PENDING'}</p></div>
+                                    <div className="pt-2 border-t border-slate-200"><p className="text-[9px] font-medium uppercase text-[#374151] mb-1">Tracking</p><p className="text-xl font-medium italic text-[#000000] uppercase tracking-wider">{selectedOrder.tracking_number || 'PENDING'}</p></div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <p className="font-medium text-xl italic text-[#000000] uppercase tracking-tighter">{selectedOrder.address?.recipient_name}</p>
+                                    <p className="text-sm text-[#111827] leading-relaxed italic">{selectedOrder.address?.address_detail}</p>
+                                    <p className="text-sm font-medium text-[#000000] flex items-center gap-3 mt-4 bg-[#FDFCFB] p-2.5 rounded-xl border-2 border-slate-100"><Phone size={14} strokeWidth={3}/> {selectedOrder.address?.phone_number}</p>
                                 </div>
                             </div>
-
-                            <div className="pt-8 md:pt-10 border-t-4 border-[#2D241E]/5 space-y-4 md:space-y-5 mt-8 md:mt-auto">
-                                <div className="flex justify-between font-black text-sm uppercase text-[#2D241E] tracking-widest">
-                                    <span>Subtotal</span>
-                                    <span>฿{(Number(selectedOrder.total_amount) - Number(selectedOrder.shipping_cost)).toLocaleString()}</span>
-                                </div>
-                                {/* ปรับขนาดตัวอักษรค่าส่งที่นี่ (text-sm) */}
-                                <div className="flex justify-between font-black text-sm uppercase text-[#2D241E] tracking-widest">
-                                    <span>Shipping</span>
-                                    <span className="italic">{Number(selectedOrder.shipping_cost) > 0 ? `฿${selectedOrder.shipping_cost}` : 'Free'}</span>
-                                </div>
-                                <div className="flex justify-between items-end pt-6 md:pt-8 border-t-4 border-[#2D241E] mt-4">
-                                    <span className="text-xl md:text-2xl font-black italic text-[#2D241E]">PAYMENT</span>
-                                    <span className="text-3xl md:text-4xl font-black italic text-[#2D241E] tracking-tighter">฿{Number(selectedOrder.total_amount).toLocaleString()}</span>
-                                </div>
-                                {/* ปรับ Padding ปุ่ม py-3.5 และ mt-4 */}
-                                <button 
-                                    onClick={() => setSelectedOrder(null)} 
-                                    className="w-full mt-4 py-3.5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-black transition-all italic active:scale-95"
-                                >
-                                    Close Details
-                                </button>
+                            <div className="mt-auto space-y-3 border-t-4 border-slate-300 pt-5 text-left">
+                                <div className="flex justify-between font-medium text-base uppercase text-[#374151]"><span>Subtotal</span><span className="text-[#111827]">฿{(Number(selectedOrder.total_amount) - Number(selectedOrder.shipping_cost)).toLocaleString()}</span></div>
+                                <div className="flex justify-between font-medium text-base uppercase text-[#374151]"><span>Delivery</span><span className="text-[#111827]">{Number(selectedOrder.shipping_cost) > 0 ? `฿${selectedOrder.shipping_cost}` : 'FREE'}</span></div>
+                                <div className="flex justify-between items-end pt-4 border-t-4 border-[#000000]"><span className="text-xl font-medium italic text-[#000000]">TOTAL</span><span className="text-4xl font-medium italic text-[#000000] tracking-tighter">฿{Number(selectedOrder.total_amount).toLocaleString()}</span></div>
+                                <button onClick={() => setSelectedOrder(null)} className="w-full mt-4 py-3 bg-white border-2 border-slate-300 text-[#000000] rounded-full font-medium uppercase tracking-widest hover:bg-slate-50 active:scale-95 shadow-sm italic">Close Details</button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            <Footer userData={userData} />
+            {isResubmitOpen && <ResubmitSlipModal order={orderForAction} onClose={() => setIsResubmitOpen(false)} onRefresh={fetchData} />}
+            {isReviewOpen && <ReviewModal order={orderForAction} onClose={() => setIsReviewOpen(false)} onRefresh={fetchData} />}
 
-            <style dangerouslySetInnerHTML={{ __html: `
-                .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E; border-radius: 10px; }
-                .no-scrollbar::-webkit-scrollbar { display: none; }
-                @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-                .animate-bounce-slow { animation: bounce-slow 4s infinite; }
-            `}} />
+            <Footer userData={userData} />
         </div>
     );
 };

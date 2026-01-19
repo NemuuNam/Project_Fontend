@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { 
-  Bell, LogOut, Home, Settings, ChevronDown, 
-  Sparkles, Leaf, Cookie, ShieldCheck, Loader2
+  Bell, LogOut, Home, ChevronDown, 
+  Sparkles, ShieldCheck, Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 import { API_ENDPOINTS } from '../api/config';
 
-const Header = ({ title = "แผงควบคุม" }) => {
+const Header = ({ title = "แผงควบคุม", isCollapsed }) => {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -51,63 +51,86 @@ const Header = ({ title = "แผงควบคุม" }) => {
   };
 
   return (
-    <header className="flex justify-between items-center mb-6 md:mb-8 font-['Kanit'] w-full relative z-[100] bg-white py-2">
-      <div className="header-left relative z-20 text-left">
-        <p className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest mb-0.5">CURRENT PAGE</p>
-        <h1 className="text-2xl md:text-3xl font-black text-[#2D241E] tracking-tighter uppercase italic flex items-center gap-2 leading-none">
-          <Sparkles size={18} className="text-[#2D241E]" strokeWidth={3} />
+    <header className={`
+      fixed top-0 right-0 z-[100] /* 🚀 ปรับ z-index ให้เหมาะสม */
+      transition-all duration-500 ease-in-out
+      flex justify-between items-center 
+      bg-[#FDFCFB] border-b border-slate-300
+      py-4 px-6 md:px-10
+      ${isCollapsed ? 'left-[110px]' : 'left-[280px]'}
+      hidden lg:flex
+    `}>
+      {/* --- 🎨 Left: Page Title --- */}
+      <div className="header-left text-left">
+        <p className="text-sm font-medium text-[#374151] uppercase tracking-widest mb-1 italic">Dashboard /</p>
+        <h1 className="text-3xl md:text-4xl font-medium text-[#000000] tracking-tighter uppercase italic flex items-center gap-4 leading-none">
+          <div className="p-3 bg-white border border-slate-300 rounded-2xl text-[#000000] shadow-sm">
+            <Sparkles size={26} strokeWidth={2} />
+          </div>
           {title}
         </h1>
       </div>
 
-      <div className="flex items-center gap-3 md:gap-4 relative z-20" ref={dropdownRef}>
-        <button className="relative p-3 bg-white rounded-xl border-2 border-[#2D241E] shadow-sm hover:shadow-md transition-all active:scale-90" onClick={() => navigate('/admin/orders')}>
-          <Bell size={22} strokeWidth={3} className="text-[#2D241E]" />
-          {pendingCount > 0 && <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-5 h-5 text-[10px] flex items-center justify-center font-black border-2 border-white animate-pulse">{pendingCount}</span>}
+      {/* --- 🎨 Right: Actions (White/Light Gray Theme) --- */}
+      <div className="flex items-center gap-6" ref={dropdownRef}>
+        
+        {/* 🚀 Notification Bell: พื้นหลังขาว ขอบบาง */}
+        <button 
+          className="relative p-4 bg-white rounded-2xl border border-slate-300 shadow-sm hover:bg-slate-50 transition-all active:scale-90" 
+          onClick={() => navigate('/admin/orders')}
+        >
+          <Bell size={26} strokeWidth={2} className="text-[#111827]" />
+          {pendingCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-black text-white rounded-full w-7 h-7 text-xs flex items-center justify-center font-bold border-2 border-[#FDFCFB]">
+              {pendingCount}
+            </span>
+          )}
         </button>
 
-        <button className="flex items-center gap-3 p-1.5 pr-4 bg-white rounded-xl border-2 border-[#2D241E] shadow-sm transition-all" onClick={() => setShowDropdown(!showDropdown)}>
-          <div className="w-9 h-9 bg-[#2D241E] text-white rounded-lg flex items-center justify-center font-black text-base shadow-sm">
-            {userData.first_name ? userData.first_name.charAt(0).toUpperCase() : <Loader2 className="animate-spin text-white" size={14} />}
+        {/* 🚀 User Profile Button: พื้นหลังขาว ขอบบาง */}
+        <button 
+          className="flex items-center gap-4 p-2 pr-6 bg-white rounded-2xl border border-slate-300 shadow-sm hover:bg-slate-50 hover:border-[#000000] transition-all group" 
+          onClick={() => setShowDropdown(!showDropdown)}
+        >
+          <div className="w-12 h-12 bg-slate-100 text-[#000000] rounded-xl flex items-center justify-center font-medium text-2xl border border-slate-200 shadow-inner">
+            {userData.first_name ? userData.first_name.charAt(0).toUpperCase() : <Loader2 className="animate-spin" size={18} />}
           </div>
-          <div className="hidden sm:block text-left leading-none">
-            <p className="text-sm font-black text-[#2D241E] uppercase italic mb-1">{userData.first_name || 'LOADING...'}</p>
-            <p className="text-[9px] font-black text-[#2D241E] uppercase tracking-widest">{userData.role_name}</p>
+          <div className="text-left leading-tight">
+            <p className="text-xl font-medium text-[#000000] uppercase italic leading-none">{userData.first_name || '...'}</p>
+            <p className="text-xs font-medium text-[#374151] uppercase tracking-widest mt-1.5">{userData.role_name}</p>
           </div>
-          <ChevronDown size={14} strokeWidth={3} className={`text-[#2D241E] transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+          <ChevronDown size={20} strokeWidth={2.5} className={`text-[#374151] transition-transform duration-500 ${showDropdown ? 'rotate-180' : ''}`} />
         </button>
 
-        {/* Compact Dropdown - เข้มชัด */}
+        {/* --- 📝 Dropdown Menu --- */}
         {showDropdown && (
-          <div className="absolute top-16 right-0 w-64 bg-white rounded-[2rem] border-2 border-[#2D241E] shadow-2xl z-[1000] p-6 animate-in fade-in slide-in-from-top-4 duration-300">
-            <div className="text-center pb-4 border-b-2 border-slate-100 relative z-10">
-              <div className="w-14 h-14 bg-[#2D241E] text-white rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-3 shadow-md">{userData.first_name?.charAt(0)}</div>
-              <h3 className="text-base font-black text-[#2D241E] uppercase italic">{userData.first_name} {userData.last_name}</h3>
-              <p className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest mt-2 flex items-center justify-center gap-1.5"><ShieldCheck size={12} strokeWidth={3} /> {userData.role_name}</p>
+          <div className="absolute top-24 right-0 w-80 bg-white rounded-[3rem] border border-slate-300 shadow-2xl z-[110] p-8 animate-in fade-in slide-in-from-top-6 duration-500">
+            <div className="text-center pb-6 border-b border-slate-100">
+              <div className="w-20 h-20 bg-slate-50 text-[#000000] rounded-3xl flex items-center justify-center font-medium text-4xl mx-auto mb-4 border border-slate-200 shadow-sm">
+                {userData.first_name?.charAt(0)}
+              </div>
+              <h3 className="text-2xl font-medium text-[#000000] uppercase italic leading-none">{userData.first_name} {userData.last_name}</h3>
+              <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 bg-white text-[#111827] rounded-full text-xs font-medium uppercase tracking-widest border border-slate-300">
+                <ShieldCheck size={16} strokeWidth={2} /> {userData.role_name}
+              </div>
             </div>
-            <div className="py-3 text-[#2D241E] text-[11px] font-black text-center border-b-2 border-slate-100 italic">{userData.email}</div>
             
-            <div className="flex flex-col gap-2 mt-4 relative z-10">
-              {/* 🏠 ปุ่มกลับหน้าหลัก (Home / Shop) */}
+            <div className="py-5 text-[#374151] text-sm font-medium text-center italic border-b border-slate-100">{userData.email}</div>
+            
+            <div className="flex flex-col gap-4 mt-6">
+              {/* 🚀 ปุ่มพื้นหลังขาว ขอบดำ */}
               <button 
-                className="w-full py-2.5 bg-white text-[#2D241E] border-2 border-[#2D241E] rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all active:scale-95" 
+                className="w-full py-4 bg-white text-[#111827] border border-slate-300 rounded-2xl font-medium text-base uppercase tracking-wider flex items-center justify-center gap-3 hover:bg-slate-50 transition-all active:scale-95 italic" 
                 onClick={() => navigate('/')}
               >
-                <Home size={14} strokeWidth={3} /> GO TO SHOP
+                <Home size={20} /> Visit Shop
               </button>
-
+              {/* 🚀 ปุ่ม Sign Out พื้นหลังขาว ขอบแดง */}
               <button 
-                className="w-full py-2.5 bg-white text-[#2D241E] border-2 border-[#2D241E] rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all active:scale-95" 
-                onClick={() => navigate('/admin/shop-setting')}
-              >
-                <Settings size={14} strokeWidth={3} /> SETTINGS
-              </button>
-
-              <button 
-                className="w-full py-2.5 bg-red-600 text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg hover:bg-red-700 transition-all active:scale-95 mt-2" 
+                className="w-full py-4 bg-white text-[#DC2626] border border-[#DC2626] rounded-2xl font-medium text-base uppercase tracking-wider flex items-center justify-center gap-3 shadow-sm hover:bg-red-50 transition-all active:scale-95 italic" 
                 onClick={handleLogout}
               >
-                <LogOut size={14} strokeWidth={3} /> SIGN OUT
+                <LogOut size={20} /> Sign Out
               </button>
             </div>
           </div>
@@ -116,4 +139,5 @@ const Header = ({ title = "แผงควบคุม" }) => {
     </header>
   );
 };
+
 export default Header;

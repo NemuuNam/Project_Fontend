@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { 
     User, MapPin, Settings, LogOut, Mail, Phone, 
-    ShieldCheck, Loader2, Plus, X, Lock, Trash2, Edit2, 
-    CheckCircle, Heart, ShoppingBag, Sparkles, ChevronRight, Leaf, Cookie, Smile
+    ShieldCheck, Loader2, X, Lock, Trash2, Edit2, 
+    Heart, ShoppingBag, Sparkles, ChevronRight, Send
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
@@ -12,7 +12,7 @@ import Footer from '../../components/Footer';
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
-// --- 1. แบบฟอร์มแก้ไขโปรไฟล์ (เข้มจัด) ---
+// --- 1. แบบฟอร์มแก้ไขโปรไฟล์ (ตัวอักษรใหญ่ text-xl) ---
 const ProfileEditForm = ({ initialData, onSubmit, isSubmitting }) => {
     const [form, setForm] = useState(initialData);
     const handleChange = (e) => {
@@ -27,28 +27,28 @@ const ProfileEditForm = ({ initialData, onSubmit, isSubmitting }) => {
     };
     return (
         <form onSubmit={(e) => onSubmit(e, form)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                <div className="space-y-1">
-                    <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">First Name</label>
-                    <input name="first_name" type="text" value={form.first_name} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-[#374151] uppercase tracking-widest ml-2">First Name</label>
+                    <input name="first_name" type="text" value={form.first_name} onChange={handleChange} className="w-full p-4 bg-white border-2 border-slate-300 rounded-2xl outline-none focus:border-[#000000] text-xl font-medium text-[#111827]" required />
                 </div>
-                <div className="space-y-1">
-                    <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Last Name</label>
-                    <input name="last_name" type="text" value={form.last_name} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-[#374151] uppercase tracking-widest ml-2">Last Name</label>
+                    <input name="last_name" type="text" value={form.last_name} onChange={handleChange} className="w-full p-4 bg-white border-2 border-slate-300 rounded-2xl outline-none focus:border-[#000000] text-xl font-medium text-[#111827]" required />
                 </div>
             </div>
-            <div className="space-y-1 text-left">
-                <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Phone Number</label>
-                <input name="phone" type="text" value={form.phone} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" placeholder="08x-xxx-xxxx" maxLength={12} />
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-[#374151] uppercase tracking-widest ml-2">Phone Number</label>
+                <input name="phone" type="text" value={form.phone} onChange={handleChange} className="w-full p-4 bg-white border-2 border-slate-300 rounded-2xl outline-none focus:border-[#000000] text-xl font-medium text-[#111827]" placeholder="08x-xxx-xxxx" maxLength={12} />
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest shadow-xl hover:bg-black transition-all active:scale-95 italic">
+            <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-white border-2 border-slate-300 text-[#000000] rounded-full font-medium uppercase tracking-widest hover:bg-slate-50 transition-all italic shadow-sm active:scale-95">
                 {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : "Save Profile Details"}
             </button>
         </form>
     );
 };
 
-// --- 2. แบบฟอร์มจัดการที่อยู่ ---
+// --- 2. แบบฟอร์มจัดการที่อยู่ (ตัวอักษรใหญ่) ---
 const AddressFormSub = ({ initialData, onSubmit, isSubmitting, isEdit }) => {
     const [form, setForm] = useState(initialData || { recipient_name: '', phone_number: '', address_detail: '' });
     const handleChange = (e) => {
@@ -64,22 +64,22 @@ const AddressFormSub = ({ initialData, onSubmit, isSubmitting, isEdit }) => {
     };
     return (
         <form onSubmit={(e) => onSubmit(e, form)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                <div className="space-y-1">
-                    <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Recipient Name</label>
-                    <input name="recipient_name" type="text" value={form.recipient_name} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-[#374151] uppercase tracking-widest ml-2">Recipient Name</label>
+                    <input name="recipient_name" type="text" value={form.recipient_name} onChange={handleChange} className="w-full p-4 bg-white border-2 border-slate-300 rounded-2xl outline-none focus:border-[#000000] text-xl font-medium text-[#111827]" required />
                 </div>
-                <div className="space-y-1">
-                    <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Phone</label>
-                    <input name="phone_number" type="text" value={form.phone_number} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" placeholder="08x-xxx-xxxx" maxLength={12} required />
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-[#374151] uppercase tracking-widest ml-2">Phone</label>
+                    <input name="phone_number" type="text" value={form.phone_number} onChange={handleChange} className="w-full p-4 bg-white border-2 border-slate-300 rounded-2xl outline-none focus:border-[#000000] text-xl font-medium text-[#111827]" placeholder="08x-xxx-xxxx" maxLength={12} required />
                 </div>
             </div>
-            <div className="space-y-1 text-left">
-                <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Address Details</label>
-                <textarea name="address_detail" value={form.address_detail} onChange={handleChange} className="w-full p-5 bg-slate-50 border-2 border-[#2D241E]/20 rounded-3xl outline-none h-32 resize-none focus:border-[#2D241E] font-black text-[#2D241E] italic" required />
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-[#374151] uppercase tracking-widest ml-2">Address Details</label>
+                <textarea name="address_detail" value={form.address_detail} onChange={handleChange} className="w-full p-5 bg-white border-2 border-slate-300 rounded-3xl outline-none h-32 resize-none focus:border-[#000000] font-medium text-lg text-[#111827] italic" required />
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 italic">
-                {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : (isEdit ? "Update Address" : "Add New Address")}
+            <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-white border-2 border-slate-300 text-[#000000] rounded-full font-medium uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 italic">
+                {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : (isEdit ? "Update Registry" : "Add Address")}
             </button>
         </form>
     );
@@ -95,26 +95,27 @@ const ChangePasswordForm = ({ onSubmit, isSubmitting }) => {
         onSubmit(e, form);
     };
     return (
-        <form onSubmit={handleSubmit} className="space-y-4 text-left">
-            <div className="space-y-1">
-                <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Current Password</label>
-                <input name="oldPassword" type="password" value={form.oldPassword} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-[#374151] uppercase tracking-widest ml-2">Current Password</label>
+                <input name="oldPassword" type="password" value={form.oldPassword} onChange={handleChange} className="w-full p-4 bg-white border-2 border-slate-300 rounded-2xl focus:border-[#000000] outline-none text-xl" required />
             </div>
-            <div className="space-y-1">
-                <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">New Password</label>
-                <input name="newPassword" type="password" value={form.newPassword} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-[#374151] uppercase tracking-widest ml-2">New Password</label>
+                <input name="newPassword" type="password" value={form.newPassword} onChange={handleChange} className="w-full p-4 bg-white border-2 border-slate-300 rounded-2xl focus:border-[#000000] outline-none text-xl" required />
             </div>
-            <div className="space-y-1">
-                <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest ml-2">Confirm New Password</label>
-                <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-[#2D241E]/20 rounded-2xl outline-none focus:border-[#2D241E] font-black text-[#2D241E]" required />
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-[#374151] uppercase tracking-widest ml-2">Confirm New Password</label>
+                <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} className="w-full p-4 bg-white border-2 border-slate-300 rounded-2xl focus:border-[#000000] outline-none text-xl" required />
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-[#2D241E] text-white rounded-full font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 italic mt-4">
-                {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : "Update Security Password"}
+            <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-white border-2 border-slate-300 text-[#000000] rounded-full font-medium uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 italic mt-4 shadow-sm">
+                {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : "Update Security"}
             </button>
         </form>
     );
 };
 
+// --- 4. Main Component ---
 const Profile = ({ userData }) => {
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
@@ -161,9 +162,9 @@ const Profile = ({ userData }) => {
 
     const handleDeleteAddress = async (id) => {
         const result = await Swal.fire({ 
-            title: 'ต้องการลบที่อยู่นี้?', text: 'ข้อมูลจะถูกลบออกจากระบบถาวร', icon: 'warning', 
-            showCancelButton: true, confirmButtonColor: '#2D241E', confirmButtonText: 'ยืนยันการลบ',
-            customClass: { popup: 'rounded-[3rem] font-["Kanit"] border-4 border-[#2D241E]' } 
+            title: 'Delete Address?', text: 'Action cannot be undone.', icon: 'warning', 
+            showCancelButton: true, confirmButtonColor: '#111827', confirmButtonText: 'Confirm',
+            customClass: { popup: 'rounded-[3rem] font-["Kanit"] border-2 border-slate-300 bg-white' } 
         });
         if (result.isConfirmed) {
             try {
@@ -176,144 +177,128 @@ const Profile = ({ userData }) => {
     const handleRemoveFavorite = async (productId) => {
         try {
             const res = await axiosInstance.post('/api/wishlist/toggle', { product_id: productId });
-            if (res.success) { toast.success("ลบออกจากรายการโปรดแล้ว"); fetchData(); }
-        } catch (err) { toast.error("เกิดข้อผิดพลาด"); }
+            if (res.success) { toast.success("Removed from wishlist"); fetchData(); }
+        } catch (err) { toast.error("Error occurred"); }
     };
 
     const handleChangePassword = async (e, formData) => {
         e.preventDefault(); setIsSubmitting(true);
         try {
             const res = await axiosInstance.put(`${API_ENDPOINTS.AUTH}/change-password`, formData);
-            if (res.success) { toast.success("เปลี่ยนรหัสผ่านสำเร็จ"); closeModal(); }
-        } catch (err) { toast.error(err.response?.data?.message || "เปลี่ยนรหัสผ่านล้มเหลว"); } finally { setIsSubmitting(false); }
+            if (res.success) { toast.success("Password updated"); closeModal(); }
+        } catch (err) { toast.error(err.response?.data?.message || "Update failed"); } finally { setIsSubmitting(false); }
     };
 
     const Modal = ({ title, children, onClose }) => (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#2D241E]/30 backdrop-blur-md p-4 animate-in fade-in duration-300" onClick={onClose}>
-            <div className="bg-white rounded-[3rem] w-full max-w-lg p-8 lg:p-12 shadow-2xl relative animate-in zoom-in-95 border-4 border-[#2D241E]" onClick={e => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-6 right-6 p-2 bg-slate-50 text-[#2D241E] hover:text-red-500 rounded-full transition-all border-2 border-[#2D241E]"><X size={20} strokeWidth={3} /></button>
-                <h2 className="text-2xl font-black mb-8 text-[#2D241E] uppercase tracking-tighter italic text-left">Manage <span className="opacity-40 not-italic font-light">{title}</span></h2>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-500/20 backdrop-blur-md p-4 animate-in fade-in" onClick={onClose}>
+            <div className="bg-white rounded-[3rem] w-full max-w-lg p-10 shadow-2xl relative animate-in zoom-in-95 border-2 border-slate-300" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-6 right-6 p-2 bg-white text-black border-2 border-slate-300 rounded-full hover:bg-slate-50 transition-all shadow-sm"><X size={20} strokeWidth={3} /></button>
+                <h2 className="text-2xl font-medium mb-8 text-[#000000] uppercase italic border-b-4 border-slate-100 pb-2">Manage <span className="text-[#374151] not-italic">{title}</span></h2>
                 <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar text-left">{children}</div>
             </div>
         </div>
     );
 
-    if (loading || !profile) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={40} /></div>;
+    if (loading || !profile) return <div className="h-screen flex items-center justify-center bg-[#FDFCFB]"><Loader2 className="animate-spin text-[#000000]" size={48} /></div>;
 
     return (
-        <div className="min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden selection:bg-[#F3E9DC] relative">
-            <Toaster position="top-right" />
+        <div className="min-h-screen bg-[#FDFCFB] font-['Kanit'] text-[#111827] relative overflow-x-hidden selection:bg-slate-200">
+            <Toaster position="bottom-right" />
             <HeaderHome userData={userData} />
 
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <Leaf className="absolute top-[10%] left-[-5%] rotate-12 text-[#2D241E] opacity-[0.02]" size={300} />
-                <Cookie className="absolute bottom-[20%] right-[-5%] -rotate-12 text-[#2D241E] opacity-[0.03]" size={250} />
-                <Smile className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#2D241E] opacity-[0.02]" size={400} />
-            </div>
-
-            {/* --- Profile Header --- */}
-            <section className="relative pt-32 pb-16 px-6 bg-[#FAFAFA] border-b-2 border-slate-100 z-10 text-left">
-                <div className="container mx-auto flex flex-col md:flex-row items-center gap-8 md:gap-12">
-                    <div className="w-40 h-40 md:w-48 md:h-48 bg-white text-[#2D241E] rounded-[4rem] shadow-xl flex items-center justify-center relative border-4 border-[#2D241E]">
-                        <User size={70} strokeWidth={3} />
-                        <div className="absolute -bottom-2 -right-2 bg-[#2D241E] text-white p-3 rounded-2xl shadow-lg"><ShieldCheck size={24} strokeWidth={3} /></div>
+            {/* --- 🚀 Profile Header: pt-16 (ลดจาก 24), pb-4 (ลดจาก 12) --- */}
+            <section className="relative pt-16 pb-4 px-8 bg-white border-b-2 border-slate-300 text-left">
+                <div className="container mx-auto flex flex-col md:flex-row items-center gap-8">
+                    <div className="w-40 h-40 bg-[#FDFCFB] text-[#000000] rounded-[3.5rem] shadow-sm flex items-center justify-center relative border-2 border-slate-300">
+                        <User size={72} strokeWidth={2} />
+                        <div className="absolute -bottom-2 -right-2 bg-white border-2 border-slate-300 text-[#000000] p-3 rounded-2xl shadow-lg"><ShieldCheck size={24} /></div>
                     </div>
-                    <div className="flex-1 text-center md:text-left space-y-3">
-                        <span className="bg-[#2D241E] text-white text-xs font-black px-5 py-1.5 rounded-full tracking-widest uppercase shadow-lg italic">Premium Account</span>
-                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-tight text-[#2D241E]">
-                            {profile.first_name} <span className="font-light italic text-[#2D241E]/60">{profile.last_name}</span>
+                    <div className="flex-1 space-y-3">
+                        <h1 className="text-5xl md:text-7xl font-medium tracking-tighter uppercase italic leading-none text-[#000000]">
+                            {profile.first_name} <span className="font-light not-italic text-[#374151]">{profile.last_name}</span>
                         </h1>
                     </div>
                 </div>
             </section>
 
-            <section className="relative py-12 md:py-20 px-6 container mx-auto z-10 text-left">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            {/* --- py-6: ลดจาก 12 เพื่อให้เนื้อหากระชับ --- */}
+            <section className="relative py-6 px-8 container mx-auto text-left">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     
-                    {/* 🛠️ Sidebar Menu */}
-                    <div className="lg:col-span-4 space-y-3 sticky top-32">
-                        <h3 className="text-[10px] font-black text-[#2D241E] uppercase tracking-[0.25em] mb-6 px-4 italic">Account Settings</h3>
+                    {/* 🛠️ Sidebar Menu: space-y-2 */}
+                    <div className="lg:col-span-3 space-y-2 lg:sticky lg:top-28">
+                        <p className="text-[10px] font-medium text-[#374151] uppercase tracking-[0.4em] mb-4 ml-4 italic">Registry Settings</p>
                         {[
-                            { id: 'profile', icon: Settings, label: 'Personal Information' },
-                            { id: 'address', icon: ShoppingBag, label: 'Shipping Addresses' },
+                            { id: 'profile', icon: Settings, label: 'Identity Information' },
+                            { id: 'address', icon: MapPin, label: 'Shipping Registry' },
                             { id: 'favorites', icon: Heart, label: 'Wishlist History' },
-                            { id: 'password', icon: Lock, label: 'Security & Access' }
+                            { id: 'password', icon: Lock, label: 'Security Access' }
                         ].map((menu) => (
-                            <button key={menu.id} onClick={() => menu.id === 'favorites' ? document.getElementById('fav-section').scrollIntoView({ behavior: 'smooth' }) : setActiveModal(menu.id)} className="w-full flex items-center justify-between p-5 bg-white hover:bg-[#2D241E] hover:text-white rounded-3xl transition-all group border-2 border-slate-200 hover:border-[#2D241E] shadow-sm">
-                                <div className="flex items-center gap-5">
-                                    <div className="p-3 bg-slate-100 rounded-2xl text-[#2D241E] group-hover:bg-white/10 group-hover:text-white transition-all"><menu.icon size={20} strokeWidth={3}/></div>
-                                    <span className="font-black text-sm uppercase tracking-tighter">{menu.label}</span>
+                            <button key={menu.id} onClick={() => menu.id === 'favorites' ? document.getElementById('fav-section').scrollIntoView({ behavior: 'smooth' }) : setActiveModal(menu.id)} className="w-full flex items-center justify-between p-4 bg-white border-2 border-slate-100 rounded-2xl transition-all hover:border-[#000000] hover:bg-[#FDFCFB] group">
+                                <div className="flex items-center gap-4 text-lg font-medium uppercase italic text-[#111827]">
+                                    <menu.icon size={20} className="text-[#374151] group-hover:text-black" /> {menu.label}
                                 </div>
-                                <ChevronRight size={18} strokeWidth={3} className="text-[#2D241E] group-hover:text-white transition-all" />
+                                <ChevronRight size={18} className="text-slate-300 group-hover:text-black" />
                             </button>
                         ))}
-                        <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }} className="w-full mt-6 flex items-center justify-center gap-3 p-5 text-red-600 font-black text-sm bg-white rounded-3xl transition-all uppercase tracking-widest border-2 border-red-100 hover:bg-red-600 hover:text-white shadow-sm italic">
-                            <LogOut size={18} strokeWidth={3}/> Logout Session
+                        <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }} className="w-full mt-6 flex items-center justify-center gap-4 p-4 text-red-700 font-medium text-xs bg-white rounded-2xl border-2 border-red-100 hover:bg-red-50 transition-all uppercase tracking-widest italic shadow-sm">
+                            <LogOut size={16} /> Logout Session
                         </button>
                     </div>
 
-                    <div className="lg:col-span-8 space-y-12">
-                        <div className="bg-white rounded-[3.5rem] p-10 md:p-14 border-2 border-slate-100 shadow-xl relative overflow-hidden group">
-                            <Sparkles className="absolute top-10 right-10 text-[#2D241E] opacity-[0.05]" size={100} />
-                            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter mb-12 italic text-[#2D241E]">Member <span className="font-light not-italic opacity-40">Identity</span></h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10 gap-x-12">
-                                <InfoItem label="Full Name" value={`${profile.first_name} ${profile.last_name}`} icon={<User size={20} strokeWidth={3}/>} />
-                                <InfoItem label="Email Account" value={profile.email} icon={<Mail size={20} strokeWidth={3}/>} />
-                                <InfoItem label="Contact Phone" value={profile.phone || 'Not Specified'} icon={<Phone size={20} strokeWidth={3}/>} />
-                                <InfoItem label="Account Role" value={profile.role_name === 'Customer' ? 'Gold Member' : profile.role_name} icon={<ShieldCheck size={20} strokeWidth={3}/>} isHigh />
+                    <div className="lg:col-span-9 space-y-6">
+                        {/* Member Identity Card */}
+                        <div className="bg-white rounded-[3rem] p-8 border-2 border-slate-300 shadow-sm relative">
+                            <h2 className="text-4xl font-medium uppercase tracking-tighter mb-8 italic text-[#000000]">Member <span className="font-light not-italic text-[#374151]">Identity</span></h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
+                                <InfoItem label="Full Registered Name" value={`${profile.first_name} ${profile.last_name}`} icon={<User size={22}/>} />
+                                <InfoItem label="Email Account" value={profile.email} icon={<Mail size={22}/>} />
+                                <InfoItem label="Mobile Phone" value={profile.phone || 'NOT SPECIFIED'} icon={<Phone size={22}/>} />
+                                <InfoItem label="Role Privileges" value={profile.role_name} icon={<ShieldCheck size={22}/>} />
                             </div>
 
-                            <div className="mt-16 pt-12 border-t-2 border-slate-100 text-left">
-                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
-                                    <h4 className="text-2xl font-black uppercase tracking-tighter italic text-[#2D241E]">Address Registry</h4>
-                                    <button onClick={() => setActiveModal('address')} className="px-6 py-2.5 bg-[#2D241E] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all">+ Register New</button>
+                            <div className="mt-8 pt-8 border-t-2 border-slate-100">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h4 className="text-2xl font-medium uppercase italic text-[#000000]">Location Registry</h4>
+                                    <button onClick={() => setActiveModal('address')} className="px-5 py-2 bg-white border-2 border-slate-300 text-black rounded-full text-xs font-medium uppercase tracking-widest hover:bg-slate-50 shadow-sm">+ Add New</button>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {profile.addresses?.map(addr => (
-                                        <div key={addr.address_id} className="p-6 bg-slate-50 rounded-[2.5rem] border-2 border-slate-200 relative group hover:border-[#2D241E]/40 transition-all shadow-sm">
-                                            <div className="absolute top-6 right-6 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                                <button onClick={() => { setEditingAddress(addr); setActiveModal('address'); }} className="p-2 text-[#2D241E] hover:scale-110"><Edit2 size={16} strokeWidth={3}/></button>
-                                                <button onClick={() => handleDeleteAddress(addr.address_id)} className="p-2 text-red-600 hover:scale-110"><Trash2 size={16} strokeWidth={3}/></button>
+                                        <div key={addr.address_id} className="p-6 bg-[#FDFCFB] rounded-[2rem] border-2 border-slate-200 relative group transition-all hover:border-[#000000] shadow-sm">
+                                            <div className="absolute top-5 right-5 flex gap-1">
+                                                <button onClick={() => { setEditingAddress(addr); setActiveModal('address'); }} className="p-2 text-slate-400 hover:text-black"><Edit2 size={18}/></button>
+                                                <button onClick={() => handleDeleteAddress(addr.address_id)} className="p-2 text-red-200 hover:text-red-700"><Trash2 size={18}/></button>
                                             </div>
-                                            <p className="font-black text-[#2D241E] text-lg uppercase tracking-tighter italic mb-2">{addr.recipient_name}</p>
-                                            <p className="text-sm font-bold text-[#2D241E] italic leading-relaxed mb-6">"{addr.address_detail}"</p>
-                                            <div className="flex items-center gap-2 text-xs font-black text-[#2D241E] uppercase tracking-widest"><Phone size={14} strokeWidth={3}/> {addr.phone_number}</div>
+                                            <p className="font-medium text-[#000000] text-2xl uppercase italic mb-1 tracking-tight">{addr.recipient_name}</p>
+                                            <p className="text-lg text-[#374151] italic leading-relaxed mb-4 font-medium">"{addr.address_detail}"</p>
+                                            <div className="flex items-center gap-2 text-xs font-medium text-[#111827] uppercase tracking-widest"><Phone size={14} /> {addr.phone_number}</div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
 
-                        {/* --- Wishlist Archive --- */}
-                        <div id="fav-section" className="bg-white rounded-[3.5rem] p-10 md:p-14 border-2 border-slate-100 shadow-xl relative overflow-hidden group">
-                            <Heart className="absolute -top-10 -right-10 text-[#2D241E] opacity-[0.03]" size={200} strokeWidth={3} />
-                            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter mb-12 italic text-[#2D241E]">Wishlist <span className="font-light not-italic opacity-40">Archive</span></h2>
-                            
+                        {/* Wishlist Archive */}
+                        <div id="fav-section" className="bg-white rounded-[3rem] p-8 border-2 border-slate-300 shadow-sm">
+                            <h2 className="text-4xl font-medium uppercase tracking-tighter mb-8 italic text-[#000000]">Wishlist <span className="font-light not-italic text-[#374151]">Archive</span></h2>
                             {favorites.length > 0 ? (
-                                <div className="space-y-4 relative z-10">
+                                <div className="space-y-3">
                                     {favorites.map((fav) => {
                                         const prod = fav.product || fav; 
-                                        const mainImg = prod.images?.[0]?.image_url || '/placeholder.png';
                                         return (
-                                            <div key={fav.wishlist_id || prod.product_id} className="group/card flex flex-col md:flex-row items-center gap-6 p-4 bg-white rounded-[2.5rem] border-2 border-slate-200 hover:border-[#2D241E] transition-all duration-500 hover:shadow-lg text-left">
-                                                <div className="relative w-24 h-24 shrink-0 rounded-2xl overflow-hidden bg-slate-50 border-2 border-slate-200 shadow-inner">
-                                                    <img src={mainImg} className="w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-[1.5s]" alt={prod.product_name} />
+                                            <div key={fav.wishlist_id || prod.product_id} className="flex flex-col md:flex-row items-center gap-8 p-5 bg-[#FDFCFB] rounded-[2rem] border-2 border-slate-200 hover:border-[#000000] transition-all">
+                                                <div className="w-24 h-24 shrink-0 rounded-2xl overflow-hidden border-2 border-slate-100 bg-white p-1 shadow-sm">
+                                                    <img src={prod.images?.[0]?.image_url || '/placeholder.png'} className="w-full h-full object-cover rounded-xl" alt="" />
                                                 </div>
-                                                <div className="flex-1">
-                                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#2D241E] rounded-lg text-[9px] font-black text-white uppercase tracking-widest mb-1 shadow-md">
-                                                        <Sparkles size={10} strokeWidth={3} /> Best Flavor
-                                                    </div>
-                                                    <h4 className="font-black text-[#2D241E] text-lg uppercase italic leading-tight">{prod.product_name}</h4>
-                                                    <p className="text-xs font-bold text-[#2D241E]/60 italic">Handcrafted with premium ingredients</p>
+                                                <div className="flex-1 text-left">
+                                                    <h4 className="font-medium text-2xl uppercase italic text-[#000000] tracking-tight">{prod.product_name}</h4>
+                                                    <p className="text-base text-[#374151] italic font-medium">Premium Handcrafted Cookie</p>
                                                 </div>
-                                                <div className="w-full md:w-auto flex flex-row md:flex-col items-center md:items-end gap-4 min-w-[150px] pt-4 md:pt-0 border-t-2 md:border-t-0 md:border-l-2 border-slate-100 md:pl-6">
-                                                    <div className="text-left md:text-right flex-1 md:flex-none">
-                                                        <p className="text-[9px] font-black text-[#2D241E] uppercase tracking-widest mb-1 leading-none">Price</p>
-                                                        <p className="text-2xl font-black text-[#2D241E] italic leading-none">฿{prod.unit_price?.toLocaleString()}</p>
-                                                    </div>
+                                                <div className="flex items-center gap-8 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-8">
+                                                    <p className="text-3xl font-medium italic text-[#000000]">฿{prod.unit_price?.toLocaleString()}</p>
                                                     <div className="flex gap-2">
-                                                        <button onClick={() => handleRemoveFavorite(prod.product_id)} className="p-3 bg-slate-100 text-red-600 rounded-2xl border-2 border-transparent hover:border-red-600 transition-all shadow-sm"><Trash2 size={18} strokeWidth={3} /></button>
-                                                        <button onClick={() => navigate(`/products`)} className="px-6 py-3 bg-[#2D241E] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-black transition-all active:scale-95 flex items-center gap-2 italic"><ShoppingBag size={14} strokeWidth={3} /> Order</button>
+                                                        <button onClick={() => handleRemoveFavorite(prod.product_id)} className="p-3.5 text-red-700 bg-white border-2 border-red-50 rounded-xl hover:bg-red-50 transition-all"><Trash2 size={18} /></button>
+                                                        <button onClick={() => navigate(`/products`)} className="px-6 py-3 bg-white border-2 border-slate-300 text-black rounded-xl font-medium text-sm uppercase italic hover:bg-slate-50 shadow-sm flex items-center gap-2 active:scale-95"><ShoppingBag size={16} /> Buy Now</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -321,10 +306,9 @@ const Profile = ({ userData }) => {
                                     })}
                                 </div>
                             ) : (
-                                <div className="py-20 text-center bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-300 flex flex-col items-center gap-6">
-                                    <ShoppingBag size={48} strokeWidth={1} className="text-[#2D241E] opacity-20" />
-                                    <p className="text-[#2D241E] font-black uppercase tracking-widest text-sm italic">Wishlist is currently empty</p>
-                                    <button onClick={() => navigate('/products')} className="px-8 py-3 bg-[#2D241E] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95">Explore Bakery</button>
+                                <div className="py-24 text-center bg-[#FDFCFB] rounded-[2.5rem] border-2 border-dashed border-slate-300">
+                                    <ShoppingBag size={64} className="mx-auto text-slate-200 mb-4" />
+                                    <p className="text-slate-400 uppercase font-medium tracking-widest text-lg italic">Wishlist is empty</p>
                                 </div>
                             )}
                         </div>
@@ -335,22 +319,34 @@ const Profile = ({ userData }) => {
             <Footer userData={userData} />
             
             {/* Modal Components */}
-            {activeModal === 'profile' && <Modal title="Profile Details" onClose={closeModal}><ProfileEditForm initialData={{ first_name: profile.first_name, last_name: profile.last_name, phone: profile.phone || '' }} onSubmit={handleUpdateProfile} isSubmitting={isSubmitting} /></Modal>}
-            {activeModal === 'address' && <Modal title={editingAddress ? "Location Info" : "New Registry"} onClose={closeModal}><AddressFormSub initialData={editingAddress} onSubmit={handleSaveAddress} isSubmitting={isSubmitting} isEdit={!!editingAddress} /></Modal>}
-            {activeModal === 'password' && <Modal title="Security Access" onClose={closeModal}><ChangePasswordForm onSubmit={handleChangePassword} isSubmitting={isSubmitting} /></Modal>}
+            {activeModal === 'profile' && (
+                <Modal title="Personal Info" onClose={closeModal}>
+                    <ProfileEditForm initialData={{ first_name: profile.first_name, last_name: profile.last_name, phone: profile.phone || '' }} onSubmit={handleUpdateProfile} isSubmitting={isSubmitting} />
+                </Modal>
+            )}
+            {activeModal === 'address' && (
+                <Modal title={editingAddress ? "Location Registry" : "New Address"} onClose={closeModal}>
+                    <AddressFormSub initialData={editingAddress} onSubmit={handleSaveAddress} isSubmitting={isSubmitting} isEdit={!!editingAddress} />
+                </Modal>
+            )}
+            {activeModal === 'password' && (
+                <Modal title="Security Access" onClose={closeModal}>
+                    <ChangePasswordForm onSubmit={handleChangePassword} isSubmitting={isSubmitting} />
+                </Modal>
+            )}
 
             <style dangerouslySetInnerHTML={{ __html: `
-                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2D241E; border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
             `}} />
         </div>
     );
 };
 
-const InfoItem = ({ label, value, icon, isHigh = false }) => (
-    <div className="space-y-1 text-left border-b-2 border-slate-100 pb-4 group/item">
-        <label className="text-[10px] font-black text-[#2D241E] uppercase tracking-widest flex items-center gap-2 mb-2 leading-none">{icon} {label}</label>
-        <p className={`text-xl font-black tracking-tighter uppercase ${isHigh ? 'text-[#D4A373] italic' : 'text-[#2D241E]'}`}>{value || '—'}</p>
+const InfoItem = ({ label, value, icon }) => (
+    <div className="space-y-2 text-left border-b-2 border-slate-100 pb-4 group">
+        <label className="text-sm font-medium text-[#374151] uppercase tracking-[0.3em] flex items-center gap-3 leading-none italic">{icon} {label}</label>
+        <p className="text-2xl font-medium tracking-tight uppercase text-[#000000] italic leading-none">{value || '—'}</p>
     </div>
 );
 

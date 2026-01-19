@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
     Store, Truck, Save, Loader2, Trash2, Plus, X,
-    CreditCard, Landmark, Phone, Mail, Edit3,
-    Coins, MapPin, RefreshCw, Menu, Building2,
-    Sparkles, Building
+    Landmark, Phone, Mail, Edit3,
+    Coins, MapPin, Menu, Building2,
+    Sparkles
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -13,7 +13,7 @@ import { API_ENDPOINTS } from '../api/config';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
-// ✅ 1. ย้าย Helpers มาไว้นอก Component เพื่อป้องกัน Infinite Loop และการประกาศซ้ำ
+// ✅ Helpers 
 const formatPhoneNumber = (value) => {
     if (!value) return "";
     const val = value.replace(/\D/g, '');
@@ -32,7 +32,6 @@ const formatAccountNumber = (value) => {
 };
 
 const ShopSetting = () => {
-    // --- 🏗️ States ---
     const [formData, setFormData] = useState({
         shop_name: '', address: '', phone: '', email: '',
         hero_description: '', delivery_fee: 0, min_free_shipping: 0
@@ -49,7 +48,6 @@ const ShopSetting = () => {
     const [newProvider, setNewProvider] = useState('');
     const [newPayment, setNewPayment] = useState({ bank_name: '', account_name: '', account_number: '' });
 
-    // --- 📦 Data Fetching ---
     const fetchData = useCallback(async (isSilent = false) => {
         try {
             if (!isSilent) setLoading(true);
@@ -59,7 +57,6 @@ const ShopSetting = () => {
                 axiosInstance.get(`${API_ENDPOINTS.ADMIN.SHOP_SETTINGS}/payments`)
             ]);
 
-            // จัดการ Settings
             const s = settingsRes.data || settingsRes;
             if (s && (settingsRes.success || s.shop_name)) {
                 const clean = (v) => (v === "EMPTY" || !v ? "" : v);
@@ -73,17 +70,12 @@ const ShopSetting = () => {
                     min_free_shipping: Number(s.min_free_shipping || 0)
                 });
             }
-
-            // จัดการ Providers (รองรับข้อมูลหลายรูปแบบ)
             const pData = provsRes.data || provsRes;
             setProviders(Array.isArray(pData) ? pData : (pData.data || []));
-
-            // จัดการ Payments
             const payData = paymentsRes.data || paymentsRes;
             setPaymentMethods(Array.isArray(payData) ? payData : (payData.data || []));
 
         } catch (err) { 
-            console.error("Fetch error:", err);
             toast.error("โหลดข้อมูลล้มเหลว"); 
         } finally { 
             setLoading(false); 
@@ -137,8 +129,8 @@ const ShopSetting = () => {
 
     const handleDelete = async (type, id) => {
         const result = await Swal.fire({
-            title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#2D241E', confirmButtonText: 'ลบข้อมูล',
-            customClass: { popup: 'rounded-[2rem] font-["Kanit"] border-4 border-[#2D241E]' }
+            title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#000000', confirmButtonText: 'ลบข้อมูล',
+            customClass: { popup: 'rounded-[2.5rem] font-["Kanit"]' }
         });
         if (result.isConfirmed) {
             try {
@@ -149,152 +141,147 @@ const ShopSetting = () => {
         }
     };
 
-    if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#2D241E]" size={40} /></div>;
+    if (loading) return <div className="h-screen flex items-center justify-center bg-[#FDFCFB]"><Loader2 className="animate-spin text-slate-800" size={40} /></div>;
 
     return (
-        <div className="flex min-h-screen bg-white font-['Kanit'] text-[#2D241E] overflow-x-hidden relative max-w-[1920px] mx-auto shadow-2xl">
-            <Toaster position="top-right" />
+        <div className="flex min-h-screen bg-[#FDFCFB] font-['Kanit'] text-[#111827] overflow-x-hidden relative max-w-full">
+            <Toaster position="top-right" containerStyle={{ zIndex: 9999 }} />
             <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} isMobileOpen={isSidebarOpen} setIsMobileOpen={setIsSidebarOpen} activePage="shop-setting" />
 
-            <main className={`flex-1 transition-all duration-500 ease-in-out ${isCollapsed ? 'lg:ml-[100px]' : 'lg:ml-[280px]'} p-4 md:p-8 lg:p-10 w-full relative z-10`}>
-                <div className="mb-6 flex items-center gap-4">
-                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white rounded-xl text-[#2D241E] shadow-sm border-2 border-[#2D241E] active:scale-90"><Menu size={24} /></button>
-                    <Header title="การจัดการร้านค้า" />
+            {/* 🚀 ปรับ Margin Left ตามความกว้าง 280px และลด Padding ขวา */}
+            <main className={`flex-1 transition-all duration-500 ease-in-out ${isCollapsed ? 'lg:ml-[110px]' : 'lg:ml-[280px]'} p-4 md:p-5 lg:p-6 lg:pr-4 w-full relative z-10`}>
+                <div className="mb-4 flex items-center gap-4 text-left">
+                    <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 bg-white rounded-xl text-[#111827] border border-slate-300 shadow-sm"><Menu size={24} /></button>
+                    <Header title="การจัดการร้านค้า" isCollapsed={isCollapsed} />
                 </div>
 
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-10 px-2 text-left">
-                    <div className="flex-1 space-y-3">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#2D241E] rounded-full shadow-md">
-                            <Sparkles size={14} className="text-white" />
-                            <span className="text-xs font-black uppercase tracking-widest text-white">Shop Configuration</span>
-                        </div>
-                        <h1 className="text-5xl md:text-6xl 2xl:text-7xl font-black uppercase tracking-tighter text-[#2D241E] leading-none italic">Settings</h1>
-                    </div>
-                    <button onClick={() => fetchData()} className="p-4 rounded-2xl bg-white border-2 border-[#2D241E] shadow-lg hover:rotate-180 transition-all active:scale-90 group shrink-0">
-                        <RefreshCw size={24} className={`text-[#2D241E] ${loading ? 'animate-spin' : ''}`} strokeWidth={3} />
-                    </button>
-                </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10 px-2">
-                    <StatCardSmall title="แบรนด์ร้านค้า" value={formData.shop_name || '—'} icon={<Building2 />} />
-                    <StatCardSmall title="ค่าส่งเริ่มต้น" value={`฿${formData.delivery_fee}`} icon={<Truck />} />
-                    <StatCardSmall title="ส่งฟรีขั้นต่ำ" value={`${formData.min_free_shipping} ชิ้น`} icon={<Coins />} />
-                    <StatCardSmall title="บัญชีธนาคาร" value={`${paymentMethods.length} บัญชี`} icon={<Landmark />} />
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <div className="lg:col-span-8 space-y-6">
-                        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xl text-left relative overflow-hidden group">
-                            <div className="flex justify-between items-center mb-8 relative z-10">
-                                <h3 className="text-xl font-black uppercase italic text-[#2D241E] flex items-center gap-3"><Store size={22} strokeWidth={3} /> ข้อมูลพื้นฐาน</h3>
-                                <button onClick={() => setActiveModal('general')} className="p-2.5 bg-slate-50 text-[#2D241E] border-2 border-slate-100 rounded-xl hover:border-[#2D241E] transition-all shadow-sm"><Edit3 size={18} strokeWidth={3} /></button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <InfoBlock label="อีเมลติดต่อ" value={formData.email} icon={<Mail size={16} strokeWidth={3} />} />
-                                <InfoBlock label="เบอร์โทรศัพท์" value={formData.phone} icon={<Phone size={16} strokeWidth={3} />} />
-                                <InfoBlock label="ที่ตั้งร้านค้า" value={formData.address} icon={<MapPin size={16} strokeWidth={3} />} isFull />
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xl text-left">
-                            <div className="flex justify-between items-center mb-8">
-                                <h3 className="text-xl font-black uppercase italic text-[#2D241E] flex items-center gap-3"><Landmark size={22} strokeWidth={3} /> ช่องทางชำระเงิน</h3>
-                                <button onClick={() => setActiveModal('payments')} className="p-2.5 bg-[#2D241E] text-white rounded-xl hover:bg-black transition-all shadow-lg"><Plus size={18} strokeWidth={3} /></button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {paymentMethods.map(m => (
-                                    <div key={m.method_id} className="p-6 bg-slate-50 border-2 border-white rounded-[2rem] relative group hover:border-[#2D241E]/10 transition-all shadow-sm">
-                                        <button onClick={() => handleDelete('payment', m.method_id)} className="absolute top-4 right-4 p-2 text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} strokeWidth={3} /></button>
-                                        <p className="font-black text-[#2D241E] text-sm uppercase italic">{m.bank_name}</p>
-                                        <p className="text-xs font-black text-[#2D241E] uppercase mt-1">{m.account_name}</p>
-                                        <p className="text-lg font-black text-[#2D241E] mt-4 italic">{m.account_number}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                {/* 🚀 pt-24 หลบ Header ทึบ */}
+                <div className="pt-24">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 px-2">
+                        {/* 📊 StatCards: ปรับ p-6 และขอบบาง 1px */}
+                        <StatCardSmall title="แบรนด์ร้านค้า" value={formData.shop_name || '—'} />
+                        <StatCardSmall title="ค่าส่งเริ่มต้น" value={`฿${formData.delivery_fee}`} />
+                        <StatCardSmall title="ส่งฟรีขั้นต่ำ" value={`${formData.min_free_shipping} ชิ้น`} />
+                        <StatCardSmall title="บัญชีธนาคาร" value={`${paymentMethods.length} บัญชี`} />
                     </div>
 
-                    <div className="lg:col-span-4 space-y-6 text-left">
-                        <div className="bg-[#2D241E] p-6 md:p-8 rounded-[2.5rem] shadow-2xl text-white">
-                            <h3 className="text-lg font-black uppercase italic mb-6 flex items-center gap-3"><Truck size={20} strokeWidth={3} /> เงื่อนไขค่าส่ง</h3>
-                            <div className="space-y-4 mb-8">
-                                <div className="bg-white/10 p-4 rounded-2xl border border-white/10">
-                                    <p className="text-[10px] font-black uppercase opacity-60">Delivery Fee</p>
-                                    <p className="text-3xl font-black italic">฿{formData.delivery_fee}</p>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 px-2">
+                        <div className="lg:col-span-8 space-y-6">
+                            {/* ข้อมูลพื้นฐาน: border 1px */}
+                            <div className="bg-white p-6 rounded-[3rem] border border-slate-300 shadow-sm text-left">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-2xl font-medium uppercase italic text-[#000000] flex items-center gap-3"><Store size={28} /> ข้อมูลพื้นฐาน</h3>
+                                    <button onClick={() => setActiveModal('general')} className="p-2.5 bg-white border border-slate-300 rounded-xl text-[#374151] hover:text-[#000000] transition-colors shadow-sm"><Edit3 size={22} /></button>
                                 </div>
-                                <div className="bg-white/10 p-4 rounded-2xl border border-white/10">
-                                    <p className="text-[10px] font-black uppercase opacity-60">Units for Free</p>
-                                    <p className="text-3xl font-black italic">{formData.min_free_shipping} ชิ้น</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <InfoBlock label="อีเมลติดต่อ" value={formData.email} />
+                                    <InfoBlock label="เบอร์โทรศัพท์" value={formData.phone} />
+                                    <InfoBlock label="ที่ตั้งร้านค้า" value={formData.address} isFull />
                                 </div>
                             </div>
-                            <button onClick={() => setActiveModal('shipping_cost')} className="w-full py-4 bg-white text-[#2D241E] rounded-full font-black uppercase text-xs hover:bg-slate-100 transition-all italic">Update Cost</button>
-                        </div>
 
-                        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xl">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-black uppercase italic text-[#2D241E]">Partners</h3>
-                                <button onClick={() => setActiveModal('providers')} className="p-2 bg-slate-50 text-[#2D241E] border-2 border-slate-100 rounded-lg hover:border-[#2D241E] transition-all"><Plus size={16} strokeWidth={3} /></button>
-                            </div>
-                            <div className="space-y-3">
-                                {providers.map(p => (
-                                    <div key={p.provider_id} className="flex justify-between items-center p-4 bg-slate-50 border-2 border-transparent hover:border-red-100 rounded-2xl transition-all group/prov">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#2D241E]" />
-                                            <span className="font-black text-[#2D241E] uppercase text-sm italic">{p.provider_name}</span>
+                            {/* ช่องทางชำระเงิน: border 1px */}
+                            <div className="bg-white p-6 rounded-[3rem] border border-slate-300 shadow-sm text-left">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-2xl font-medium uppercase italic text-[#000000] flex items-center gap-3"><Landmark size={28} /> ช่องทางชำระเงิน</h3>
+                                    <button onClick={() => setActiveModal('payments')} className="p-2.5 bg-white border border-[#000000] text-[#000000] rounded-xl hover:bg-slate-50 transition-colors shadow-sm"><Plus size={22} /></button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {paymentMethods.map(m => (
+                                        <div key={m.method_id} className="p-6 bg-slate-50 border border-slate-200 rounded-2xl relative group shadow-sm">
+                                            <button onClick={() => handleDelete('payment', m.method_id)} className="absolute top-4 right-4 p-1.5 text-rose-300 hover:text-rose-600 transition-colors"><Trash2 size={20} /></button>
+                                            <p className="text-lg font-medium text-[#374151] uppercase italic border-b border-slate-200 pb-1 mb-3">{m.bank_name}</p>
+                                            <p className="text-xl font-medium text-[#000000] uppercase">{m.account_name}</p>
+                                            <p className="text-2xl font-medium text-[#111827] mt-3 italic tracking-tighter">{m.account_number}</p>
                                         </div>
-                                        <button onClick={() => handleDelete('provider', p.provider_id)} className="p-2 text-red-400 hover:text-red-600 md:opacity-0 group-hover/prov:opacity-100 transition-all"><Trash2 size={18} strokeWidth={3} /></button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-4 space-y-6 text-left">
+                            {/* เงื่อนไขค่าส่ง: border 1px */}
+                            <div className="bg-white p-6 rounded-[3rem] border border-slate-300 shadow-sm">
+                                <h3 className="text-xl font-medium uppercase italic text-[#000000] mb-6 flex items-center gap-2 border-b border-slate-100 pb-3"><Truck size={24} /> เงื่อนไขค่าส่ง</h3>
+                                <div className="space-y-4 mb-8">
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner">
+                                        <p className="text-[10px] font-medium uppercase text-[#374151] mb-1">Delivery Fee</p>
+                                        <p className="text-3xl font-medium italic text-[#000000]">฿{formData.delivery_fee}</p>
                                     </div>
-                                ))}
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner">
+                                        <p className="text-[10px] font-medium uppercase text-[#374151] mb-1">Units for Free</p>
+                                        <p className="text-3xl font-medium italic text-[#000000]">{formData.min_free_shipping} ชิ้น</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setActiveModal('shipping_cost')} className="w-full py-4 bg-white border border-[#000000] text-[#000000] rounded-full font-medium uppercase text-base shadow-sm hover:bg-slate-50 transition-colors italic">Update Rules</button>
+                            </div>
+
+                            {/* พาร์ทเนอร์ขนส่ง: border 1px */}
+                            <div className="bg-white p-6 rounded-[3rem] border border-slate-300 shadow-sm">
+                                <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-3">
+                                    <h3 className="text-xl font-medium uppercase italic text-[#000000]">Partners</h3>
+                                    <button onClick={() => setActiveModal('providers')} className="p-1.5 bg-white border border-slate-300 rounded-lg text-[#374151] hover:text-[#000000] shadow-sm"><Plus size={18} /></button>
+                                </div>
+                                <div className="space-y-3">
+                                    {providers.map(p => (
+                                        <div key={p.provider_id} className="flex justify-between items-center p-4 bg-slate-50 border border-slate-200 rounded-xl group transition-all">
+                                            <span className="text-lg font-medium text-[#111827] uppercase italic">{p.provider_name}</span>
+                                            <button onClick={() => handleDelete('provider', p.provider_id)} className="p-1.5 text-rose-300 hover:text-rose-600 transition-colors"><Trash2 size={18} /></button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </main>
 
-            {/* --- Modals --- */}
+            {/* --- Modals (🚀 Compact & Thin Borders) --- */}
             {activeModal && (
-                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[#2D241E]/30 backdrop-blur-sm" onClick={() => setActiveModal(null)}>
-                    <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-8 border-4 border-[#2D241E] relative" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setActiveModal(null)} className="absolute top-6 right-6 p-2 bg-slate-50 text-[#2D241E] rounded-full border-2 border-[#2D241E] hover:text-red-500 transition-all"><X size={20} strokeWidth={3} /></button>
-
-                        <div className="mb-8 text-left">
-                            <h2 className="text-2xl font-black text-[#2D241E] uppercase italic">Update Details</h2>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm animate-in fade-in" onClick={() => setActiveModal(null)}>
+                    <div className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl p-8 border border-slate-300 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-8 text-left border-b border-slate-100 pb-4">
+                            <h2 className="text-2xl font-medium uppercase italic text-[#000000]">Update Details</h2>
+                            <button onClick={() => setActiveModal(null)} className="p-2 bg-slate-50 text-[#111827] border border-slate-200 rounded-full hover:text-red-600 transition-colors"><X size={24} /></button>
                         </div>
 
-                        <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar text-left space-y-6">
+                        <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar text-left">
                             {activeModal === 'general' && (
-                                <form onSubmit={handleUpdate} className="space-y-4">
-                                    <ModalInputField label="Shop Name" value={formData.shop_name} onChange={v => setFormData({ ...formData, shop_name: v })} required />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <ModalInputField label="Email" value={formData.email} onChange={v => setFormData({ ...formData, email: v })} />
-                                        <ModalInputField label="Phone" value={formData.phone} onChange={v => setFormData({ ...formData, phone: formatPhoneNumber(v) })} />
+                                <form onSubmit={handleUpdate} className="space-y-5">
+                                    <ModalInputField label="Shop Brand Name" value={formData.shop_name} onChange={v => setFormData({ ...formData, shop_name: v })} required />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <ModalInputField label="Email Address" value={formData.email} onChange={v => setFormData({ ...formData, email: v })} />
+                                        <ModalInputField label="Contact Number" value={formData.phone} onChange={v => setFormData({ ...formData, phone: formatPhoneNumber(v) })} />
                                     </div>
-                                    <textarea className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-[#2D241E]/10 outline-none font-black text-sm h-24 italic" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Shop Address..." />
-                                    <button type="submit" className="w-full py-4 bg-[#2D241E] text-white rounded-full font-black uppercase text-sm shadow-xl">Save Changes</button>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-medium uppercase ml-2 text-[#374151] tracking-widest">Full Address</label>
+                                        <textarea className="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 outline-none font-medium text-lg italic text-[#111827] h-28 focus:bg-white" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} />
+                                    </div>
+                                    <button type="submit" className="w-full py-5 bg-white border border-[#000000] text-[#000000] rounded-full font-medium uppercase text-xl shadow-md active:scale-95 italic">Save Changes</button>
                                 </form>
                             )}
 
                             {activeModal === 'payments' && (
-                                <div className="space-y-4">
+                                <div className="space-y-5">
                                     <ModalInputField label="Bank Name" value={newPayment.bank_name} onChange={v => setNewPayment({ ...newPayment, bank_name: v })} />
-                                    <ModalInputField label="Account Name" value={newPayment.account_name} onChange={v => setNewPayment({ ...newPayment, account_name: v })} />
+                                    <ModalInputField label="Account Holder Name" value={newPayment.account_name} onChange={v => setNewPayment({ ...newPayment, account_name: v })} />
                                     <ModalInputField label="Account Number" value={newPayment.account_number} onChange={v => setNewPayment({ ...newPayment, account_number: formatAccountNumber(v) })} />
-                                    <button onClick={handleAddPayment} className="w-full py-4 bg-[#2D241E] text-white rounded-full font-black uppercase text-sm shadow-xl">Add Account</button>
+                                    <button onClick={handleAddPayment} className="w-full py-5 bg-white border border-[#000000] text-[#000000] rounded-full font-medium uppercase text-xl shadow-md active:scale-95 italic">Add Account</button>
                                 </div>
                             )}
 
                             {activeModal === 'shipping_cost' && (
                                 <form onSubmit={handleUpdate} className="space-y-6">
                                     <ModalInputField label="Delivery Fee (฿)" type="number" value={formData.delivery_fee} onChange={v => setFormData({ ...formData, delivery_fee: Number(v) })} />
-                                    <ModalInputField label="Min Units for Free" type="number" value={formData.min_free_shipping} onChange={v => setFormData({ ...formData, min_free_shipping: Number(v) })} />
-                                    <button type="submit" className="w-full py-4 bg-[#2D241E] text-white rounded-full font-black uppercase text-sm shadow-xl">Update Rules</button>
+                                    <ModalInputField label="Minimum Units for Free Shipping" type="number" value={formData.min_free_shipping} onChange={v => setFormData({ ...formData, min_free_shipping: Number(v) })} />
+                                    <button type="submit" className="w-full py-5 bg-white border border-[#000000] text-[#000000] rounded-full font-medium uppercase text-xl shadow-md active:scale-95 italic">Update Costs</button>
                                 </form>
                             )}
 
                             {activeModal === 'providers' && (
-                                <div className="space-y-4">
-                                    <ModalInputField label="Provider Name" value={newProvider} onChange={v => setNewProvider(v)} />
-                                    <button onClick={handleAddProvider} className="w-full py-4 bg-[#2D241E] text-white rounded-full font-black uppercase text-sm shadow-xl">Add Partner</button>
+                                <div className="space-y-5">
+                                    <ModalInputField label="Partner Provider Name" value={newProvider} onChange={v => setNewProvider(v)} />
+                                    <button onClick={handleAddProvider} className="w-full py-5 bg-white border border-[#000000] text-[#000000] rounded-full font-medium uppercase text-xl shadow-md active:scale-95 italic">Register Partner</button>
                                 </div>
                             )}
                         </div>
@@ -305,30 +292,25 @@ const ShopSetting = () => {
     );
 };
 
-// 💎 Helpers UI
-const StatCardSmall = ({ title, value, icon }) => (
-    <div className="bg-white p-5 rounded-2xl border-2 border-[#2D241E] shadow-lg flex items-center justify-between group">
-        <div className="flex-1 text-left">
-            <p className="text-[10px] font-black text-[#2D241E] uppercase mb-1">{title}</p>
-            <h2 className="text-[#2D241E] text-xl font-black italic uppercase truncate">{value}</h2>
-        </div>
-        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-[#2D241E] border-2 border-[#2D241E] group-hover:bg-[#2D241E] group-hover:text-white transition-all">
-            {React.cloneElement(icon, { size: 20, strokeWidth: 3 })}
-        </div>
+// 💎 Helpers UI Components: p-6 & border 1px
+const StatCardSmall = ({ title, value }) => (
+    <div className="bg-white p-6 rounded-[3rem] border border-slate-300 shadow-sm flex flex-col gap-1 text-left">
+        <p className="text-xl font-medium text-[#374151] uppercase tracking-widest italic leading-none">{title}</p>
+        <h2 className="text-5xl font-medium italic tracking-tighter text-[#000000] leading-none mt-2 truncate">{value}</h2>
     </div>
 );
 
-const InfoBlock = ({ label, value, icon, isFull = false }) => (
-    <div className={`space-y-1.5 ${isFull ? 'md:col-span-2' : ''}`}>
-        <label className="text-[10px] font-black text-[#2D241E] uppercase flex items-center gap-2">{icon} {label}</label>
-        <p className="text-base font-black text-[#2D241E] border-b-2 border-slate-100 pb-2 italic">{value || '—'}</p>
+const InfoBlock = ({ label, value, isFull = false }) => (
+    <div className={`space-y-2 ${isFull ? 'md:col-span-2' : ''}`}>
+        <label className="text-[10px] font-medium text-[#374151] uppercase tracking-widest block border-l border-[#000000] pl-2">{label}</label>
+        <p className="text-xl font-medium text-[#111827] italic leading-tight">{value || '—'}</p>
     </div>
 );
 
 const ModalInputField = ({ label, value, onChange, type = "text", required = false }) => (
-    <div className="space-y-1">
-        <label className="text-[10px] font-black uppercase text-[#2D241E] ml-2">{label}</label>
-        <input type={type} className="w-full p-4 rounded-xl bg-slate-50 border-2 border-[#2D241E]/10 outline-none font-black text-sm italic" value={value} onChange={e => onChange(e.target.value)} required={required} />
+    <div className="space-y-1.5">
+        <label className="text-[10px] font-medium uppercase ml-2 text-[#374151] tracking-widest">{label}</label>
+        <input type={type} className="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 outline-none font-medium text-xl italic text-[#111827] focus:bg-white" value={value} onChange={e => onChange(e.target.value)} required={required} />
     </div>
 );
 
