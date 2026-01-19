@@ -133,7 +133,7 @@ const Checkout = ({ userData }) => {
                 window.dispatchEvent(new Event('storage'));
                 Swal.fire({ icon: 'success', title: 'ORDER SUCCESS!', confirmButtonColor: '#000000' }).then(() => navigate('/my-orders'));
             }
-        } catch (err) { Swal.fire({ icon: 'error', title: 'ERROR' }); }
+        } catch (err) { Swal.fire({ icon: 'error', title: 'กรุณาแนบสลิปโอนเงินใหม่ เนื่องจากรูปมีปัญหา' }); }
     };
 
     if (loading) return <div className="h-screen flex items-center justify-center bg-[#FDFCFB]"><Loader2 className="animate-spin text-[#000000]" size={48} /></div>;

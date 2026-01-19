@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { 
-    User, MapPin, Settings, LogOut, Mail, Phone, 
-    ShieldCheck, Loader2, X, Lock, Trash2, Edit2, 
+import {
+    User, MapPin, Settings, LogOut, Mail, Phone,
+    ShieldCheck, Loader2, X, Lock, Trash2, Edit2,
     Heart, ShoppingBag, Sparkles, ChevronRight, Send
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -130,11 +130,11 @@ const Profile = ({ userData }) => {
             setLoading(true);
             const [profileRes, wishRes] = await Promise.allSettled([
                 axiosInstance.get(`${API_ENDPOINTS.AUTH}/profile`),
-                axiosInstance.get('/api/wishlist') 
+                axiosInstance.get('/api/wishlist')
             ]);
             if (profileRes.status === 'fulfilled' && profileRes.value.success) setProfile(profileRes.value.data);
             if (wishRes.status === 'fulfilled' && wishRes.value.success) setFavorites(wishRes.value.data || []);
-        } catch (error) { toast.error("ดึงข้อมูลล้มเหลว"); } 
+        } catch (error) { toast.error("ดึงข้อมูลล้มเหลว"); }
         finally { setLoading(false); }
     }, []);
 
@@ -143,28 +143,61 @@ const Profile = ({ userData }) => {
     const closeModal = () => { setActiveModal(null); setEditingAddress(null); };
 
     const handleUpdateProfile = async (e, formData) => {
-        e.preventDefault(); setIsSubmitting(true);
-        try {
-            const res = await axiosInstance.put(`${API_ENDPOINTS.AUTH}/profile`, formData);
-            if (res.success) { toast.success("อัปเดตโปรไฟล์สำเร็จ"); fetchData(); closeModal(); }
-        } catch (err) { toast.error("บันทึกล้มเหลว"); } finally { setIsSubmitting(false); }
-    };
+        e.preventDefault();
+        setIsSubmitting(true);
 
-    const handleSaveAddress = async (e, formData) => {
-        e.preventDefault(); setIsSubmitting(true);
+        // --- ✨ UI FIX: เตรียมข้อมูลให้ตรงกับที่ Controller/DB ต้องการ ---
+        const dataToSubmit = {
+            ...formData,
+            // ลบขีด (-) ออกจากเบอร์โทรให้เหลือแค่ตัวเลข 10 หลัก
+            phone: formData.phone.replace(/\D/g, '')
+        };
+
         try {
-            const res = editingAddress 
-                ? await axiosInstance.put(`${API_ENDPOINTS.ADDRESSES}/${editingAddress.address_id}`, formData)
-                : await axiosInstance.post(API_ENDPOINTS.ADDRESSES, formData);
-            if (res.success) { toast.success("จัดการที่อยู่สำเร็จ"); fetchData(); closeModal(); }
-        } catch (err) { toast.error("จัดการที่อยู่ล้มเหลว"); } finally { setIsSubmitting(false); }
+            const res = await axiosInstance.put(`${API_ENDPOINTS.AUTH}/profile`, dataToSubmit);
+            if (res.success) {
+                toast.success("อัปเดตโปรไฟล์สำเร็จ");
+                fetchData();
+                closeModal();
+            }
+        } catch (err) {
+            toast.error("บันทึกล้มเหลว");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    const handleSaveAddress = async (e, formData) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        // --- ✨ UI FIX: ทำความสะอาดเบอร์โทรศัพท์สำหรับที่อยู่ ---
+        const dataToSubmit = {
+            ...formData,
+            phone_number: formData.phone_number.replace(/\D/g, '')
+        };
+
+        try {
+            const res = editingAddress
+                ? await axiosInstance.put(`${API_ENDPOINTS.ADDRESSES}/${editingAddress.address_id}`, dataToSubmit)
+                : await axiosInstance.post(API_ENDPOINTS.ADDRESSES, dataToSubmit);
+            if (res.success) {
+                toast.success("จัดการที่อยู่สำเร็จ");
+                fetchData();
+                closeModal();
+            }
+        } catch (err) {
+            toast.error("จัดการที่อยู่ล้มเหลว");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleDeleteAddress = async (id) => {
-        const result = await Swal.fire({ 
-            title: 'Delete Address?', text: 'Action cannot be undone.', icon: 'warning', 
+        const result = await Swal.fire({
+            title: 'Delete Address?', text: 'Action cannot be undone.', icon: 'warning',
             showCancelButton: true, confirmButtonColor: '#111827', confirmButtonText: 'Confirm',
-            customClass: { popup: 'rounded-[3rem] font-["Kanit"] border-2 border-slate-300 bg-white' } 
+            customClass: { popup: 'rounded-[3rem] font-["Kanit"] border-2 border-slate-300 bg-white' }
         });
         if (result.isConfirmed) {
             try {
@@ -224,7 +257,7 @@ const Profile = ({ userData }) => {
             {/* --- py-6: ลดจาก 12 เพื่อให้เนื้อหากระชับ --- */}
             <section className="relative py-6 px-8 container mx-auto text-left">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    
+
                     {/* 🛠️ Sidebar Menu: space-y-2 */}
                     <div className="lg:col-span-3 space-y-2 lg:sticky lg:top-28">
                         <p className="text-[10px] font-medium text-[#374151] uppercase tracking-[0.4em] mb-4 ml-4 italic">Registry Settings</p>
@@ -251,10 +284,10 @@ const Profile = ({ userData }) => {
                         <div className="bg-white rounded-[3rem] p-8 border-2 border-slate-300 shadow-sm relative">
                             <h2 className="text-4xl font-medium uppercase tracking-tighter mb-8 italic text-[#000000]">Member <span className="font-light not-italic text-[#374151]">Identity</span></h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
-                                <InfoItem label="Full Registered Name" value={`${profile.first_name} ${profile.last_name}`} icon={<User size={22}/>} />
-                                <InfoItem label="Email Account" value={profile.email} icon={<Mail size={22}/>} />
-                                <InfoItem label="Mobile Phone" value={profile.phone || 'NOT SPECIFIED'} icon={<Phone size={22}/>} />
-                                <InfoItem label="Role Privileges" value={profile.role_name} icon={<ShieldCheck size={22}/>} />
+                                <InfoItem label="Full Registered Name" value={`${profile.first_name} ${profile.last_name}`} icon={<User size={22} />} />
+                                <InfoItem label="Email Account" value={profile.email} icon={<Mail size={22} />} />
+                                <InfoItem label="Mobile Phone" value={profile.phone || 'NOT SPECIFIED'} icon={<Phone size={22} />} />
+                                <InfoItem label="Role Privileges" value={profile.role_name} icon={<ShieldCheck size={22} />} />
                             </div>
 
                             <div className="mt-8 pt-8 border-t-2 border-slate-100">
@@ -266,8 +299,8 @@ const Profile = ({ userData }) => {
                                     {profile.addresses?.map(addr => (
                                         <div key={addr.address_id} className="p-6 bg-[#FDFCFB] rounded-[2rem] border-2 border-slate-200 relative group transition-all hover:border-[#000000] shadow-sm">
                                             <div className="absolute top-5 right-5 flex gap-1">
-                                                <button onClick={() => { setEditingAddress(addr); setActiveModal('address'); }} className="p-2 text-slate-400 hover:text-black"><Edit2 size={18}/></button>
-                                                <button onClick={() => handleDeleteAddress(addr.address_id)} className="p-2 text-red-200 hover:text-red-700"><Trash2 size={18}/></button>
+                                                <button onClick={() => { setEditingAddress(addr); setActiveModal('address'); }} className="p-2 text-slate-400 hover:text-black"><Edit2 size={18} /></button>
+                                                <button onClick={() => handleDeleteAddress(addr.address_id)} className="p-2 text-red-200 hover:text-red-700"><Trash2 size={18} /></button>
                                             </div>
                                             <p className="font-medium text-[#000000] text-2xl uppercase italic mb-1 tracking-tight">{addr.recipient_name}</p>
                                             <p className="text-lg text-[#374151] italic leading-relaxed mb-4 font-medium">"{addr.address_detail}"</p>
@@ -284,7 +317,7 @@ const Profile = ({ userData }) => {
                             {favorites.length > 0 ? (
                                 <div className="space-y-3">
                                     {favorites.map((fav) => {
-                                        const prod = fav.product || fav; 
+                                        const prod = fav.product || fav;
                                         return (
                                             <div key={fav.wishlist_id || prod.product_id} className="flex flex-col md:flex-row items-center gap-8 p-5 bg-[#FDFCFB] rounded-[2rem] border-2 border-slate-200 hover:border-[#000000] transition-all">
                                                 <div className="w-24 h-24 shrink-0 rounded-2xl overflow-hidden border-2 border-slate-100 bg-white p-1 shadow-sm">
@@ -317,7 +350,7 @@ const Profile = ({ userData }) => {
             </section>
 
             <Footer userData={userData} />
-            
+
             {/* Modal Components */}
             {activeModal === 'profile' && (
                 <Modal title="Personal Info" onClose={closeModal}>
@@ -335,7 +368,8 @@ const Profile = ({ userData }) => {
                 </Modal>
             )}
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
             `}} />
