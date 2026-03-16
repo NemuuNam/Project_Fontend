@@ -1,20 +1,20 @@
-<<<<<<< HEAD
-# React + Vite
+# 🛒 E-commerce Platform (Frontend)
+**Senior Project: A Responsive Full-stack Online Store**
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+โปรเจกต์ส่วนหน้าบ้าน (Frontend) พัฒนาขึ้นเพื่อสร้างประสบการณ์การช้อปปิ้งออนไลน์ที่ลื่นไหลและตอบสนองได้ทุกอุปกรณ์ (Responsive Design)
 
-Currently, two official plugins are available:
+## 🚀 Tech Stack
+- **Library/Framework:** React.js & Vue.js (Multi-framework implementation)
+- **Styling:** CSS3 / Responsive Layouts
+- **Communication:** Axios for RESTful API requests
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Key Features
+- **Dynamic Shopping Cart:** ระบบเพิ่ม/ลดสินค้าในตะกร้าและคำนวณราคาแบบ Real-time
+- **Product Display:** จัดหมวดหมู่และแสดงรายละเอียดสินค้าที่ดึงข้อมูลมาจาก Backend
+- **User Authentication:** หน้าจอ Login/Register และส่วนจัดการข้อมูลสมาชิก
+- **Responsive UI:** รองรับการใช้งานทั้งบนมือถือและคอมพิวเตอร์
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-=======
-# project_frontend
->>>>>>> 48b2ce1468eb8b57faf0225930f17ae154e45b91
+## 🛠️ Getting Started
+1. Clone repository: `git clone [URL]`
+2. Install dependencies: `npm install`
+3. Run project: `npm run dev`
